@@ -331,25 +331,26 @@
 
 /* Header Layout */
 .top-header {
-  height: var(--header-height);
-  background: var(--color-bg-main);
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--spacing-2xl);
-  position: sticky;
-  top: 0;
-  z-index: var(--z-sticky);
+    height: var(--header-height);
+    background: var(--color-bg-white);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-2xl);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-sm);
 }
 
 /* Page Content */
 .page-content {
-  padding: var(--spacing-2xl);
-  max-width: 1200px;
-  width: 100%;
+    padding: var(--spacing-2xl);
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
 }
-
 /* ============================================
    Card Layout
    ============================================ */
@@ -381,31 +382,73 @@
 /* ============================================
    Stats Grid Layout
    ============================================ */
+/* Stats Grid - Force 3 columns */
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-2xl);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-2xl);
 }
 
+/* Stat Card - horizontal layout with icon on right */
 .stat-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 24px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: box-shadow var(--transition-fast);
 }
 
+.stat-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.stat-label {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    font-weight: 400;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    line-height: 1.2;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--color-primary-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-icon svg {
+    width: 24px;
+    height: 24px;
+    color: var(--color-primary);
+}
 /* ============================================
    Middle Section Layout
    ============================================ */
 .middle-section {
-  display: grid;
-  grid-template-columns: 272px 1fr;
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-2xl);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-2xl);
 }
 
 /* ============================================
@@ -602,27 +645,31 @@
 
 .quick-actions-card,
 .chart-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 20px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
 }
 
 .chart-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-lg);
 }
 
 .chart-placeholder {
-  border: 1.5px dashed var(--border-color);
-  border-radius: var(--radius-sm);
-  height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-bg-header);
+    background: var(--color-bg-header);
+    border-radius: var(--radius-md);
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--border-color-dark);
+}
+
+.chart-placeholder svg {
+    opacity: 0.5;
 }
 
 .view-all-btn {
