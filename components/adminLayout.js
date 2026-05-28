@@ -149,16 +149,18 @@ function initAdminLayout() {
 
   const navItems = sidebar.querySelectorAll('.nav-item');
   navItems.forEach(function(item) {
-    item.addEventListener('click', function() {
-      navItems.forEach(function(nav) {
-        nav.classList.remove('active');
-      });
-      
-      item.classList.add('active');
-      
-      if (window.innerWidth <= 768) {
-        SidebarManager.close();
-      }
+    item.addEventListener('click', function(e) {
+        const href = item.getAttribute('href');
+        // Only prevent if it's the same page? No, let browser handle.
+        // But we need to ensure active class updates before navigation
+        navItems.forEach(function(nav) {
+            nav.classList.remove('active');
+        });
+        item.classList.add('active');
+        if (window.innerWidth <= 768) {
+            SidebarManager.close();
+        }
+        // Allow default navigation - do nothing else
     });
   });
 }

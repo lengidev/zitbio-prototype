@@ -50,10 +50,13 @@ function initSettingsPage() {
   // Navigation items - prevent default behavior
   const navItems = document.querySelectorAll('.nav-item');
   navItems.forEach(function(item) {
-    item.addEventListener('click', function(e) {
-      e.preventDefault();
-    });
-  });
+    if (item.getAttribute('href') === '#') {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Page coming soon');
+        });
+    }
+});
 
   // User dropdown click
   const userDropdown = document.querySelector('.user-dropdown');

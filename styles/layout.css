@@ -150,7 +150,7 @@
     position: relative;
 }
 
-/* Sidebar Layout - Unified */
+/* Sidebar Base*/
 .sidebar {
     width: 260px;
     min-width: 260px;
@@ -163,8 +163,8 @@
     display: flex;
     flex-direction: column;
     z-index: 100;
-    transition: width 0.25s ease, min-width 0.25s ease;
-    overflow: hidden;
+    transition: width 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1), min-width 0.3s ease;
+    overflow-x: hidden;
 }
 
 .sidebar-header {
@@ -175,6 +175,7 @@
     border-bottom: 1px solid var(--border-color, #e5e7eb);
     height: 60px;
     box-sizing: border-box;
+    transition: padding 0.2s ease;
 }
 
 .sidebar-toggle-btn {
@@ -198,7 +199,7 @@
     font-weight: 700;
     color: var(--color-primary, #2563eb);
     white-space: nowrap;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
 .sidebar-menu {
@@ -217,11 +218,14 @@
     transition: all 0.2s ease;
     border-left: 3px solid transparent;
     margin-bottom: 0.25rem;
+    white-space: nowrap;
 }
+
 
 .nav-item:hover {
     background-color: var(--color-bg-hover, #f3f4f6);
     color: var(--color-text-primary, #1f2937);
+    text-decoration: none;
 }
 
 .nav-item.active {
@@ -242,41 +246,46 @@
 
 .nav-text {
     white-space: nowrap;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
 .main-content {
     flex-grow: 1;
     margin-left: 260px;
     min-height: 100vh;
-    transition: margin-left 0.25s ease;
+    transition: margin-left 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
     width: calc(100% - 260px);
-    box-sizing: border-box;
 }
 
 /* Collapsible Class Modifiers */
 .sidebar.collapsed {
-    width: 70px;
-    min-width: 70px;
+    width: 72px;
+    min-width: 72px;
 }
 
 .sidebar.collapsed + .main-content,
 .main-content.expanded {
-    margin-left: 70px;
-    width: calc(100% - 70px);
+    margin-left: 72px;
+    width: calc(100% - 72px);
 }
 
 /* Clean text-hiding logic during minimized view */
-.sidebar.collapsed .nav-text,
-.sidebar.collapsed .sidebar-header-title {
-    display: none;
+.sidebar.collapsed .nav-text{
     opacity: 0;
+    visibility: hidden;
+    width: 0;
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-header-title {
+    opacity: 0;
+    visibility: hidden;
+    width: 0;
 }
 
 .sidebar.collapsed .nav-item {
     justify-content: center;
-    padding-left: 0;
-    padding-right: 0;
+    padding: 0.75rem 0;
 }
 
 .sidebar.collapsed .nav-icon {
@@ -445,6 +454,11 @@
   padding: 16px;
   border-bottom: 1px solid var(--border-color);
   height: var(--header-height);
+}
+
+.sidebar.collapsed .sidebar-header {
+    justify-content: center;
+    padding: 1rem 0;
 }
 
 .sidebar-logo {

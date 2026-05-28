@@ -97,14 +97,14 @@ small,
    Link Styles
    ============================================ */
 a {
-  color: var(--color-primary);
-  text-decoration: none;
-  transition: color var(--transition-fast);
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
 }
 
 a:hover {
-  color: var(--color-primary-hover);
-  text-decoration: underline;
+    color: var(--color-primary-hover);
+    text-decoration: none;  /* ensure no underline */
 }
 
 /* ============================================
