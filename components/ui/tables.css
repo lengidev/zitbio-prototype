@@ -1,0 +1,467 @@
+/**
+ * BioMonitor - Table Component Styles
+ * Isolated data-centric grid configurations
+ */
+
+/* ============================================
+   Base Table Container
+   ============================================ */
+.table-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================
+   Table Header Section
+   ============================================ */
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--color-bg-white);
+}
+
+.table-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.table-subtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+/* ============================================
+   Data Table Base
+   ============================================ */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table thead th {
+  padding: 10px 20px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-header);
+  border-bottom: 1px solid var(--border-color);
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.data-table tbody tr {
+  transition: background var(--transition-fast);
+}
+
+.data-table tbody tr:hover {
+  background: var(--color-bg-sidebar);
+}
+
+.data-table tbody td {
+  padding: 12px 20px;
+  font-size: 13px;
+  color: var(--color-text-main);
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-empty-cell {
+  text-align: center;
+  padding: 24px;
+  color: var(--color-text-muted);
+}
+
+/* ============================================
+   Table Cell Variants
+   ============================================ */
+.date-cell {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.species-cell {
+  font-weight: 500;
+  color: var(--color-text-main);
+}
+
+.location-cell {
+  color: var(--color-text-secondary);
+}
+
+.officer-cell {
+  color: var(--color-text-secondary);
+}
+
+.status-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-cell.active,
+.status-cell.published {
+  background: var(--color-success-light);
+  color: #2e7d32;
+}
+
+.status-cell.pending {
+  background: var(--color-warning-light);
+  color: #f57c00;
+}
+
+.status-cell.inactive,
+.status-cell.draft {
+  background: var(--color-text-disabled);
+  color: var(--color-text-secondary);
+}
+
+.status-cell.error,
+.status-cell.rejected {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+/* Status indicator dot */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.status-dot.active {
+  background: var(--color-success);
+}
+
+.status-dot.pending {
+  background: var(--color-warning);
+}
+
+.status-dot.inactive {
+  background: var(--color-text-muted);
+}
+
+/* ============================================
+   Table Actions Column
+   ============================================ */
+.actions-cell {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.actions-cell .btn {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.action-btn-small {
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================
+   View Button (Table Action)
+   ============================================ */
+.view-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-header);
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.view-btn:hover {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.edit-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-header);
+  color: var(--color-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.edit-btn:hover {
+  background-color: var(--color-secondary-light);
+  border-color: var(--color-secondary);
+}
+
+.delete-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-header);
+  color: var(--color-danger);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.delete-btn:hover {
+  background-color: var(--color-danger-light);
+  border-color: var(--color-danger);
+}
+
+/* ============================================
+   Table Footer & Pagination
+   ============================================ */
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-color);
+  background: var(--color-bg-white);
+}
+
+.table-info {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.pagination-arrows {
+  display: flex;
+  gap: 4px;
+}
+
+.page-arrow {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.page-arrow:hover:not(.disabled) {
+  background-color: var(--color-bg-header);
+  border-color: var(--border-color-dark);
+}
+
+.page-arrow.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-arrow svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--color-text-secondary);
+}
+
+.page-numbers {
+  display: flex;
+  gap: 2px;
+}
+
+.page-number {
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.page-number:hover {
+  background-color: var(--color-bg-header);
+}
+
+.page-number.active {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+.table-empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.table-empty svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--spacing-lg);
+  opacity: 0.5;
+}
+
+.table-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-main);
+  margin-bottom: var(--spacing-sm);
+}
+
+.table-empty-description {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* ============================================
+   Table with Striped Rows
+   ============================================ */
+.data-table.striped tbody tr:nth-child(odd) {
+  background-color: var(--color-bg-sidebar);
+}
+
+.data-table.striped tbody tr:nth-child(even) {
+  background-color: var(--color-bg-card);
+}
+
+.data-table.striped tbody tr:hover {
+  background: var(--color-bg-header);
+}
+
+/* ============================================
+   Compact Table Variant
+   ============================================ */
+.data-table.compact thead th,
+.data-table.compact tbody td {
+  padding: 8px 12px;
+}
+
+.data-table.compact tbody td {
+  font-size: 12px;
+}
+
+/* ============================================
+   Table Controls (Search, Filter, etc.)
+   ============================================ */
+.table-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.table-search {
+  flex: 1;
+  max-width: 300px;
+}
+
+.table-filters {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+/* ============================================
+   Sortable Column Headers
+   ============================================ */
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 24px !important;
+}
+
+.sortable::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='7 15 12 10 17 15'%3E%3C/polyline%3E%3Cpolyline points='7 9 12 14 17 9'%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.5;
+}
+
+.sortable.asc::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%232E7D32' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='7 15 12 10 17 15'%3E%3C/svg%3E");
+  opacity: 1;
+}
+
+.sortable.desc::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%232E7D32' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='7 9 12 14 17 9'%3E%3C/svg%3E");
+  opacity: 1;
+}
+
+/* ============================================
+   Mobile Responsive Tables
+   ============================================ */
+@media (max-width: 767px) {
+  .table-header {
+    padding: 12px 16px;
+  }
+
+  .data-table thead th,
+  .data-table tbody td {
+    padding: 10px 12px;
+  }
+
+  .table-footer {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: 12px 16px;
+  }
+
+  .table-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .table-search {
+    max-width: 100%;
+  }
+
+  .table-filters {
+    flex-wrap: wrap;
+  }
+}

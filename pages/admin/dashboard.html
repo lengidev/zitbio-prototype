@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BioMonitor - Biodiversity Monitoring System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Icons&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/fontsource-inter@5.0.18/index.min.css" rel="stylesheet">
+<link rel="stylesheet" href="../../styles/theme.css">
+<link rel="stylesheet" href="../../styles/global.css">
+<link rel="stylesheet" href="../../styles/layout.css">
+<link rel="stylesheet" href="../../components/ui/buttons.css">
+<link rel="stylesheet" href="../../components/ui/tables.css">
+</head>
+<body class="page-dashboard">
+
+<div class="app-container">
+    
+    <aside class="sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <button id="sidebarToggle" class="sidebar-toggle-btn">
+                <span class="material-icons">menu</span>
+            </button>
+            <span class="sidebar-header-title">BioMonitor</span>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <a href="dashboard.html" class="nav-item" id="navDashboard">
+                <span class="material-icons nav-icon">dashboard</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            
+            <a href="observations.html" class="nav-item" id="navObservations">
+                <span class="material-icons nav-icon">visibility</span>
+                <span class="nav-text">Observations</span>
+            </a>
+            
+            <a href="settings.html" class="nav-item" id="navSettings">
+                <span class="material-icons nav-icon">settings</span>
+                <span class="nav-text">Settings</span>
+            </a>
+            
+            <a href="../../index.html" class="nav-item logout" id="navLogout">
+                <span class="material-icons nav-icon">logout</span>
+                <span class="nav-text">Logout</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div>
+                <h1 class="header-title">Biodiversity Monitoring System</h1>
+            </div>
+            <div class="header-right">
+                <a class="help-link" href="#">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Help
+                </a>
+                <div class="user-menu" id="userMenu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span class="user-menu-name">Sarah Chen</span>
+                    <svg class="user-menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <h2 class="page-title">Dashboard</h2>
+            <p class="page-subtitle">Overview of biodiversity monitoring activity</p>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <span class="stat-label">Total Users</span>
+                        <span class="stat-value">8</span>
+                    </div>
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 00-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 010 7.75"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <span class="stat-label">Total Observations</span>
+                        <span class="stat-value">32</span>
+                    </div>
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <span class="stat-label">Observations (Last 7 days)</span>
+                        <span class="stat-value">0</span>
+                    </div>
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Section -->
+            <div class="middle-section">
+                <div class="quick-actions-card">
+                    <h3 class="card-title">Quick Actions</h3>
+                    <div class="action-buttons">
+                        <button class="action-btn primary" id="btnNewObservation">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            New Observation
+                        </button>
+                        <button class="action-btn primary" id="btnAddUser">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
+                                <circle cx="8.5" cy="7" r="4"></circle>
+                                <line x1="20" y1="8" x2="20" y2="14"></line>
+                                <line x1="23" y1="11" x2="17" y2="11"></line>
+                            </svg>
+                            Add User
+                        </button>
+                        <button class="action-btn secondary" id="btnGenerateReport">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            </svg>
+                            Generate Report
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3 class="chart-title">Observations (Last 4 weeks)</h3>
+                    <div class="chart-placeholder">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Table -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3 class="table-title">Recent Activity</h3>
+                    <button class="view-all-btn" id="btnViewAll">View All Observations</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Species</th>
+                            <th>Location</th>
+                            <th>Officer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="date-cell">4/7/2026</td>
+                            <td class="species-cell">Buffalo</td>
+                            <td class="location-cell">Grassland, Sector O6</td>
+                            <td class="officer-cell">Kwame Asante</td>
+                        </tr>
+                        <tr>
+                            <td class="date-cell">4/7/2026</td>
+                            <td class="species-cell">African Wild Dog</td>
+                            <td class="location-cell">Pack Territory, Sector W14</td>
+                            <td class="officer-cell">Carlos Mbeki</td>
+                        </tr>
+                        <tr>
+                            <td class="date-cell">4/6/2026</td>
+                            <td class="species-cell">Rhinoceros (Black)</td>
+                            <td class="location-cell">Thornbush Thicket, Sector N5</td>
+                            <td class="officer-cell">Aisha Patel</td>
+                        </tr>
+                        <tr>
+                            <td class="date-cell">4/6/2026</td>
+                            <td class="species-cell">Spotted Hyena</td>
+                            <td class="location-cell">Grassland, Sector U12</td>
+                            <td class="officer-cell">David Kim</td>
+                        </tr>
+                        <tr>
+                            <td class="date-cell">4/5/2026</td>
+                            <td class="species-cell">Leopard</td>
+                            <td class="location-cell">Riverine Forest, Sector T11</td>
+                            <td class="officer-cell">James Wilson</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+</div>
+
+<script src="../../components/adminLayout.js"></script>
+
+</body>
+</html>
+

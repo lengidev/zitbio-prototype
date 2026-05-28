@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioMonitor</title>
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/global.css">
+    <link rel="stylesheet" href="../styles/layout.css">
+    <link rel="stylesheet" href="../components/ui/forms.css">
+    <link rel="stylesheet" href="../components/ui/buttons.css">
+    <link rel="stylesheet" href="../components/ui/tables.css">
+</head>
+<body class="page-fieldofficer">
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20c4 0 8.68-4 12-12a5.5 5.5 0 00-3-2zm-8.5 7.5a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0z"/></svg>
+            </div>
+            <span class="logo-text">BioMonitor</span>
+        </div>
+        <div class="user-menu">
+            <svg class="user-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <span class="user-name">James Wilson</span>
+            <svg class="dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="observation-form">
+            <div class="form-header" id="formHeader">
+                <span class="form-title">Record New Observation</span>
+                <svg class="form-toggle" id="formToggle" viewBox="0 0 24 24">
+                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
+                </svg>
+            </div>
+            <div class="form-body" id="formBody">
+                <form id="observationForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Species Name <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="speciesName" placeholder="e.g., Golden Eagle" required>
+                            <span class="error-message" id="speciesNameError">Species name is required</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Population Count <span class="required">*</span></label>
+                            <input type="number" class="form-input" id="populationCount" placeholder="e.g., 5" min="1" required>
+                            <span class="error-message" id="populationCountError">Population count is required</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Observation Date <span class="required">*</span></label>
+                            <div class="input-with-icon">
+                                <input type="date" class="form-input" id="observationDate" required>
+                                <svg class="input-icon" viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+                            </div>
+                            <span class="error-message" id="observationDateError">Observation date is required</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Location <span class="required">*</span></label>
+                            <div class="input-with-icon">
+                                <input type="text" class="form-input" id="location" placeholder="e.g., Mountain Ridge Trail" required>
+                                <svg class="input-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                            </div>
+                            <span class="error-message" id="locationError">Location is required</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label class="form-label">Habitat Description</label>
+                            <textarea class="form-input" id="habitatDescription" placeholder="Describe the habitat"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Temperature (°C)</label>
+                            <input type="number" step="0.1" class="form-input" id="temperature" placeholder="e.g., 15.5">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Rainfall (mm)</label>
+                            <input type="number" step="0.1" class="form-input" id="rainfall" placeholder="e.g., 2.3">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-input" id="notes" placeholder="Additional observations"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">Submit Observation</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <div class="table-controls">
+                <div class="pagination-arrows">
+                    <button class="page-arrow disabled" id="prevPage">
+                        <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                    </button>
+                    <button class="page-arrow disabled" id="nextPage">
+                        <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    </button>
+                </div>
+                <div class="search-box">
+                    <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search your observations...">
+                </div>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Species</th>
+                        <th>Count</th>
+                        <th>Location</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+            <div class="table-footer" id="tableFooter">
+                Showing 1–6 of 6 observations
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Observation Details</span>
+                <button class="modal-close" id="modalClose">
+                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <div class="modal-content" id="modalContent">
+            </div>
+        </div>
+    </div>
+
+    <script src="../scripts/app.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioMonitor - Biodiversity Monitoring System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons&display=swap" rel="stylesheet">
+    <link href="https://fontsource.nyc3.cdn.digitaloceanspaces.com/inter/400.css" rel="stylesheet">
+    <link href="https://fontsource.nyc3.cdn.digitaloceanspaces.com/inter/500.css" rel="stylesheet">
+    <link href="https://fontsource.nyc3.cdn.digitaloceanspaces.com/inter/600.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../styles/theme.css">
+    <link rel="stylesheet" href="../../styles/global.css">
+    <link rel="stylesheet" href="../../styles/layout.css">
+    <link rel="stylesheet" href="../../components/ui/buttons.css">
+    <link rel="stylesheet" href="../../components/ui/tables.css">
+    <link rel="stylesheet" href="../../components/ui/forms.css">
+</head>
+<body class="page-observations">
+    <div class="app-container">
+        
+        <aside class="sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <button id="sidebarToggle" class="sidebar-toggle-btn">
+                    <span class="material-icons">menu</span>
+                </button>
+                <span class="sidebar-header-title">BioMonitor</span>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <a href="dashboard.html" class="nav-item" id="navDashboard">
+                    <span class="material-icons nav-icon">dashboard</span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                
+                <a href="observations.html" class="nav-item" id="navObservations">
+                    <span class="material-icons nav-icon">visibility</span>
+                    <span class="nav-text">Observations</span>
+                </a>
+                
+                <a href="settings.html" class="nav-item" id="navSettings">
+                    <span class="material-icons nav-icon">settings</span>
+                    <span class="nav-text">Settings</span>
+                </a>
+                
+                <a href="../../index.html" class="nav-item logout" id="navLogout">
+                    <span class="material-icons nav-icon">logout</span>
+                    <span class="nav-text">Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div>
+                    <h1 class="header-title">Biodiversity Monitoring System</h1>
+                </div>
+                <div class="header-right">
+                    <a class="help-link" href="#">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        Help
+                    </a>
+                    <div class="user-menu" id="userMenu">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span class="user-menu-name">Sarah Chen</span>
+                        <svg class="user-menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <div class="content-header">
+                    <h2 class="content-title">Observations</h2>
+                    <p class="content-subtitle">Manage and view all biodiversity records</p>
+                </div>
+
+                <!-- Controls Row -->
+                <div class="controls-row">
+                    <div class="pagination-controls">
+                        <button class="page-btn" id="prevBtn" disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <button class="page-btn" id="nextBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="controls-right">
+                        <div class="search-container">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <input type="text" class="search-input" id="searchInput" placeholder="Search...">
+                        </div>
+                        <button class="btn-export">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="12" y1="18" x2="12" y2="12"></line>
+                                <polyline points="9 15 12 18 15 15"></polyline>
+                            </svg>
+                            Export
+                        </button>
+                        <button class="btn-add" id="btnAddRecord">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add New Record
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Species</th>
+                                <th>Count</th>
+                                <th>Location</th>
+                                <th>Recorded By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Footer -->
+                <div class="pagination-footer" id="paginationFooter">
+                    Showing 1–8 of 32 observations
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- View Modal -->
+    <div class="modal-overlay" id="viewModal">
+        <div class="view-modal">
+            <div class="view-modal-header">
+                <div>
+                    <h3 class="view-modal-title" id="modalSpeciesTitle">Buffalo</h3>
+                    <p class="view-modal-subtitle" id="modalSubtitle">Observation details recorded on 4/7/2026</p>
+                </div>
+                <button class="modal-close" id="closeViewModalBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="view-modal-body" id="modalBody">
+            </div>
+            <div class="view-modal-footer">
+                <button class="btn-delete" id="btnDeleteObservation">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Delete
+                </button>
+                <button class="btn-close-modal" id="closeViewModalFooterBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Record Modal -->
+    <div class="modal-overlay" id="addModal">
+        <div class="add-modal">
+            <div class="add-modal-header">
+                <h3 class="add-modal-title">Add New Record</h3>
+                <button class="modal-close" id="closeAddModalBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="add-modal-body">
+                <p style="color: #6b7280; font-size: 13px; margin-bottom: 16px;">This feature is coming soon. Please contact your administrator to add new records.</p>
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <button class="btn-export" id="closeAddModalFooterBtn">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../components/adminLayout.js"></script>
+    <script src="../../components/modals.js"></script>
+    <script src="../../pages/admin/observations-page.js"></script>
+</body>
+</html>
+

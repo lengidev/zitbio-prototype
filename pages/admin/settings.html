@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BioMonitor - Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Icons&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../styles/theme.css">
+<link rel="stylesheet" href="../../styles/global.css">
+<link rel="stylesheet" href="../../styles/layout.css">
+<link rel="stylesheet" href="../../components/ui/buttons.css">
+<link rel="stylesheet" href="../../components/ui/forms.css">
+</head>
+<body class="page-settings">
+
+<div class="app-container">
+    
+    <aside class="sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <button id="sidebarToggle" class="sidebar-toggle-btn">
+                <span class="material-icons">menu</span>
+            </button>
+            <span class="sidebar-header-title">BioMonitor</span>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <a href="dashboard.html" class="nav-item" id="navDashboard">
+                <span class="material-icons nav-icon">dashboard</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            
+            <a href="observations.html" class="nav-item" id="navObservations">
+                <span class="material-icons nav-icon">visibility</span>
+                <span class="nav-text">Observations</span>
+            </a>
+            
+            <a href="settings.html" class="nav-item" id="navSettings">
+                <span class="material-icons nav-icon">settings</span>
+                <span class="nav-text">Settings</span>
+            </a>
+            
+            <a href="../../index.html" class="nav-item logout" id="navLogout">
+                <span class="material-icons nav-icon">logout</span>
+                <span class="nav-text">Logout</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="top-header">
+            <div>
+                <h1 class="header-title">Biodiversity Monitoring System</h1>
+            </div>
+            <div class="header-right">
+                <a class="help-link" href="#">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Help
+                </a>
+                <div class="user-menu" id="userMenu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span class="user-menu-name">Sarah Chen</span>
+                    <svg class="user-menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="content-area">
+            <h1 class="page-title">Settings</h1>
+            <p class="page-subtitle">Manage your account and security</p>
+
+            <!-- Change Password -->
+            <div class="section">
+                <div class="section-title">Change Password</div>
+                <div class="form-group">
+                    <label class="form-label" for="currentPwd">Current Password</label>
+                    <input type="password" id="currentPwd" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="newPwd">New Password (min. 8 characters)</label>
+                    <input type="password" id="newPwd" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="confirmPwd">Confirm New Password</label>
+                    <input type="password" id="confirmPwd" class="form-input" />
+                </div>
+                <button class="btn-primary" id="changePwdBtn">Change Password</button>
+            </div>
+
+            <hr class="divider" />
+
+            <!-- Account Information -->
+            <div class="section">
+                <div class="section-title">Account Information</div>
+                <div class="info-table">
+                    <div class="info-row">
+                        <span class="info-label">User ID:</span>
+                        <span class="info-value">ADM-001</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Role:</span>
+                        <span class="info-value">Administrator</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value status-active">Active</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Account Created:</span>
+                        <span class="info-value">November 15, 2025</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Last Password Change:</span>
+                        <span class="info-value">December 10, 2025</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Last Login:</span>
+                        <span class="info-value">5/27/2026, 7:43:19 AM</span>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="divider" />
+
+            <!-- System Information -->
+            <div class="section">
+                <div class="section-title">System Information</div>
+                <div class="info-table">
+                    <div class="info-row">
+                        <span class="info-label">Version:</span>
+                        <span class="info-value">1.0.0 (Mockup)</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Last Updated:</span>
+                        <span class="info-value">April 3, 2026</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Database Status:</span>
+                        <span class="info-value">
+                            <span class="db-status">
+                                <span class="db-dot"></span>
+                                Connected (Mock)
+                            </span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+</div>
+
+<script src="../../components/adminLayout.js"></script>
+<script src="../../pages/admin/settings-page.js"></script>
+
+</body>
+</html>
+
