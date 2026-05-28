@@ -409,46 +409,46 @@
 .stat-info {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xs);
+    gap: 8px;
 }
 
 .stat-label {
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 500;
     color: var(--color-text-secondary);
-    font-weight: 400;
 }
 
 .stat-value {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 700;
     color: var(--color-text-primary);
     line-height: 1.2;
 }
 
 .stat-icon {
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
     background: var(--color-primary-light);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
 }
 
 .stat-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     color: var(--color-primary);
 }
+
 /* ============================================
    Middle Section Layout
    ============================================ */
 .middle-section {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-lg);
-    margin-bottom: var(--spacing-2xl);
+    gap: 24px;
+    margin-bottom: 32px;
 }
 
 /* ============================================
@@ -643,19 +643,25 @@
   color: var(--color-primary);
 }
 
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
 .quick-actions-card,
 .chart-card {
     background: var(--color-bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-xl);
+    padding: 20px;
 }
 
 .chart-title {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     color: var(--color-text-primary);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: 20px;
 }
 
 .chart-placeholder {
