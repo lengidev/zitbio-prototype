@@ -346,8 +346,8 @@
 
 /* Page Content */
 .page-content {
-    padding: var(--spacing-2xl);
-    max-width: 1200px;
+    padding: 32px 40px;
+    max-width: 1280px;
     width: 100%;
     margin: 0 auto;
 }

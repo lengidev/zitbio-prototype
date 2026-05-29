@@ -4,9 +4,9 @@
  */
 
 :root {
-  /* Primary Colors - Forest Green */
+  /* Primary – Forest Green */
   --color-primary: #2E7D32;
-  --color-primary-hover: #256b28;
+  --color-primary-hover: #267c2a; /* 90% opacity equivalent */
   --color-primary-light: #e8f5e9;
   --color-primary-lighter: #f0f7f0;
 
@@ -20,23 +20,23 @@
   --color-accent-hover: #ffa726;
   --color-accent-light: #fff3e0;
 
-  /* Background Colors */
-  --color-bg: #F5F7FA;
+  /* Backgrounds */
+  --color-bg: #F5F7FA;        /* light‑mist – page base */
   --color-bg-white: #ffffff;
   --color-bg-sidebar: #ffffff;
   --color-bg-card: #ffffff;
-  --color-bg-input: #f8fafc;
-  --color-bg-header: #fafbfc;
+  --color-bg-input: #f3f3f5;  /* subtle gray for inputs */
+  --color-bg-header: #F9FAFB; /* table header background */
 
-  /* Text Colors */
+  /* Text Colors – Dark Slate (#2C3E50) for main, Gray (#7F8C8D) for muted */
   --color-text-main: #2C3E50;
-  --color-text-primary: #1e293b;
-  --color-text-secondary: #64748b;
-  --color-text-muted: #94a3b8;
-  --color-text-disabled: #cbd5e1;
+  --color-text-primary: #2C3E50;
+  --color-text-secondary: #7F8C8D;
+  --color-text-muted: #7F8C8D;
+  --color-text-disabled: #b0bec5;
   --color-text-inverse: #ffffff;
 
-  /* Semantic Colors */
+  /* Semantic – Danger Red & Success Green */
   --color-danger: #E53935;
   --color-danger-hover: #c62828;
   --color-danger-light: #ffebee;
@@ -45,8 +45,6 @@
   --color-success-light: #e8f5e9;
   --color-warning: #ffb74d;
   --color-warning-light: #fff3e0;
-  --color-info: #42a5f5;
-  --color-info-light: #e3f2fd;
 
   /* Border Colors */
   --border-color: #e5e7eb;
@@ -74,14 +72,14 @@
   --spacing-sm: 8px;
   --spacing-md: 12px;
   --spacing-lg: 16px;
-  --spacing-xl: 20px;
-  --spacing-2xl: 24px;
-  --spacing-3xl: 32px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 40px;
 
   /* Layout Dimensions */
   --sidebar-width: 260px;
   --sidebar-width-collapsed: 72px;
-  --header-height: 56px;
+  --header-height: 60px;
   --mobile-breakpoint: 768px;
   --tablet-breakpoint: 1024px;
   --desktop-breakpoint: 1200px;
