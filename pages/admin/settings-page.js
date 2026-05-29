@@ -59,7 +59,7 @@ function initSettingsPage() {
 });
 
   // User dropdown click
-  const userDropdown = document.querySelector('.user-dropdown');
+  const userDropdown = document.querySelector('.user-dropdown'); //not functioning yet
   if (userDropdown) {
     userDropdown.addEventListener('click', function() {
       alert('User menu dropdown (mockup)');

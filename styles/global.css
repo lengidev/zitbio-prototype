@@ -92,7 +92,7 @@ label,
 }
 
 /* Small Text */
-small, .text-small .text-xs{
+small, .text-small, .text-xs{
   font-size: 12px;
 }
 
@@ -913,12 +913,6 @@ tr:hover td {
   }
 }
 
-
-/* Stat numbers (prominent) */
-.stat-value {
-  font-size: 30px;    /* text‑3xl */
-  font-weight: 600;
-}
 
 /* Sidebar navigation */
 .nav-text {
