@@ -175,7 +175,7 @@
 .sidebar-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    /*justify-content: space-between;*/
     padding: 1rem;
     border-bottom: 1px solid var(--border-color, #e5e7eb);
     height: 60px;
@@ -241,12 +241,13 @@
 }
 
 .nav-icon {
-    font-size: 1.5rem;
+    font-size: 24px;
     margin-right: 1rem;
     min-width: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-variation-settings: 'wght' 400;;
 }
 
 .nav-text {
@@ -263,6 +264,29 @@
 }
 
 /* Collapsible Class Modifiers */
+/* Sidebar logo image to replace text */
+.sidebar-logo-img {
+    height: 24px;         
+    width: auto;
+    display: block;
+    margin-left: 12px;     /* spacing after the toggle button */
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.sidebar.collapsed .sidebar-logo-img {
+    opacity: 0;
+    visibility: hidden;
+    width: 0;
+    margin-left: 0;
+}
+
+/* Also when collapsed, ensure the header centers the toggle button */
+/*.sidebar.collapsed .sidebar-header {
+    justify-content: center;
+    padding: 1rem 0;
+}*/
+
+
 .sidebar.collapsed {
     width: 72px;
     min-width: 72px;
@@ -351,7 +375,7 @@
 
 /* Page Content */
 .page-content {
-    padding: 32px 40px;
+    padding: 32px 30px;
     max-width: 1280px;
     width: 100%;
     margin: 0 auto;
