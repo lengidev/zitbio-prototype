@@ -282,6 +282,29 @@
   flex-shrink: 0;
 }
 
+/* Material Symbols icon styling */
+.nav-icon {
+    font-size: 22px;
+    font-variation-settings: 'wght' 400;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+}
+
+/* Hover state – slightly bolder */
+.nav-item:hover .nav-icon {
+    font-variation-settings: 'wght' 500;
+}
+
+/* Active page – bolder and primary color */
+.nav-item.active .nav-icon {
+    font-variation-settings: 'wght' 600;
+    color: var(--color-primary);
+}
+
+.nav-item.logout:hover .nav-icon {
+    font-variation-settings: 'wght' 500;
+}
+
 /* ============================================
    Icon-only Navigation
    ============================================ */
