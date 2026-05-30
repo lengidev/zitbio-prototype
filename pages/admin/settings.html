@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Settings</title>
+<link rel="icon" type="image/png" href="../../assets/favicon/logo-64.png">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Material+Icons&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,6 +13,8 @@
 <link rel="stylesheet" href="../../styles/layout.css">
 <link rel="stylesheet" href="../../components/ui/buttons.css">
 <link rel="stylesheet" href="../../components/ui/forms.css">
+<link rel="stylesheet" href="../../components/ui/modals.css">
+<link rel="stylesheet" href="../../styles/settings.css">
 </head>
 <body class="page-settings">
 
@@ -22,33 +25,33 @@
         <button id="sidebarToggle" class="sidebar-toggle-btn">
             <span class="material-icons">menu</span>
         </button>
-        <span class="sidebar-header-title">BioMonitor</span>
+        <span class="sidebar-header-title">ZitBIO</span>
     </div>
     <nav class="sidebar-menu">
-        <a href="dashboard.html" class="nav-item" id="navDashboard">
-            <span class="material-icons nav-icon">dashboard</span>
-            <span class="nav-text">Dashboard</span>
-        </a>
-        <a href="observations.html" class="nav-item" id="navObservations">
-            <span class="material-icons nav-icon">visibility</span>
-            <span class="nav-text">Observations</span>
-        </a>
-        <a href="#" class="nav-item" id="navUsers">
-            <span class="material-icons nav-icon">people</span>
-            <span class="nav-text">Users</span>
-        </a>
-        <a href="#" class="nav-item" id="navAnalytics">
-            <span class="material-icons nav-icon">analytics</span>
-            <span class="nav-text">Analytics</span>
-        </a>
-        <a href="settings.html" class="nav-item" id="navSettings">
-            <span class="material-icons nav-icon">settings</span>
-            <span class="nav-text">Settings</span>
-        </a>
-        <a href="../../index.html" class="nav-item logout" id="navLogout">
-            <span class="material-icons nav-icon">logout</span>
-            <span class="nav-text">Logout</span>
-        </a>
+    <a href="dashboard.html" class="nav-item" id="navDashboard">
+        <span class="material-icons nav-icon">dashboard</span>
+        <span class="nav-text">Dashboard</span>
+    </a>
+    <a href="observations.html" class="nav-item" id="navObservations">
+        <span class="material-icons nav-icon">visibility</span>
+        <span class="nav-text">Observations</span>
+    </a>
+    <a href="#" class="nav-item" id="navUsers">
+        <span class="material-icons nav-icon">people</span>
+        <span class="nav-text">Users</span>
+    </a>
+    <a href="#" class="nav-item" id="navAnalytics">
+        <span class="material-icons nav-icon">analytics</span>
+        <span class="nav-text">Analytics</span>
+    </a>
+    <a href="settings.html" class="nav-item" id="navSettings">
+        <span class="material-icons nav-icon">settings</span>
+        <span class="nav-text">Settings</span>
+    </a>
+    <a href="../../index.html" class="nav-item logout" id="navLogout">
+        <span class="material-icons nav-icon">logout</span>
+        <span class="nav-text">Logout</span>
+    </a>
     </nav>
     </aside>
 
@@ -56,7 +59,7 @@
         <!-- Top Bar -->
         <header class="top-header">
             <div>
-                <h1 class="header-title">Biodiversity Monitoring System</h1>
+                <h1 class="header-title">ZitBIO Analytics</h1>
             </div>
             <div class="header-right">
                 <a class="help-link" href="#">
@@ -103,8 +106,7 @@
                 <button class="btn-primary" id="changePwdBtn">Change Password</button>
             </div>
 
-            <hr class="divider" />
-
+           
             <!-- Account Information -->
             <div class="section">
                 <div class="section-title">Account Information</div>
@@ -136,7 +138,7 @@
                 </div>
             </div>
 
-            <hr class="divider" />
+
 
             <!-- System Information -->
             <div class="section">

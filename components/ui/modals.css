@@ -1,0 +1,293 @@
+/* Admin Page Modal Styles */
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+/* Base Modal Container */
+.modal-container,
+.view-modal,
+.add-modal {
+    background: var(--color-bg-white);
+    border-radius: var(--radius-lg);
+    max-width: 560px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    animation: modalFadeIn 0.2s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Modal Header */
+.modal-header,
+.view-modal-header,
+.add-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title,
+.view-modal-title,
+.add-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+.modal-subtitle,
+.view-modal-subtitle {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+}
+
+/* Modal Close Button */
+.modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    transition: all var(--transition-fast);
+}
+
+.modal-close:hover {
+    background: var(--color-bg-header);
+    color: var(--color-text-main);
+}
+
+.modal-close svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Modal Body */
+.modal-body,
+.view-modal-body,
+.add-modal-body {
+    padding: 24px;
+}
+
+/* Modal Footer */
+.modal-footer,
+.view-modal-footer,
+.add-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color);
+    background: var(--color-bg-white);
+}
+
+/* Detail sections inside modals */
+.detail-section {
+    margin-bottom: 20px;
+}
+
+.detail-section-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.detail-section-value {
+    font-size: 14px;
+    color: var(--color-text-main);
+}
+
+.detail-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.detail-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-bottom: 4px;
+}
+
+.detail-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-main);
+}
+
+/* Buttons inside modal footer */
+.btn-delete {
+    background: var(--color-danger);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.btn-delete:hover {
+    background: var(--color-danger-hover);
+}
+
+.btn-close-modal {
+    background: var(--color-bg-white);
+    border: 1px solid var(--border-color);
+    color: var(--color-text-main);
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-close-modal:hover {
+    background: var(--color-bg-header);
+    border-color: var(--border-color-dark);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .detail-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .modal-header,
+    .view-modal-header,
+    .add-modal-header {
+        padding: 16px 20px;
+    }
+    
+    .modal-body,
+    .view-modal-body,
+    .add-modal-body {
+        padding: 20px;
+    }
+}
+
+/* Field Officer Page Modal Styles */
+.page-fieldofficer .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.page-fieldofficer .modal-overlay.active {
+  display: flex;
+}
+
+.page-fieldofficer .modal {
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.page-fieldofficer .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.page-fieldofficer .modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.page-fieldofficer .modal-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.page-fieldofficer .modal-close:hover {
+  background-color: var(--color-bg-header);
+}
+
+.page-fieldofficer .modal-close svg {
+  width: 16px;
+  height: 16px;
+  fill: var(--color-text-muted);
+}
+
+.page-fieldofficer .modal-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.page-fieldofficer .modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.page-fieldofficer .modal-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.page-fieldofficer .modal-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.page-fieldofficer .modal-field-value {
+  font-size: 13px;
+  color: var(--color-text-main);
+}
