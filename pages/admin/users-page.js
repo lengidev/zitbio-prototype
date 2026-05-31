@@ -1,65 +1,64 @@
 /**
- * BioMonitor - Users Page Logic
- * Handles table rendering, search, and modal interactions
+ * Users Page Logic
+ * Manages user table, search, and modal interactions
  */
 
-// User data (matches the image provided)
-const allUsers = [
-    { name: "Sarah Chen", email: "sarah.chen@biodiversity.org", role: "Administrator", created: "11/15/2025" },
-    { name: "James Wilson", email: "james.wilson@biodiversity.org", role: "Field Officer", created: "12/1/2025" },
-    { name: "Maria Garcia", email: "maria.garcia@biodiversity.org", role: "Field Officer", created: "12/10/2025" },
-    { name: "David Kim", email: "david.kim@biodiversity.org", role: "Field Officer", created: "1/5/2026" },
-    { name: "Aisha Patel", email: "aisha.patel@biodiversity.org", role: "Field Officer", created: "1/20/2026" },
-    { name: "Carlos Mbeki", email: "carlos.mbeki@biodiversity.org", role: "Field Officer", created: "2/10/2026" },
-    { name: "Elena Volkov", email: "elena.volkov@biodiversity.org", role: "Administrator", created: "12/5/2025" },
-    { name: "Kwame Asante", email: "kwame.asante@biodiversity.org", role: "Field Officer", created: "3/1/2026" }
+// Mock user data
+const usersData = [
+    { id: 1, name: 'Sarah Chen', email: 'sarah.chen@biodiversity.org', role: 'Administrator', created: '11/15/2025' },
+    { id: 2, name: 'James Wilson', email: 'james.wilson@biodiversity.org', role: 'Field Officer', created: '12/1/2025' },
+    { id: 3, name: 'Maria Garcia', email: 'maria.garcia@biodiversity.org', role: 'Field Officer', created: '12/10/2025' },
+    { id: 4, name: 'David Kim', email: 'david.kim@biodiversity.org', role: 'Field Officer', created: '1/5/2026' },
+    { id: 5, name: 'Aisha Patel', email: 'aisha.patel@biodiversity.org', role: 'Field Officer', created: '1/20/2026' },
+    { id: 6, name: 'Carlos Mbeki', email: 'carlos.mbeki@biodiversity.org', role: 'Field Officer', created: '2/10/2026' },
+    { id: 7, name: 'Elena Volkov', email: 'elena.volkov@biodiversity.org', role: 'Administrator', created: '12/5/2025' },
+    { id: 8, name: 'Kwame Asante', email: 'kwame.asante@biodiversity.org', role: 'Field Officer', created: '3/1/2026' }
 ];
 
-let filteredUsers = [...allUsers];
+let filteredData = [...usersData];
+let currentPage = 1;
+const recordsPerPage = 8;
 
-// Get filtered data based on search term
-function getFilteredData() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-    if (!searchTerm) return allUsers;
-    return allUsers.filter(user =>
-        user.name.toLowerCase().includes(searchTerm) ||
-        user.email.toLowerCase().includes(searchTerm) ||
-        user.role.toLowerCase().includes(searchTerm)
-    );
-}
-
-// Render the table
 function renderTable() {
-    filteredUsers = getFilteredData();
-    const tbody = document.getElementById('tableBody');
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+    if (searchTerm) {
+        filteredData = usersData.filter(user =>
+            user.name.toLowerCase().includes(searchTerm) ||
+            user.email.toLowerCase().includes(searchTerm)
+        );
+    } else {
+        filteredData = [...usersData];
+    }
+
+    const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+    if (currentPage > totalPages) currentPage = totalPages || 1;
+
+    const startIdx = (currentPage - 1) * recordsPerPage;
+    const pageData = filteredData.slice(startIdx, startIdx + recordsPerPage);
+
+    const tbody = document.getElementById('userTableBody');
     const footer = document.getElementById('paginationFooter');
 
-    if (filteredUsers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="table-empty-cell">No matching users found</td></tr>';
+    if (filteredData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="table-empty-cell">No users found</td></tr>';
         footer.textContent = 'Showing 0 of 0 users';
         return;
     }
 
     let html = '';
-    filteredUsers.forEach((user, index) => {
-        // Determine the badge class based on role
-        let badgeClass = 'officer';
-        if (user.role === 'Administrator') {
-            badgeClass = 'admin';
-        }
-
-        // Actions column with edit and delete icons
+    pageData.forEach(user => {
+        const roleClass = user.role === 'Administrator' ? 'admin' : 'officer';
         html += `
             <tr>
-                <td><strong>${user.name}</strong></td>
-                <td style="color: var(--color-text-secondary);">${user.email}</td>
-                <td><span class="role-badge ${badgeClass}">${user.role}</span></td>
-                <td style="color: var(--color-text-secondary);">${user.created}</td>
-                <td style="text-align: right; white-space: nowrap;">
-                    <button class="action-icon-btn" data-index="${index}" title="Edit User">
+                <td class="name-cell">${user.name}</td>
+                <td class="email-cell">${user.email}</td>
+                <td><span class="role-badge ${roleClass}">${user.role}</span></td>
+                <td class="date-cell">${user.created}</td>
+                <td class="actions-cell">
+                    <button class="action-icon-btn edit-user" data-id="${user.id}" title="Edit">
                         <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>
                     </button>
-                    <button class="action-icon-btn delete" data-index="${index}" title="Delete User">
+                    <button class="action-icon-btn delete delete-user" data-id="${user.id}" title="Delete">
                         <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
                     </button>
                 </td>
@@ -68,81 +67,49 @@ function renderTable() {
     });
     tbody.innerHTML = html;
 
-    const total = filteredUsers.length;
-    footer.textContent = `Showing 1–${total} of ${total} users`;
-
-    // Attach event listeners to action buttons
-    document.querySelectorAll('.action-icon-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const index = parseInt(this.getAttribute('data-index'), 10);
-            if (this.classList.contains('delete')) {
-                if (confirm(`Are you sure you want to delete ${filteredUsers[index].name}?`)) {
-                    // In a real app, you'd send a DELETE request to the server
-                    allUsers.splice(allUsers.indexOf(filteredUsers[index]), 1);
-                    renderTable(); // Re-render the table
-                }
-            } else {
-                // Edit logic placeholder
-                alert(`Edit user: ${filteredUsers[index].name}`);
-            }
-        });
-    });
+    const start = startIdx + 1;
+    const end = Math.min(startIdx + recordsPerPage, filteredData.length);
+    footer.textContent = `Showing ${start}–${end} of ${filteredData.length} users`;
 }
 
-// Handle search input
 function handleSearch() {
+    currentPage = 1;
     renderTable();
 }
 
-// Handle Add User button
-function handleAddUser() {
+function openAddUserModal() {
     document.getElementById('addUserModal').classList.add('active');
 }
 
-// Initialize page when DOM is ready
-if (typeof document !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize table
-        renderTable();
+function closeAddUserModal() {
+    document.getElementById('addUserModal').classList.remove('active');
+}
 
-        // Search input
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', handleSearch);
+// Simple edit/delete handlers (placeholders)
+document.addEventListener('click', (e) => {
+    if (e.target.closest('.edit-user')) {
+        const id = e.target.closest('.edit-user').getAttribute('data-id');
+        alert(`Edit user ID ${id} – coming soon.`);
+    }
+    if (e.target.closest('.delete-user')) {
+        const id = e.target.closest('.delete-user').getAttribute('data-id');
+        if (confirm(`Delete user ID ${id}?`)) {
+            const index = usersData.findIndex(u => u.id == id);
+            if (index !== -1) usersData.splice(index, 1);
+            renderTable();
         }
+    }
+});
 
-        // Add user button
-        const btnAddUser = document.getElementById('btnAddUser');
-        if (btnAddUser) {
-            btnAddUser.addEventListener('click', handleAddUser);
-        }
-
-        // Close Add User Modal Logic
-        const closeAddUserModalBtn = document.getElementById('closeAddUserModalBtn');
-        const closeAddUserModalFooterBtn = document.getElementById('closeAddUserModalFooterBtn');
-        const addUserModal = document.getElementById('addUserModal');
-
-        if (closeAddUserModalBtn) {
-            closeAddUserModalBtn.addEventListener('click', function() {
-                addUserModal.classList.remove('active');
-            });
-        }
-        if (closeAddUserModalFooterBtn) {
-            closeAddUserModalFooterBtn.addEventListener('click', function() {
-                addUserModal.classList.remove('active');
-            });
-        }
-        if (addUserModal) {
-            addUserModal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.remove('active');
-                }
-            });
-        }
+document.addEventListener('DOMContentLoaded', () => {
+    renderTable();
+    document.getElementById('searchInput').addEventListener('input', handleSearch);
+    document.getElementById('btnAddUser').addEventListener('click', openAddUserModal);
+    document.getElementById('closeAddUserModalBtn').addEventListener('click', closeAddUserModal);
+    document.getElementById('closeAddUserModalFooterBtn').addEventListener('click', closeAddUserModal);
+    // Close modal on overlay click
+    const modal = document.getElementById('addUserModal');
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeAddUserModal();
     });
-}
-
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { renderTable, handleSearch, handleAddUser };
-}
+});

@@ -6,7 +6,8 @@
 /* Content area */
 .page-settings .content-area {
     max-width: 800px;
-    margin: 0 auto;
+    margin-left: 14px;
+    margin-right: 0px;
     padding: 32px 20px !important; /* override default page padding for a more compact look */
 }
 

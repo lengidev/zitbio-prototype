@@ -1,6 +1,6 @@
 /**
  * BioMonitor - Observations Page Logic
- * Handles table rendering, pagination, search, and modal interactions
+ * Handles table rendering, pagination (numbered), search, and modal interactions
  */
 
 // Observation data
@@ -68,13 +68,10 @@ function renderTable() {
     const pageData = filteredData.slice(startIdx, endIdx);
 
     const tbody = document.getElementById('tableBody');
-    const footer = document.getElementById('paginationFooter');
 
     if (filteredData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="no-results">No matching observations found</td></tr>';
-        footer.textContent = 'Showing 0 of 0 observations';
-        document.getElementById('prevBtn').disabled = true;
-        document.getElementById('nextBtn').disabled = true;
+        renderPagination();
         return;
     }
 
@@ -104,18 +101,43 @@ function renderTable() {
         });
     });
 
-    const actualStart = startIdx + 1;
-    const actualEnd = Math.min(endIdx, filteredData.length);
-    footer.textContent = `Showing ${actualStart}–${actualEnd} of ${filteredData.length} observations`;
-
-    document.getElementById('prevBtn').disabled = currentPage <= 1;
-    document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+    renderPagination();
 }
 
-// Change page
-function changePage(direction) {
-    currentPage += direction;
-    renderTable();
+// Render numbered pagination
+function renderPagination() {
+    const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+    const container = document.getElementById('paginationContainer');
+    if (!container) return;
+
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+    for (let i = 1; i <= totalPages; i++) {
+        const activeClass = i === currentPage ? 'active' : '';
+        html += `<div class="page-item ${activeClass}" data-page="${i}">${i}</div>`;
+    }
+    container.innerHTML = html;
+
+    // Attach click handlers to page items
+    document.querySelectorAll('.page-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const page = parseInt(item.getAttribute('data-page'), 10);
+            if (!isNaN(page) && page !== currentPage) {
+                currentPage = page;
+                renderTable();
+            }
+        });
+    });
+
+    // Update prev/next button states
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    if (prevBtn) prevBtn.disabled = (currentPage <= 1);
+    if (nextBtn) nextBtn.disabled = (currentPage >= totalPages);
 }
 
 // Handle search input
@@ -225,22 +247,34 @@ function closeAddModal() {
 // Initialize page when DOM is ready
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize table
         renderTable();
-
-        // Pagination buttons
-        document.getElementById('prevBtn').addEventListener('click', function() {
-            changePage(-1);
-        });
-        document.getElementById('nextBtn').addEventListener('click', function() {
-            changePage(1);
-        });
 
         // Search input
         document.getElementById('searchInput').addEventListener('input', handleSearch);
 
         // Add record button
         document.getElementById('btnAddRecord').addEventListener('click', openAddModal);
+
+        // Previous/Next buttons – connect to existing pagination
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTable();
+                }
+            });
+        }
 
         // Close view modal buttons
         document.getElementById('closeViewModalBtn').addEventListener('click', closeViewModal);
@@ -273,5 +307,5 @@ if (typeof document !== 'undefined') {
 
 // Export functions for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { renderTable, changePage, handleSearch, viewRecord, closeViewModal, handleDelete, openAddModal, closeAddModal };
+    module.exports = { renderTable, handleSearch, viewRecord, closeViewModal, handleDelete, openAddModal, closeAddModal };
 }

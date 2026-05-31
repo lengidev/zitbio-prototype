@@ -1,15 +1,13 @@
 /**
  * Users Page - Specific Styles
- * Follows the same pattern as settings.css
  */
 
 /* Page header area */
 .page-users .page-header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: stretch;
     margin-bottom: 24px;
-    flex-wrap: wrap;
     gap: 16px;
 }
 
@@ -21,7 +19,21 @@
     margin-bottom: 0;
 }
 
-/* Role badges */
+/* Controls wrapper (search + add button) */
+.page-users .controls-wrapper {
+    display: flex;
+    margin-top: 16px;
+    justify-content: flex-end; /* pushes search + add button to the right */
+    gap: 12px;
+    align-items: center;
+}
+
+/* Override search input width on users page */
+.page-users .search-container .search-input {
+    width: 260px;
+}
+
+/* Role badges using design system tokens */
 .role-badge {
     display: inline-block;
     padding: 4px 12px;
@@ -38,11 +50,11 @@
 }
 
 .role-badge.officer {
-    background-color: rgba(141, 110, 99, 0.1); /*couldn't find the exact color variable */
-    color: var(--color-secondary);
+    background-color: rgba(141, 110, 99, 0.1);
+    color: var(--color-secondary);  /* keep distinct from primary */
 }
 
-/* Action icons in table */
+/* Action icons inside table */
 .action-icon-btn {
     background: none;
     border: none;
@@ -60,21 +72,14 @@
     color: var(--color-danger);
 }
 
-/* Controls wrapper (search + add button) */
-.page-users .controls-wrapper {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-/* Table container border (already in tables.css, but ensure it matches) */
+/* Table container border (already in tables.css, but ensure consistency) */
 .page-users .table-container {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     overflow: hidden;
 }
 
-/* Override search container width for users page */
-.page-users .search-container .search-input {
-    width: 260px;
+/* Hide pagination footer on Users page only */
+.page-users .pagination-footer {
+    display: none;
 }
