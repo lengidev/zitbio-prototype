@@ -1,0 +1,80 @@
+/**
+ * Users Page - Specific Styles
+ * Follows the same pattern as settings.css
+ */
+
+/* Page header area */
+.page-users .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.page-users .page-title {
+    margin-bottom: 4px;
+}
+
+.page-users .page-subtitle {
+    margin-bottom: 0;
+}
+
+/* Role badges */
+.role-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: var(--radius-full);
+    background-color: var(--color-bg-header);
+    color: var(--color-text-secondary);
+}
+
+.role-badge.admin {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+.role-badge.officer {
+    background-color: rgba(141, 110, 99, 0.1); /*couldn't find the exact color variable */
+    color: var(--color-secondary);
+}
+
+/* Action icons in table */
+.action-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    padding: 4px 6px;
+    transition: color var(--transition-fast);
+}
+
+.action-icon-btn:hover {
+    color: var(--color-primary);
+}
+
+.action-icon-btn.delete:hover {
+    color: var(--color-danger);
+}
+
+/* Controls wrapper (search + add button) */
+.page-users .controls-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Table container border (already in tables.css, but ensure it matches) */
+.page-users .table-container {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+/* Override search container width for users page */
+.page-users .search-container .search-input {
+    width: 260px;
+}
