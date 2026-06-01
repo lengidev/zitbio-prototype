@@ -1,0 +1,222 @@
+/**
+ * Dashboard Page - Specific Styles
+ */
+
+/* Dashboard content area */
+.page-dashboard .page-content {
+    padding: 32px 40px;
+}
+
+.page-dashboard .page-title {
+    margin-bottom: 4px;
+    color: var(--color-text-main);
+}
+
+.page-dashboard .page-subtitle {
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    margin: 0 0 24px 0;
+}
+
+/* ============================================
+   Stats Grid
+   ============================================ */
+.page-dashboard .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.page-dashboard .stat-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.page-dashboard .stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.page-dashboard .stat-label {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    font-weight: 400;
+}
+
+.page-dashboard .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+
+.page-dashboard .stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.page-dashboard .stat-icon svg {
+    width: 20px;
+    height: 20px;
+    color: var(--color-primary);
+}
+
+/* ============================================
+   Middle Section (Quick Actions + Chart)
+   ============================================ */
+.page-dashboard .middle-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.page-dashboard .quick-actions-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+}
+
+.page-dashboard .card-title {
+    margin-bottom: 16px;
+    font-size: 16px;
+}
+
+.page-dashboard .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.page-dashboard .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.page-dashboard .action-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.page-dashboard .action-btn.primary {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.page-dashboard .action-btn.primary:hover {
+    background: var(--color-primary-hover);
+}
+
+.page-dashboard .action-btn.secondary {
+    background: var(--color-bg-white);
+    color: var(--color-text-main);
+    border-color: var(--border-color);
+}
+
+.page-dashboard .action-btn.secondary:hover {
+    background: var(--color-bg-header);
+}
+
+.page-dashboard .chart-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+}
+
+.page-dashboard .chart-title {
+    margin-bottom: 16px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.page-dashboard .chart-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+}
+
+/* ============================================
+   Dashboard Table (Recent Activity)
+   ============================================ */
+.page-dashboard .table-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.page-dashboard .table-card .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.page-dashboard .table-card .table-title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Dashboard table: compact look */
+.page-dashboard .data-table th {
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.page-dashboard .data-table td {
+    padding: 10px 20px;
+    font-size: 14px;
+}
+
+/* Species name emphasis */
+.page-dashboard .data-table .species-cell {
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+.page-dashboard .data-table .date-cell {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 768px) {
+    .page-dashboard .page-content {
+        padding: 24px 16px;
+    }
+
+    .page-dashboard .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-dashboard .middle-section {
+        grid-template-columns: 1fr;
+    }
+}

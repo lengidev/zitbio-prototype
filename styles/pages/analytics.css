@@ -1,0 +1,250 @@
+/**
+ * Analytics Page - Specific Styles
+ */
+
+.page-analytics .analytics-container {
+    padding: 32px 40px;
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+/* Header with title and tabs */
+.page-analytics .analytics-header {
+    margin-bottom: 24px;
+}
+
+.page-analytics .analytics-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--color-text-main);
+    margin: 0 0 20px 0;
+}
+
+/* Tabs & Search Row */
+.page-analytics .analytics-tabs {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.page-analytics .tabs-left-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.page-analytics .analytics-tab {
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    padding: 8px 16px;
+    transition: color 0.2s;
+    border-bottom: 2px solid transparent;
+}
+
+.page-analytics .analytics-tab:first-child {
+    padding-left: 0;
+}
+
+.page-analytics .analytics-tab.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: 600;
+}
+
+.page-analytics .analytics-tab:hover {
+    color: var(--color-text-main);
+}
+
+/* Search & Filter */
+.page-analytics .observation-search-wrapper {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+}
+
+.page-analytics .search-icon {
+    position: absolute;
+    left: 10px;
+    width: 14px;
+    height: 14px;
+    color: var(--color-text-muted);
+}
+
+.page-analytics .search-input {
+    padding: 8px 12px 8px 32px;
+    font-size: 13px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-white);
+    width: 220px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.page-analytics .search-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.page-analytics .observation-filter-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    padding: 6px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-white);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.page-analytics .observation-filter-btn:hover {
+    background: var(--color-bg-header);
+    color: var(--color-primary);
+}
+
+.page-analytics .observation-filter-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Table */
+.page-analytics .analytics-card {
+    background: transparent;
+    padding: 0;
+}
+
+.page-analytics .observations-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 24px;
+}
+
+.page-analytics .observations-table th {
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.page-analytics .observation-row {
+    transition: background-color 0.15s ease;
+}
+
+.page-analytics .observation-row:hover {
+    background-color: var(--color-bg-header);
+}
+
+.page-analytics .observation-row td {
+    padding: 14px 8px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-color-light);
+    color: var(--color-text-main);
+}
+
+.page-analytics .sci-name {
+    font-style: italic;
+}
+
+.page-analytics .coords {
+    font-family: monospace;
+    font-size: 12px;
+}
+
+/* Pagination */
+.page-analytics .observations-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+    padding: 0 8px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+
+.page-analytics .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.page-analytics .pagi-btn {
+    padding: 4px 8px;
+    border: 1px solid var(--border-color);
+    background: var(--color-bg-white);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: inherit;
+    transition: all 0.2s;
+}
+
+.page-analytics .pagi-btn:hover:not(:disabled) {
+    background: var(--color-bg-header);
+    border-color: var(--border-color-dark);
+}
+
+.page-analytics .pagi-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.page-analytics .pagi-btn svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+}
+
+.page-analytics .page-numbers {
+    display: flex;
+    gap: 4px;
+}
+
+.page-analytics .page-num {
+    padding: 4px 10px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+}
+
+.page-analytics .page-num.active {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+}
+
+.page-analytics .page-num:hover:not(.active) {
+    background: var(--color-bg-header);
+}
+
+.page-analytics .pagination-info .bold {
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .page-analytics .analytics-container {
+        padding: 24px 16px;
+    }
+    .page-analytics .analytics-tabs {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .page-analytics .tabs-left-group {
+        justify-content: space-between;
+    }
+    .page-analytics .observations-pagination {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+}
