@@ -75,9 +75,13 @@ function renderTable() {
         var roleDisplay = getRoleDisplayName(user.role);
         var roleClass = roleDisplay === 'Administrator' ? 'admin' : 'officer';
 
-        // Generate a simulated lastLogin for display (since we don't persist real login times yet)
-        var mockLastLogin = new Date(Date.now() - (user.id * 2 + 1) * 3600000); // staggered hours
-        var relativeTime = getRelativeTime(mockLastLogin);
+        // Use real lastLogin from data layer, or show "Never" if null
+        var relativeTime;
+        if (user.lastLogin) {
+          relativeTime = getRelativeTime(new Date(user.lastLogin));
+        } else {
+          relativeTime = 'Never';
+        }
 
         html += '<tr>' +
             '<td class="name-cell">' + user.name + '</td>' +

@@ -178,6 +178,13 @@
   // Populate dashboard stats from unified data layer
   document.addEventListener('DOMContentLoaded', function() {
     if (window.BioData) {
+      // Set header to actual logged-in user
+      var session = BioData.getSession();
+      if (session) {
+        var userNameEl = document.querySelector('.user-menu-name');
+        if (userNameEl) userNameEl.textContent = session.name;
+      }
+
       document.getElementById('statTotalUsers').textContent = BioData.totalUsers();
       document.getElementById('statTotalObservations').textContent = BioData.totalObservations();
       document.getElementById('statLast7Days').textContent = BioData.observationsLast7Days();

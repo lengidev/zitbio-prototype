@@ -143,6 +143,17 @@
 
     <script src="../scripts/data.js"></script>
     <script src="../scripts/app.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        if (window.BioData) {
+          var session = BioData.getSession();
+          if (session) {
+            var el = document.querySelector('.user-name');
+            if (el) el.textContent = session.name;
+          }
+        }
+      });
+    </script>
 </body>
 </html>
 
