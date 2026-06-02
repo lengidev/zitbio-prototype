@@ -93,7 +93,7 @@
                 <div class="stat-card">
                     <div class="stat-info">
                         <span class="stat-label">Total Users</span>
-                        <span class="stat-value">8</span>
+                        <span class="stat-value" id="statTotalUsers">-</span>
                     </div>
                     <div class="stat-icon">
                         <span class="material-symbols-outlined">group</span>
@@ -102,7 +102,7 @@
                 <div class="stat-card">
                     <div class="stat-info">
                         <span class="stat-label">Total Observations</span>
-                        <span class="stat-value">32</span>
+                        <span class="stat-value" id="statTotalObservations">-</span>
                     </div>
                     <div class="stat-icon">
                         <span class="material-symbols-outlined">visibility</span>
@@ -111,7 +111,7 @@
                 <div class="stat-card">
                     <div class="stat-info">
                         <span class="stat-label">Observations (Last 7 days)</span>
-                        <span class="stat-value">0</span>
+                        <span class="stat-value" id="statLast7Days">-</span>
                     </div>
                     <div class="stat-icon">
                         <span class="material-symbols-outlined">date_range</span>
@@ -162,37 +162,8 @@
                             <th>Officer</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td class="date-cell">4/7/2026</td>
-                            <td class="species-cell">Buffalo</td>
-                            <td class="location-cell">Grassland, Sector O6</td>
-                            <td class="officer-cell">Kwame Asante</td>
-                        </tr>
-                        <tr>
-                            <td class="date-cell">4/7/2026</td>
-                            <td class="species-cell">African Wild Dog</td>
-                            <td class="location-cell">Pack Territory, Sector W14</td>
-                            <td class="officer-cell">Carlos Mbeki</td>
-                        </tr>
-                        <tr>
-                            <td class="date-cell">4/6/2026</td>
-                            <td class="species-cell">Rhinoceros (Black)</td>
-                            <td class="location-cell">Thornbush Thicket, Sector N5</td>
-                            <td class="officer-cell">Aisha Patel</td>
-                        </tr>
-                        <tr>
-                            <td class="date-cell">4/6/2026</td>
-                            <td class="species-cell">Spotted Hyena</td>
-                            <td class="location-cell">Grassland, Sector U12</td>
-                            <td class="officer-cell">David Kim</td>
-                        </tr>
-                        <tr>
-                            <td class="date-cell">4/5/2026</td>
-                            <td class="species-cell">Leopard</td>
-                            <td class="location-cell">Riverine Forest, Sector T11</td>
-                            <td class="officer-cell">James Wilson</td>
-                        </tr>
+                    <tbody id="recentActivityBody">
+                        <!-- Populated dynamically from BioData -->
                     </tbody>
                 </table>
             </div>
@@ -201,7 +172,34 @@
 
 </div>
 
+<script src="../../scripts/data.js"></script>
 <script src="../../components/adminLayout.js"></script>
+<script>
+  // Populate dashboard stats from unified data layer
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.BioData) {
+      document.getElementById('statTotalUsers').textContent = BioData.totalUsers();
+      document.getElementById('statTotalObservations').textContent = BioData.totalObservations();
+      document.getElementById('statLast7Days').textContent = BioData.observationsLast7Days();
+
+      // Render recent activity table
+      var tbody = document.getElementById('recentActivityBody');
+      if (tbody) {
+        var activities = BioData.recentActivity(5);
+        var html = '';
+        activities.forEach(function(act) {
+          html += '<tr>' +
+            '<td class="date-cell">' + act.date + '</td>' +
+            '<td class="species-cell">' + act.species + '</td>' +
+            '<td class="location-cell">' + act.location + '</td>' +
+            '<td class="officer-cell">' + act.officer + '</td>' +
+            '</tr>';
+        });
+        tbody.innerHTML = html;
+      }
+    }
+  });
+</script>
 
 </body>
 </html>
