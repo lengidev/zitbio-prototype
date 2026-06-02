@@ -99,6 +99,23 @@
     overflow: hidden;
 }
 
+/* Last Login cell with clock icon */
+.last-login-cell {
+    white-space: nowrap;
+}
+
+.last-login-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.last-login-icon {
+    font-size: 16px !important;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
 /* Hide pagination footer on Users page only */
 .page-users .pagination-footer {
     display: none;

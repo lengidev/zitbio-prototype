@@ -5,15 +5,39 @@
 
 // Mock user data
 const usersData = [
-    { id: 1, name: 'Sarah Chen', email: 'sarah.chen@biodiversity.org', role: 'Administrator', created: '11/15/2025' },
-    { id: 2, name: 'James Wilson', email: 'james.wilson@biodiversity.org', role: 'Field Officer', created: '12/1/2025' },
-    { id: 3, name: 'Maria Garcia', email: 'maria.garcia@biodiversity.org', role: 'Field Officer', created: '12/10/2025' },
-    { id: 4, name: 'David Kim', email: 'david.kim@biodiversity.org', role: 'Field Officer', created: '1/5/2026' },
-    { id: 5, name: 'Aisha Patel', email: 'aisha.patel@biodiversity.org', role: 'Field Officer', created: '1/20/2026' },
-    { id: 6, name: 'Carlos Mbeki', email: 'carlos.mbeki@biodiversity.org', role: 'Field Officer', created: '2/10/2026' },
-    { id: 7, name: 'Elena Volkov', email: 'elena.volkov@biodiversity.org', role: 'Administrator', created: '12/5/2025' },
-    { id: 8, name: 'Kwame Asante', email: 'kwame.asante@biodiversity.org', role: 'Field Officer', created: '3/1/2026' }
+    { id: 1, name: 'Sarah Chen', email: 'sarah.chen@biodiversity.org', role: 'Administrator', created: '11/15/2025', lastLogin: new Date(Date.now() - 1 * 60 * 60 * 1000) },
+    { id: 2, name: 'James Wilson', email: 'james.wilson@biodiversity.org', role: 'Field Officer', created: '12/1/2025', lastLogin: new Date(Date.now() - 30 * 60 * 1000) },
+    { id: 3, name: 'Maria Garcia', email: 'maria.garcia@biodiversity.org', role: 'Field Officer', created: '12/10/2025', lastLogin: new Date(Date.now() - 5 * 60 * 60 * 1000) },
+    { id: 4, name: 'David Kim', email: 'david.kim@biodiversity.org', role: 'Field Officer', created: '1/5/2026', lastLogin: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    { id: 5, name: 'Aisha Patel', email: 'aisha.patel@biodiversity.org', role: 'Field Officer', created: '1/20/2026', lastLogin: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+    { id: 6, name: 'Carlos Mbeki', email: 'carlos.mbeki@biodiversity.org', role: 'Field Officer', created: '2/10/2026', lastLogin: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+    { id: 7, name: 'Elena Volkov', email: 'elena.volkov@biodiversity.org', role: 'Administrator', created: '12/5/2025', lastLogin: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
+    { id: 8, name: 'Kwame Asante', email: 'kwame.asante@biodiversity.org', role: 'Field Officer', created: '3/1/2026', lastLogin: new Date(Date.now() - 60 * 60 * 1000) }
 ];
+
+/**
+ * Converts a Date object into a relative time string (e.g., "1 hour ago").
+ * @param {Date} date
+ * @returns {string}
+ */
+function getRelativeTime(date) {
+    const now = new Date();
+    const diffMs = now - date; // milliseconds difference
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30);
+
+    if (diffSeconds < 60) return 'Just now';
+    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    if (diffWeeks < 5) return `${diffWeeks} week${diffWeeks === 1 ? '' : 's'} ago`;
+    if (diffMonths < 12) return `${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
+    return `${Math.floor(diffMonths / 12)} year${Math.floor(diffMonths / 12) === 1 ? '' : 's'} ago`;
+}
 
 let filteredData = [...usersData];
 let currentPage = 1;
@@ -43,7 +67,7 @@ function renderTable() {
     const footer = document.getElementById('paginationFooter');
 
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="table-empty-cell">No users found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="table-empty-cell">No users found</td></tr>';
         footer.textContent = 'Showing 0 of 0 users';
         return;
     }
@@ -51,12 +75,19 @@ function renderTable() {
     let html = '';
     pageData.forEach(user => {
         const roleClass = user.role === 'Administrator' ? 'admin' : 'officer';
+        const relativeTime = getRelativeTime(user.lastLogin);
         html += `
             <tr>
                 <td class="name-cell">${user.name}</td>
                 <td class="email-cell">${user.email}</td>
                 <td><span class="role-badge ${roleClass}">${user.role}</span></td>
                 <td class="date-cell">${user.created}</td>
+                <td class="last-login-cell">
+                    <span class="last-login-wrapper">
+                        <span class="material-symbols-outlined last-login-icon">schedule</span>
+                        ${relativeTime}
+                    </span>
+                </td>
                 <td class="actions-cell">
                     <button class="action-icon-btn edit-user" data-id="${user.id}" title="Edit">
                         <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>
