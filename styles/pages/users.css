@@ -15,9 +15,37 @@
 .page-users .controls-wrapper {
     display: flex;
     margin-top: 16px;
-    justify-content: flex-end; /* pushes search + add button to the right */
+    justify-content: space-between;
     gap: 12px;
     align-items: center;
+}
+
+/* User count display (left side of controls wrapper) */
+.user-count-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: auto;
+}
+
+.user-count-display .count-label {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+
+.user-count-display .count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
 }
 
 /* Override search input width on users page */

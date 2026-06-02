@@ -493,6 +493,12 @@
     background: var(--color-bg-white);
 }
 
+.search-container .search-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
 .btn-export, .btn-add {
     display: inline-flex;
     align-items: center;

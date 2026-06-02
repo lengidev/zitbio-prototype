@@ -30,6 +30,9 @@ function renderTable() {
         filteredData = [...usersData];
     }
 
+    // Update the total user count badge (always shows total registered, not filtered)
+    document.getElementById('userCountBadge').textContent = usersData.length;
+
     const totalPages = Math.ceil(filteredData.length / recordsPerPage);
     if (currentPage > totalPages) currentPage = totalPages || 1;
 
