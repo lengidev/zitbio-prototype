@@ -70,10 +70,12 @@
     justify-content: center;
 }
 
-.page-dashboard .stat-icon svg {
+.page-dashboard .stat-icon svg,
+.page-dashboard .stat-icon .material-symbols-outlined {
     width: 24px;
     height: 24px;
     color: var(--color-primary);
+    font-size: 24px;
 }
 
 /* ============================================
