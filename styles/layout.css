@@ -357,6 +357,58 @@
 
 
 
+/* Sidebar Footer */
+.sidebar-footer {
+    padding: 12px 24px;
+    margin-top: auto;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    font-size: 11px;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    white-space: nowrap;
+    gap: 8px;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.sidebar.collapsed .sidebar-footer {
+    opacity: 0;
+    visibility: hidden;
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.footer-left {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.footer-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-success);
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.status-dot.disconnected {
+    background-color: var(--color-danger);
+}
+
+.status-dot.slow {
+    background-color: var(--color-accent);
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .sidebar {

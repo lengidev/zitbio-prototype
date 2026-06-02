@@ -251,6 +251,54 @@ if (typeof document !== 'undefined') {
   });
 }
 
+/**
+ * Update connection status indicator in sidebar footer
+ * States: Connected (green), Slow (amber), Disconnected (red)
+ */
+function updateConnectionStatus() {
+  var dot = document.getElementById('statusDot');
+  var text = document.getElementById('statusText');
+  if (!dot || !text) return;
+
+  if (!navigator.onLine) {
+    dot.classList.remove('slow');
+    dot.classList.add('disconnected');
+    text.textContent = 'Disconnected';
+    return;
+  }
+
+  // Check connection type for slow detection
+  var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (connection) {
+    // effectiveType: 'slow-2g', '2g', '3g', '4g'
+    if (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g') {
+      dot.classList.remove('disconnected');
+      dot.classList.add('slow');
+      text.textContent = 'Slow';
+      return;
+    }
+  }
+
+  // Default: connected
+  dot.classList.remove('disconnected', 'slow');
+  text.textContent = 'Connected';
+}
+
+// Check connection status on load and poll every 30 seconds
+document.addEventListener('DOMContentLoaded', function() {
+  updateConnectionStatus();
+  setInterval(updateConnectionStatus, 30000);
+});
+
+// Also update when browser fires online/offline events
+window.addEventListener('online', updateConnectionStatus);
+window.addEventListener('offline', updateConnectionStatus);
+
+// Listen for connection type changes (Chrome-based browsers)
+if (navigator.connection) {
+  navigator.connection.addEventListener('change', updateConnectionStatus);
+}
+
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { SidebarManager, initAdminLayout, initUserMenu, initHeaderActions };
