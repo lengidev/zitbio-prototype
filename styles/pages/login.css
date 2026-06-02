@@ -63,7 +63,7 @@
 }
 
 .page-login .logo-container img {
-  height: 48px;
+  height: 80px;
   width: auto;
   object-fit: contain;
 }
@@ -75,6 +75,7 @@
   font-weight: 600;
   color: var(--color-text-main, #2C3E50);
   margin: 0;
+  margin-top: -4px;
 }
 
 .page-login .card-subtitle {
@@ -153,9 +154,9 @@
   color: var(--color-text-main, #2C3E50);
 }
 
-.page-login .password-toggle svg {
-  width: 18px;
-  height: 18px;
+.page-login .password-toggle .material-icons {
+  font-size: 20px;
+  line-height: 1;
 }
 
 /* ---------- Helper Text ---------- */
@@ -182,48 +183,23 @@
   align-items: center;
   gap: 8px;
   margin: 0;
+  user-select: none;
 }
 
 .page-login .custom-checkbox {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--border-color, #e5e7eb);
-  border-radius: 4px;
+  appearance: checkbox;
+  -webkit-appearance: checkbox;
+  width: 12px;
+  height: 12px;
+  accent-color: var(--color-primary, #2E7D32);
   cursor: pointer;
-  transition: all var(--transition-fast, 150ms ease);
-  background: var(--color-bg-white, #ffffff);
-  position: relative;
   flex-shrink: 0;
-}
-
-.page-login .custom-checkbox:checked {
-  background: var(--color-primary, #2E7D32);
-  border-color: var(--color-primary, #2E7D32);
-}
-
-.page-login .custom-checkbox:checked::after {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 4px;
-  height: 8px;
-  border: 2px solid #fff;
-  border-top: none;
-  border-left: none;
-  transform: rotate(45deg);
-}
-
-.page-login .custom-checkbox:hover {
-  border-color: var(--color-primary, #2E7D32);
 }
 
 .page-login .remember-label {
   font-size: 14px;
   font-weight: 400;
-  color: var(--color-text-main, #2C3E50);
+  color: var(--color-text-muted, #7F8C8D);
   cursor: pointer;
   user-select: none;
 }
@@ -284,5 +260,9 @@
   .page-login .login-card {
     padding: 20px;
     transform: translateY(40px);
+  }
+
+  .page-login .logo-container img {
+    height: 64px;
   }
 }
