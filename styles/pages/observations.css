@@ -13,6 +13,25 @@
 }
 
 /* View button */
+/* Species cell — common name with scientific name subtitle */
+.page-observations .species-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.page-observations .species-common {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+.page-observations .species-scientific {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--color-text-secondary);
+}
+
 .page-observations .btn-view {
     display: inline-flex;
     align-items: center;
