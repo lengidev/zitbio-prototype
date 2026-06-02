@@ -147,6 +147,15 @@
     font-size: 12px;
 }
 
+/* Tab Content Panels */
+.analytics-tab-content {
+    display: none;
+}
+
+.analytics-tab-content.active {
+    display: block;
+}
+
 /* Pagination */
 .page-analytics .observations-pagination {
     display: flex;

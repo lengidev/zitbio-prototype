@@ -89,127 +89,159 @@
                     
                 <div class="analytics-tabs">
                     <div class="tabs-left-group">
-                        <a href="#" class="analytics-tab active">Observations</a>
-                        <a href="#" class="analytics-tab">Map</a>
-                        <a href="#" class="analytics-tab">Graphs</a>
-                        <a href="#" class="analytics-tab">Report</a>
+                        <a href="#tab-observations" class="analytics-tab active" data-tab="observations">Observations</a>
+                        <a href="#tab-map" class="analytics-tab" data-tab="map">Map</a>
+                        <a href="#tab-graphs" class="analytics-tab" data-tab="graphs">Graphs</a>
+                        <a href="#tab-report" class="analytics-tab" data-tab="report">Report</a>
                     </div>
+                </div>
 
-                    <div class="observation-search-wrapper">
+                <!-- Tab Content Panels -->
+                <div class="analytics-tab-content active" id="tab-observations">
+                    <div class="observation-search-wrapper" style="margin-bottom: 16px;">
                         <span class="material-symbols-outlined search-icon">search</span>
                         <input type="text" class="search-input" placeholder="Search observations...">
                         <button class="observation-filter-btn">
                             <span class="material-symbols-outlined">filter_list</span>
                         </button>
                     </div>
+                    <div class="analytics-card">
+                        <div class="analytics-card-body">
+                            <div class="observations-table-wrapper">
+                                <table class="observations-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Scientific name</th>
+                                            <th>Country</th>
+                                            <th>Coordinates</th>
+                                            <th>Event date</th>
+                                            <th>Locality</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="observation-row">
+                                            <td class="sci-name">Frangula dodonei</td>
+                                            <td>France</td>
+                                            <td class="coords">47.67N, 2.26E</td>
+                                            <td>2026 Jan 20</td>
+                                            <td>ISDES</td>
+                                        </tr>
+                                        <tr class="observation-row">
+                                            <td class="sci-name">Ulmus glabra</td>
+                                            <td>Austria</td>
+                                            <td class="coords">47.51N, 14.55E</td>
+                                            <td>2026 Oct 11</td>
+                                            <td>Styria</td>
+                                        </tr>
+                                        <tr class="observation-row">
+                                            <td class="sci-name">Quercus robur</td>
+                                            <td>Germany</td>
+                                            <td class="coords">51.16N, 10.45E</td>
+                                            <td>2026 Mar 5</td>
+                                            <td>Thuringia</td>
+                                        </tr>
+                                        <tr class="observation-row">
+                                            <td class="sci-name">Pinus sylvestris</td>
+                                            <td>Sweden</td>
+                                            <td class="coords">59.33N, 18.06E</td>
+                                            <td>2026 Aug 22</td>
+                                            <td>Stockholm Archipelago</td>
+                                        </tr>
+                                        <tr class="observation-row">
+                                            <td class="sci-name">Betula pendula</td>
+                                            <td>Finland</td>
+                                            <td class="coords">60.17N, 24.94E</td>
+                                            <td>2026 May 14</td>
+                                            <td>Helsinki</td>
+                                        </tr>
+                                        <tr class="observation-row">
+                                            <td class="sci-name">Fagus sylvatica</td>
+                                            <td>Poland</td>
+                                            <td class="coords">50.06N, 19.94E</td>
+                                            <td>2026 Sep 30</td>
+                                            <td>Kraków</td>
+                                        </tr>
+                                        <tr class="observation-row">
+                                            <td class="sci-name">Acer pseudoplatanus</td>
+                                            <td>Switzerland</td>
+                                            <td class="coords">46.95N, 7.45E</td>
+                                            <td>2026 Apr 18</td>
+                                            <td>Bern</td>
+                                        </tr>
+                                        <tr class="observation-row">
+                                            <td class="sci-name">Tilia cordata</td>
+                                            <td>Netherlands</td>
+                                            <td class="coords">52.37N, 4.89E</td>
+                                            <td>2026 Jul 7</td>
+                                            <td>Amsterdam</td>
+                                        </tr>
+                                        <tr class="observation-row">
+                                            <td class="sci-name">Fraxinus excelsior</td>
+                                            <td>Denmark</td>
+                                            <td class="coords">55.68N, 12.57E</td>
+                                            <td>2026 Feb 12</td>
+                                            <td>Copenhagen</td>
+                                        </tr>
+                                        <tr class="observation-row">
+                                            <td class="sci-name">Populus tremula</td>
+                                            <td>Norway</td>
+                                            <td class="coords">59.91N, 10.75E</td>
+                                            <td>2026 Nov 3</td>
+                                            <td>Oslo</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Pagination Footer -->
+                            <div class="observations-pagination">
+                                <div class="pagination-controls">
+                                    <button class="pagi-btn" disabled>
+                                        <span class="material-symbols-outlined">chevron_left</span>
+                                    </button>
+                                    <div class="page-numbers">
+                                        <span class="page-num active">1</span>
+                                        <span class="page-num">2</span>
+                                        <span class="page-num">3</span>
+                                    </div>
+                                    <button class="pagi-btn">
+                                        <span class="material-symbols-outlined">chevron_right</span>
+                                    </button>
+                                </div>
+                                <div class="pagination-info">
+                                    Showing <span class="bold">1 - 10</span> of <span class="bold">1,248</span> observations
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="analytics-card">
-                    <div class="analytics-card-body">
-                        <div class="observations-table-wrapper">
-                            <table class="observations-table">
-                                <thead>
-                                    <tr>
-                                        <th>Scientific name</th>
-                                        <th>Country</th>
-                                        <th>Coordinates</th>
-                                        <th>Event date</th>
-                                        <th>Locality</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="observation-row">
-                                        <td class="sci-name">Frangula dodonei</td>
-                                        <td>France</td>
-                                        <td class="coords">47.67N, 2.26E</td>
-                                        <td>2026 Jan 20</td>
-                                        <td>ISDES</td>
-                                    </tr>
-                                    <tr class="observation-row">
-                                        <td class="sci-name">Ulmus glabra</td>
-                                        <td>Austria</td>
-                                        <td class="coords">47.51N, 14.55E</td>
-                                        <td>2026 Oct 11</td>
-                                        <td>Styria</td>
-                                    </tr>
-                                    <tr class="observation-row">
-                                        <td class="sci-name">Quercus robur</td>
-                                        <td>Germany</td>
-                                        <td class="coords">51.16N, 10.45E</td>
-                                        <td>2026 Mar 5</td>
-                                        <td>Thuringia</td>
-                                    </tr>
-                                    <tr class="observation-row">
-                                        <td class="sci-name">Pinus sylvestris</td>
-                                        <td>Sweden</td>
-                                        <td class="coords">59.33N, 18.06E</td>
-                                        <td>2026 Aug 22</td>
-                                        <td>Stockholm Archipelago</td>
-                                    </tr>
-                                    <tr class="observation-row">
-                                        <td class="sci-name">Betula pendula</td>
-                                        <td>Finland</td>
-                                        <td class="coords">60.17N, 24.94E</td>
-                                        <td>2026 May 14</td>
-                                        <td>Helsinki</td>
-                                    </tr>
-                                    <tr class="observation-row">
-                                        <td class="sci-name">Fagus sylvatica</td>
-                                        <td>Poland</td>
-                                        <td class="coords">50.06N, 19.94E</td>
-                                        <td>2026 Sep 30</td>
-                                        <td>Kraków</td>
-                                    </tr>
-                                    <tr class="observation-row">
-                                        <td class="sci-name">Acer pseudoplatanus</td>
-                                        <td>Switzerland</td>
-                                        <td class="coords">46.95N, 7.45E</td>
-                                        <td>2026 Apr 18</td>
-                                        <td>Bern</td>
-                                    </tr>
-                                    <tr class="observation-row">
-                                        <td class="sci-name">Tilia cordata</td>
-                                        <td>Netherlands</td>
-                                        <td class="coords">52.37N, 4.89E</td>
-                                        <td>2026 Jul 7</td>
-                                        <td>Amsterdam</td>
-                                    </tr>
-                                    <tr class="observation-row">
-                                        <td class="sci-name">Fraxinus excelsior</td>
-                                        <td>Denmark</td>
-                                        <td class="coords">55.68N, 12.57E</td>
-                                        <td>2026 Feb 12</td>
-                                        <td>Copenhagen</td>
-                                    </tr>
-                                    <tr class="observation-row">
-                                        <td class="sci-name">Populus tremula</td>
-                                        <td>Norway</td>
-                                        <td class="coords">59.91N, 10.75E</td>
-                                        <td>2026 Nov 3</td>
-                                        <td>Oslo</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                <div class="analytics-tab-content" id="tab-map">
+                    <div class="analytics-card">
+                        <div class="analytics-card-body" style="text-align: center; padding: 60px 20px;">
+                            <span class="material-symbols-outlined" style="font-size: 48px; color: var(--color-text-muted);">map</span>
+                            <h3 style="margin-top: 16px; color: var(--color-text-main);">Map View</h3>
+                            <p style="color: var(--color-text-secondary); font-size: 13px; margin-top: 8px;">Interactive map coming soon.</p>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Pagination Footer -->
-                        <div class="observations-pagination">
-                            <div class="pagination-controls">
-                                <button class="pagi-btn" disabled>
-                                    <span class="material-symbols-outlined">chevron_left</span>
-                                </button>
-                                <div class="page-numbers">
-                                    <span class="page-num active">1</span>
-                                    <span class="page-num">2</span>
-                                    <span class="page-num">3</span>
-                                </div>
-                                <button class="pagi-btn">
-                                    <span class="material-symbols-outlined">chevron_right</span>
-                                </button>
-                            </div>
-                            <div class="pagination-info">
-                                Showing <span class="bold">1 - 10</span> of <span class="bold">1,248</span> observations
-                            </div>
+                <div class="analytics-tab-content" id="tab-graphs">
+                    <div class="analytics-card">
+                        <div class="analytics-card-body" style="text-align: center; padding: 60px 20px;">
+                            <span class="material-symbols-outlined" style="font-size: 48px; color: var(--color-text-muted);">bar_chart</span>
+                            <h3 style="margin-top: 16px; color: var(--color-text-main);">Graphs & Charts</h3>
+                            <p style="color: var(--color-text-secondary); font-size: 13px; margin-top: 8px;">Data visualization features coming soon.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analytics-tab-content" id="tab-report">
+                    <div class="analytics-card">
+                        <div class="analytics-card-body" style="text-align: center; padding: 60px 20px;">
+                            <span class="material-symbols-outlined" style="font-size: 48px; color: var(--color-text-muted);">description</span>
+                            <h3 style="margin-top: 16px; color: var(--color-text-main);">Reports</h3>
+                            <p style="color: var(--color-text-secondary); font-size: 13px; margin-top: 8px;">Generate and download reports coming soon.</p>
                         </div>
                     </div>
                 </div>
@@ -218,5 +250,6 @@
     </div>
 
     <script src="../../components/adminLayout.js"></script>
+    <script src="../../pages/admin/analytics-page.js"></script>
 </body>
 </html>
