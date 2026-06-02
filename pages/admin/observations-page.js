@@ -39,19 +39,22 @@ function renderTable() {
     const tbody = document.getElementById('tableBody');
 
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="no-results">No matching observations found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="no-results">No matching observations found</td></tr>';
         renderPagination();
         return;
     }
 
     let html = '';
     pageData.forEach(function(obs, index) {
+        var status = obs.verificationStatus || 'Pending';
+        var statusClass = 'status-' + status.toLowerCase();
         html += '<tr>' +
-            '<td>' + obs.date + '</td>' +
             '<td class="species-cell">' + obs.species + '</td>' +
             '<td class="count-cell">' + obs.count + '</td>' +
             '<td class="location-cell">' + obs.location + '</td>' +
+            '<td class="date-cell">' + obs.date + '</td>' +
             '<td class="recorded-by-cell">' + obs.recordedBy + '</td>' +
+            '<td><span class="status-badge ' + statusClass + '">' + status + '</span></td>' +
             '<td class="actions-cell">' +
                 '<button class="btn-view btnViewRecord" data-index="' + (startIdx + index) + '">View</button>' +
             '</td>' +
