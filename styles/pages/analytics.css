@@ -72,6 +72,7 @@
     left: 10px;
     width: 14px;
     height: 14px;
+    font-size: 14px;
     color: var(--color-text-muted);
 }
 
@@ -110,9 +111,11 @@
     color: var(--color-primary);
 }
 
-.page-analytics .observation-filter-btn svg {
+.page-analytics .observation-filter-btn svg,
+.page-analytics .observation-filter-btn .material-symbols-outlined {
     width: 14px;
     height: 14px;
+    font-size: 14px;
 }
 
 /* Table */
@@ -197,9 +200,11 @@
     cursor: not-allowed;
 }
 
-.page-analytics .pagi-btn svg {
+.page-analytics .pagi-btn svg,
+.page-analytics .pagi-btn .material-symbols-outlined {
     width: 14px;
     height: 14px;
+    font-size: 14px;
     display: block;
 }
 

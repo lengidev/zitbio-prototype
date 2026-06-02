@@ -86,9 +86,11 @@
     color: var(--color-text-main);
 }
 
-.modal-close svg {
+.modal-close svg,
+.modal-close .material-symbols-outlined {
     width: 18px;
     height: 18px;
+    font-size: 18px;
 }
 
 /* Modal Body */
@@ -258,10 +260,12 @@
   background-color: var(--color-bg-header);
 }
 
-.page-fieldofficer .modal-close svg {
+.page-fieldofficer .modal-close svg,
+.page-fieldofficer .modal-close .material-symbols-outlined {
   width: 16px;
   height: 16px;
-  fill: var(--color-text-muted);
+  font-size: 16px;
+  color: var(--color-text-muted);
 }
 
 .page-fieldofficer .modal-content {

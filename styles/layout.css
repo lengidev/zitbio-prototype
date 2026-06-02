@@ -627,9 +627,11 @@
   color: var(--color-text-primary);
 }
 
-.help-link svg {
-  width: 15px;
-  height: 15px;
+.help-link svg,
+.help-link .material-symbols-outlined {
+    width: 15px;
+    height: 15px;
+    font-size: 15px;
 }
 
 .user-menu {
@@ -647,10 +649,12 @@
   background: var(--color-bg-header);
 }
 
-.user-menu svg {
-  width: 16px;
-  height: 16px;
-  color: var(--color-text-secondary);
+.user-menu svg,
+.user-menu .material-symbols-outlined {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+    color: var(--color-text-secondary);
 }
 
 .user-menu-name {
@@ -660,9 +664,10 @@
 }
 
 .user-menu-arrow {
-  width: 14px;
-  height: 14px;
-  color: var(--color-text-muted);
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+    color: var(--color-text-muted);
 }
 
 .page-subtitle {
@@ -754,7 +759,8 @@
     border: 1px dashed var(--border-color-dark);
 }
 
-.chart-placeholder svg {
+.chart-placeholder svg,
+.chart-placeholder .material-symbols-outlined {
     opacity: 0.5;
 }
 

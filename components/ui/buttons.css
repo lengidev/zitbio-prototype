@@ -33,9 +33,11 @@
   pointer-events: none;
 }
 
-.btn svg {
+.btn svg,
+.btn .material-symbols-outlined {
   width: 16px;
   height: 16px;
+  font-size: 16px;
   flex-shrink: 0;
 }
 
@@ -143,9 +145,11 @@
   min-height: 36px;
 }
 
-.btn-icon svg {
+.btn-icon svg,
+.btn-icon .material-symbols-outlined {
   width: 20px;
   height: 20px;
+  font-size: 20px;
 }
 
 /* ============================================
@@ -156,9 +160,11 @@
   font-size: 13px;
 }
 
-.btn-sm svg {
+.btn-sm svg,
+.btn-sm .material-symbols-outlined {
   width: 14px;
   height: 14px;
+  font-size: 14px;
 }
 
 .btn-lg {
@@ -166,9 +172,11 @@
   font-size: 15px;
 }
 
-.btn-lg svg {
+.btn-lg svg,
+.btn-lg .material-symbols-outlined {
   width: 18px;
   height: 18px;
+  font-size: 18px;
 }
 
 /* ============================================
@@ -199,9 +207,11 @@
     text-align: left;
 }
 
-.action-btn svg {
+.action-btn svg,
+.action-btn .material-symbols-outlined {
     width: 18px;
     height: 18px;
+    font-size: 18px;
     stroke-width: 1.8;
     flex-shrink: 0;
 }
@@ -216,7 +226,8 @@
     background: var(--color-primary-hover);
 }
 
-.action-btn.primary svg {
+.action-btn.primary svg,
+.action-btn.primary .material-symbols-outlined {
   color: var(--color-text-inverse);
 }
 
@@ -232,7 +243,8 @@
     transform: translateY(-1px);
 }
 
-.action-btn.secondary svg {
+.action-btn.secondary svg,
+.action-btn.secondary .material-symbols-outlined {
   color: var(--color-text-secondary);
 }
 
@@ -276,9 +288,11 @@
   font-weight: 500;
 }
 
-.nav-item svg {
+.nav-item svg,
+.nav-item .material-symbols-outlined {
   width: 18px;
   height: 18px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
@@ -330,9 +344,11 @@
   color: var(--color-primary);
 }
 
-.nav-item-icon svg {
+.nav-item-icon svg,
+.nav-item-icon .material-symbols-outlined {
   width: 20px;
   height: 20px;
+  font-size: 20px;
 }
 
 /* ============================================
@@ -357,9 +373,11 @@
   color: var(--color-text-main);
 }
 
-.btn-close svg {
+.btn-close svg,
+.btn-close .material-symbols-outlined {
   width: 18px;
   height: 18px;
+  font-size: 18px;
 }
 
 /* ============================================
@@ -387,9 +405,12 @@
 }
 
 .sidebar-close svg,
-.sidebar-toggle svg {
+.sidebar-toggle svg,
+.sidebar-close .material-symbols-outlined,
+.sidebar-toggle .material-symbols-outlined {
   width: 18px;
   height: 18px;
+  font-size: 18px;
 }
 
 /* Observations page specific buttons */
@@ -433,9 +454,11 @@
     cursor: not-allowed;
 }
 
-.page-btn svg {
+.page-btn svg,
+.page-btn .material-symbols-outlined {
     width: 18px;
     height: 18px;
+    font-size: 18px;
 }
 
 .controls-right {
@@ -450,11 +473,13 @@
     align-items: center;
 }
 
-.search-container svg {
+.search-container svg,
+.search-container .material-symbols-outlined {
     position: absolute;
     left: 12px;
     width: 16px;
     height: 16px;
+    font-size: 16px;
     color: var(--color-text-muted);
     pointer-events: none;
 }
@@ -502,7 +527,9 @@
     transform: translateY(-1px);
 }
 
-.btn-export svg, .btn-add svg {
+.btn-export svg, .btn-add svg,
+.btn-export .material-symbols-outlined, .btn-add .material-symbols-outlined {
     width: 16px;
     height: 16px;
+    font-size: 16px;
 }

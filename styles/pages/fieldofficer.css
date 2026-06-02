@@ -56,7 +56,8 @@
 .page-fieldofficer .dropdown-arrow {
   width: 16px;
   height: 16px;
-  fill: var(--color-text-muted);
+  font-size: 16px;
+  color: var(--color-text-muted);
 }
 
 .page-fieldofficer .user-name {
@@ -96,7 +97,8 @@
 .page-fieldofficer .form-toggle {
   width: 16px;
   height: 16px;
-  fill: var(--color-text-muted);
+  font-size: 16px;
+  color: var(--color-text-muted);
   transition: transform var(--transition-fast);
 }
 
@@ -166,6 +168,9 @@
   right: 10px;
   width: 14px;
   height: 14px;
+  font-size: 14px;
+  position: absolute;
+  color: var(--color-text-muted);
 }
 
 .page-fieldofficer .page-arrow {
@@ -201,6 +206,7 @@
   left: 10px;
   width: 13px;
   height: 13px;
+  font-size: 13px;
   color: var(--color-text-muted);
 }
 

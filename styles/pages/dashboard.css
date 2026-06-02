@@ -124,9 +124,11 @@
     transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.page-dashboard .action-btn svg {
+.page-dashboard .action-btn svg,
+.page-dashboard .action-btn .material-symbols-outlined {
     width: 14px;
     height: 14px;
+    font-size: 14px;
 }
 
 .page-dashboard .action-btn.primary {
