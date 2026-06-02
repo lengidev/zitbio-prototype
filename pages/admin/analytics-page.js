@@ -23,10 +23,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Activate clicked tab
         tab.classList.add('active');
 
-        // Show corresponding panel (from href, e.g. "#tab-observations")
-        var targetId = tab.getAttribute('href');
-        if (targetId) {
-            var targetPanel = document.querySelector(targetId);
+        // Show corresponding panel using data-tab attribute
+        var tabName = tab.getAttribute('data-tab');
+        if (tabName) {
+            var targetPanel = document.getElementById('tab-' + tabName);
             if (targetPanel) {
                 targetPanel.classList.add('active');
             }
@@ -35,17 +35,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     tabs.forEach(function(tab) {
         tab.addEventListener('click', function(e) {
-            e.preventDefault();
             activateTab(this);
         });
     });
 
     // Activate the tab that matches the current hash on page load
-    // (also handles browser back/forward if hash changes)
     function handleHashChange() {
         var hash = window.location.hash;
         if (hash) {
-            var matchingTab = document.querySelector('.analytics-tab[href="' + hash + '"]');
+            var tabName = hash.replace('#tab-', '');
+            var matchingTab = document.querySelector('.analytics-tab[data-tab="' + tabName + '"]');
             if (matchingTab) {
                 activateTab(matchingTab);
             }
