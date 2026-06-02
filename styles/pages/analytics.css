@@ -202,18 +202,25 @@
 }
 
 .page-analytics .pagi-btn {
-    padding: 4px 8px;
-    border: 1px solid var(--border-color);
-    background: var(--color-bg-white);
-    border-radius: var(--radius-sm);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
     cursor: pointer;
-    color: inherit;
-    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
 }
 
 .page-analytics .pagi-btn:hover:not(:disabled) {
-    background: var(--color-bg-header);
-    border-color: var(--border-color-dark);
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    color: #334155;
 }
 
 .page-analytics .pagi-btn:disabled {
@@ -235,20 +242,32 @@
 }
 
 .page-analytics .page-num {
-    padding: 4px 10px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
     cursor: pointer;
-    border-radius: var(--radius-sm);
-    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
 }
 
 .page-analytics .page-num.active {
-    background: var(--color-primary);
-    color: white;
-    border: none;
+    background-color: #2d5a27;
+    color: #ffffff;
+    border-color: #2d5a27;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .page-analytics .page-num:hover:not(.active) {
-    background: var(--color-bg-header);
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    color: #334155;
 }
 
 .page-analytics .pagination-info .bold {
