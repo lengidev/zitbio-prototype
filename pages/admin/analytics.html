@@ -94,17 +94,21 @@
                         <button class="analytics-tab" data-tab="graphs">Graphs</button>
                         <button class="analytics-tab" data-tab="report">Report</button>
                     </div>
-                </div>
-
-                <!-- Tab Content Panels -->
-                <div class="analytics-tab-content active" id="tab-observations">
-                    <div class="observation-search-wrapper" style="margin-bottom: 16px;">
+                    <div class="observation-search-wrapper" id="tabSearchWrapper">
                         <span class="material-symbols-outlined search-icon">search</span>
                         <input type="text" class="search-input" placeholder="Search observations...">
                         <button class="observation-filter-btn">
                             <span class="material-symbols-outlined">filter_list</span>
                         </button>
                     </div>
+                    <button class="observation-export-btn" id="tabExportBtn" style="display: none;">
+                        <span class="material-symbols-outlined">file_download</span>
+                        Export
+                    </button>
+                </div>
+
+                <!-- Tab Content Panels -->
+                <div class="analytics-tab-content active" id="tab-observations">
                     <div class="analytics-card">
                         <div class="analytics-card-body">
                             <div class="observations-table-wrapper">

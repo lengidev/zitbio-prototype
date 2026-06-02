@@ -1,11 +1,14 @@
 /**
  * BioMonitor - Analytics Page Tab Switching
  * Enables in-page tab navigation for the Observations/Map/Graphs/Report tabs.
+ * Also toggles the right-side controls (search/filter vs export) in the tab bar.
  */
 
 document.addEventListener('DOMContentLoaded', function() {
     var tabs = document.querySelectorAll('.analytics-tab');
     var panels = document.querySelectorAll('.analytics-tab-content');
+    var searchWrapper = document.getElementById('tabSearchWrapper');
+    var exportBtn = document.getElementById('tabExportBtn');
 
     function activateTab(tab) {
         if (!tab) return;
@@ -29,6 +32,18 @@ document.addEventListener('DOMContentLoaded', function() {
             var targetPanel = document.getElementById('tab-' + tabName);
             if (targetPanel) {
                 targetPanel.classList.add('active');
+            }
+
+            // Toggle right-side controls based on which tab is active
+            if (tabName === 'observations') {
+                if (searchWrapper) searchWrapper.style.display = 'inline-flex';
+                if (exportBtn) exportBtn.style.display = 'none';
+            } else if (tabName === 'report') {
+                if (searchWrapper) searchWrapper.style.display = 'none';
+                if (exportBtn) exportBtn.style.display = 'inline-flex';
+            } else {
+                if (searchWrapper) searchWrapper.style.display = 'none';
+                if (exportBtn) exportBtn.style.display = 'none';
             }
         }
     }

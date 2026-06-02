@@ -44,11 +44,39 @@
     color: var(--color-text-main);
 }
 
-/* Search & Filter */
+/* Search & Filter in tab bar */
 .page-analytics .observation-search-wrapper {
     display: inline-flex;
     align-items: center;
     position: relative;
+    margin-left: auto;
+    width: 300px;
+}
+
+/* Export button in tab bar */
+.page-analytics .observation-export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-white);
+    color: var(--color-text-main);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.page-analytics .observation-export-btn:hover {
+    background: var(--color-bg-header);
+    border-color: var(--border-color-dark);
+}
+
+.page-analytics .observation-export-btn .material-symbols-outlined {
+    font-size: 16px;
 }
 
 .page-analytics .search-icon {
