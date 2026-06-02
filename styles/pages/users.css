@@ -2,21 +2,13 @@
  * Users Page - Specific Styles
  */
 
-/* Page header area */
-.page-users .page-header {
+/* Page header area (content-header) */
+.page-users .content-header {
     display: flex;
     flex-direction: column;
     align-items: stretch;
     margin-bottom: 24px;
     gap: 16px;
-}
-
-.page-users .page-title {
-    margin-bottom: 4px;
-}
-
-.page-users .page-subtitle {
-    margin-bottom: 0;
 }
 
 /* Controls wrapper (search + add button) */

@@ -274,6 +274,7 @@
     min-height: 100vh;
     transition: margin-left 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
     width: calc(100% - 260px);
+    scrollbar-gutter: stable;
 }
 
 /* Collapsible Class Modifiers */
@@ -670,11 +671,6 @@
     color: var(--color-text-muted);
 }
 
-.page-subtitle {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  margin-bottom: 24px;
-}
 
 .stat-info {
   display: flex;

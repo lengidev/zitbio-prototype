@@ -3,26 +3,11 @@
  * Flat sections, no card styling, matches design system
  */
 
-/* Content area */
+/* Content area - narrower max-width for form-heavy settings page */
 .page-settings .content-area {
     max-width: 800px;
-    margin-left: 14px;
-    margin-right: 0px;
-    padding: 32px 20px !important; /* override default page padding for a more compact look */
 }
 
-.page-settings .page-title {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: var(--color-text-main);
-}
-
-.page-settings .page-subtitle {
-    font-size: 14px;
-    color: var(--color-text-secondary);
-    margin-bottom: 32px;
-}
 
 /* Section – flat, no card background */
 .page-settings .section {
