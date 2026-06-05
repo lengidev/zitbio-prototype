@@ -9,7 +9,7 @@ var obsCurrentPage = 1;
 var obsFilteredData = [];
 var obsRecordsPerPage = 8;
 
-// Get filtered data from unified data layer
+// Get filtered data from unified data layer (v2 schema)
 function getObsFilteredData() {
     if (!window.BioData) return [];
     var allObservations = window.BioData.getObservations();
@@ -18,17 +18,22 @@ function getObsFilteredData() {
     var searchTerm = searchInput.value.toLowerCase().trim();
     if (!searchTerm) return allObservations.slice();
     return allObservations.filter(function(obs) {
-        var commonName = (obs.common_name || '').toLowerCase();
-        var species = (obs.species || '').toLowerCase();
+        var speciesDet = obs.species_details || {};
+        var scientificName = (speciesDet.scientific_name || '').toLowerCase();
+        var commonName = (speciesDet.common_name || '').toLowerCase();
         var loc = obs.location || {};
-        var locationStr = (loc.city || '').toLowerCase() + ' ' + (loc.area || '').toLowerCase();
-        var observer = (obs.observed_by || '').toLowerCase();
-        var dateStr = (obs.date_observed || '').toLowerCase();
-        return commonName.includes(searchTerm) ||
-            species.includes(searchTerm) ||
+        var locationStr = (loc.city || '').toLowerCase() + ' ' + (loc.administrative_area || '').toLowerCase() + ' ' + (loc.country || '').toLowerCase();
+        var observer = (obs.recorded_by || '').toLowerCase();
+        var dateStr = (obs.timestamp || '').toLowerCase();
+        var institution = (obs.institution_name || '').toLowerCase();
+        var habitat = (loc.habitat_type || '').toLowerCase();
+        return scientificName.includes(searchTerm) ||
+            commonName.includes(searchTerm) ||
             locationStr.includes(searchTerm) ||
             observer.includes(searchTerm) ||
-            dateStr.includes(searchTerm);
+            dateStr.includes(searchTerm) ||
+            institution.includes(searchTerm) ||
+            habitat.includes(searchTerm);
     });
 }
 
@@ -109,18 +114,42 @@ function handleObsSearch() {
     renderObsTable();
 }
 
-// View record details by ID
+// View record details by ID (v2 schema)
 function viewRecordById(id) {
     if (!window.BioData) return;
     var obs = window.BioData.getObservationById(id);
     if (!obs) return;
 
+    var speciesDet = obs.species_details || {};
     var loc = obs.location || {};
-    document.getElementById('modalSpeciesTitle').textContent = obs.common_name || obs.species;
-    document.getElementById('modalSubtitle').textContent = 'Observation details recorded on ' + formatObsDate(obs.date_observed);
+
+    var speciesTitle = speciesDet.common_name || speciesDet.scientific_name || 'Unknown';
+    document.getElementById('modalSpeciesTitle').textContent = speciesTitle;
+
+    var dateStr = obs.timestamp ? obs.timestamp.split('T')[0] : '';
+    document.getElementById('modalSubtitle').textContent = 'Observation details recorded on ' + formatObsDate(dateStr);
+
+    var coordsStr = '';
+    if (loc.latitude != null && loc.longitude != null) {
+        coordsStr = loc.latitude.toFixed(4) + ', ' + loc.longitude.toFixed(4);
+    } else {
+        coordsStr = 'N/A';
+    }
 
     var modalBody = document.getElementById('modalBody');
     modalBody.innerHTML =
+        '<div class="detail-section">' +
+            '<div class="detail-row">' +
+                '<div>' +
+                    '<div class="detail-label">Scientific Name</div>' +
+                    '<div class="detail-value">' + (speciesDet.scientific_name || '—') + '</div>' +
+                '</div>' +
+                '<div>' +
+                    '<div class="detail-label">Common Name</div>' +
+                    '<div class="detail-value">' + (speciesDet.common_name || '—') + '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>' +
         '<div class="detail-section">' +
             '<div class="detail-row">' +
                 '<div>' +
@@ -128,18 +157,18 @@ function viewRecordById(id) {
                     '<div class="detail-value">' + (obs.count || 0) + '</div>' +
                 '</div>' +
                 '<div>' +
-                    '<div class="detail-label">Observation Date</div>' +
-                    '<div class="detail-value">' + formatObsDate(obs.date_observed) + '</div>' +
+                    '<div class="detail-label">Date</div>' +
+                    '<div class="detail-value">' + formatObsDate(dateStr) + '</div>' +
                 '</div>' +
             '</div>' +
         '</div>' +
         '<div class="detail-section">' +
             '<div class="detail-section-header">Location</div>' +
-            '<div class="detail-section-value">' + (loc.city || '') + (loc.area ? ', ' + loc.area : '') + '</div>' +
-        '</div>' +
-        '<div class="detail-section">' +
-            '<div class="detail-section-header">Institution</div>' +
-            '<div class="detail-section-value">' + (obs.institution || '—') + '</div>' +
+            '<div class="detail-section-value">' +
+                (loc.city || '') +
+                (loc.administrative_area ? (loc.city ? ', ' : '') + loc.administrative_area : '') +
+                (loc.country ? ', ' + loc.country : '') +
+            '</div>' +
         '</div>' +
         '<div class="detail-section">' +
             '<div class="detail-row">' +
@@ -154,12 +183,36 @@ function viewRecordById(id) {
             '</div>' +
         '</div>' +
         '<div class="detail-section">' +
-            '<div class="detail-section-header">Recorded By</div>' +
-            '<div class="detail-section-value">' + (obs.observed_by || '—') + '</div>' +
+            '<div class="detail-section-header">Protected Area</div>' +
+            '<div class="detail-section-value">' + (loc.protected_area || 'None') + '</div>' +
+        '</div>' +
+        '<div class="detail-section">' +
+            '<div class="detail-section-header">Habitat Type</div>' +
+            '<div class="detail-section-value">' + (loc.habitat_type || 'Not specified') + '</div>' +
+        '</div>' +
+        '<div class="detail-section">' +
+            '<div class="detail-section-header">Locality Description</div>' +
+            '<div class="detail-section-value">' + (loc.locality_description || '—') + '</div>' +
+        '</div>' +
+        '<div class="detail-section">' +
+            '<div class="detail-row">' +
+                '<div>' +
+                    '<div class="detail-label">Recorded By</div>' +
+                    '<div class="detail-value">' + (obs.recorded_by || '—') + '</div>' +
+                '</div>' +
+                '<div>' +
+                    '<div class="detail-label">Institution</div>' +
+                    '<div class="detail-value">' + (obs.institution_name || '—') + '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+        '<div class="detail-section">' +
+            '<div class="detail-section-header">Verification Status</div>' +
+            '<div class="detail-section-value">' + (obs.verification_status || 'Pending') + '</div>' +
         '</div>';
 
     // Store current observation ID for delete
-    document.getElementById('viewModal').setAttribute('data-obs-id', obs.id);
+    document.getElementById('viewModal').setAttribute('data-obs-id', obs.observation_id);
     document.getElementById('viewModal').classList.add('active');
 }
 
