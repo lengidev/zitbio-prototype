@@ -3,99 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZitBIO</title>
+    <title>ZitBIO — Field Officer</title>
     <link rel="icon" type="image/png" href="../assets/favicon/logo-64.png">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="../styles/global.css">
-    <link rel="stylesheet" href="../styles/layout.css">
-    <link rel="stylesheet" href="../styles/components/buttons.css">
-    <link rel="stylesheet" href="../styles/components/forms.css">
-    <link rel="stylesheet" href="../styles/components/tables.css">
     <link rel="stylesheet" href="../styles/pages/fieldofficer.css">
 </head>
-<body class="page-fieldofficer">
-    <div class="header">
-        <div class="logo">
-            <div class="logo-icon">
-                <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20c4 0 8.68-4 12-12a5.5 5.5 0 00-3-2zm-8.5 7.5a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0z"/></svg>
-            </div>
-            <span class="logo-text">BioMonitor</span>
+<body class="page-fieldofficer-v2">
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Top Bar -->
+    <header class="fo-topbar">
+        <div class="fo-logo">
+            <svg viewBox="0 0 24 24" class="fo-logo-svg"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20c4 0 8.68-4 12-12a5.5 5.5 0 00-3-2zm-8.5 7.5a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0z"/></svg>
+            <span>BioMonitor</span>
         </div>
-        <div class="user-menu">
+        <div class="fo-user">
             <span class="material-symbols-outlined">person</span>
-            <span class="user-name">James Wilson</span>
-            <span class="material-symbols-outlined dropdown-arrow">arrow_drop_down</span>
+            <span class="fo-user-name">James Wilson</span>
         </div>
-    </div>
+    </header>
 
-    <div class="container">
-        <div class="observation-form">
-            <div class="form-header" id="formHeader">
-                <span class="form-title">Record New Observation</span>
-                <span class="material-symbols-outlined form-toggle" id="formToggle">expand_more</span>
+    <!-- Main Card -->
+    <main class="fo-main">
+        <form id="observationForm" class="fo-card" novalidate>
+
+            <!-- Card Header -->
+            <div class="fo-card-header">
+                <h1 class="fo-card-title">Biodiversity Observation Submission Form</h1>
             </div>
-            <div class="form-body" id="formBody">
-                <form id="observationForm">
 
-                    <!-- SECTION 1: Session Meta-Data (Auto-filled & Read-Only) -->
-                    <div class="form-section">
-                        <div class="form-section-title">Session Information</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Officer Name</label>
-                                <div class="meta-field" id="officerName">—</div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Institution</label>
-                                <div class="meta-field" id="institutionDisplay">—</div>
+            <!-- Card Body -->
+            <div class="fo-card-body">
+
+                <!-- ====== SECTION 1: OBSERVER DETAILS ====== -->
+                <section class="fo-section">
+                    <h2 class="fo-section-title">1. Observer Details</h2>
+                    <div class="fo-grid fo-grid-4">
+                        <div class="fo-field">
+                            <label class="fo-label">Officer Name <span class="fo-required">*</span></label>
+                            <div class="fo-input-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">person</span>
+                                <input type="text" id="officerName" class="fo-input" placeholder="Auto-filled from session" readonly>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Date & Time</label>
-                                <div class="input-with-icon">
-                                    <input type="datetime-local" class="form-input" id="observationDate" required>
-                                    <span class="material-symbols-outlined input-icon">calendar_today</span>
-                                </div>
-                                <span class="helper-text">Auto-filled to now. Edit for back-logged entries.</span>
+                        <div class="fo-field">
+                            <label class="fo-label">Institution <span class="fo-required">*</span></label>
+                            <div class="fo-input-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">apartment</span>
+                                <input type="text" id="institutionName" class="fo-input" placeholder="Auto-filled from session" readonly>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Population Count <span class="required">*</span></label>
-                                <div class="count-stepper">
-                                    <button type="button" class="stepper-btn" id="countMinus">−</button>
-                                    <input type="number" class="form-input count-input" id="populationCount" value="1" min="1" required>
-                                    <button type="button" class="stepper-btn" id="countPlus">+</button>
-                                </div>
-                                <span class="error-message" id="populationCountError">Population count is required</span>
+                        </div>
+                        <div class="fo-field">
+                            <label class="fo-label">Date <span class="fo-required">*</span></label>
+                            <div class="fo-input-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">calendar_today</span>
+                                <input type="date" id="obsDate" class="fo-input" required>
+                            </div>
+                            <span class="fo-error" id="obsDateError">Date is required</span>
+                        </div>
+                        <div class="fo-field">
+                            <label class="fo-label">Time <span class="fo-required">*</span></label>
+                            <div class="fo-input-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">schedule</span>
+                                <input type="time" id="obsTime" class="fo-input" required>
+                            </div>
+                            <span class="fo-error" id="obsTimeError">Time is required</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ====== SECTION 2: OBSERVATION DETAILS ====== -->
+                <section class="fo-section">
+                    <h2 class="fo-section-title">2. Observation Details</h2>
+                    <div class="fo-grid fo-grid-4">
+                        <div class="fo-field">
+                            <label class="fo-label">Common Name <span class="fo-required">*</span></label>
+                            <div class="fo-input-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">eco</span>
+                                <input type="text" id="commonName" class="fo-input" placeholder="e.g., Lion" required>
+                            </div>
+                            <span class="fo-error" id="commonNameError">Common name is required</span>
+                        </div>
+                        <div class="fo-field">
+                            <label class="fo-label">Scientific Name <span class="fo-required">*</span></label>
+                            <div class="fo-input-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">biotech</span>
+                                <input type="text" id="scientificName" class="fo-input fo-input-italic" placeholder="e.g., Panthera leo" required>
+                            </div>
+                            <span class="fo-error" id="scientificNameError">Scientific name is required</span>
+                        </div>
+                        <div class="fo-field">
+                            <label class="fo-label">Count <span class="fo-required">*</span></label>
+                            <div class="fo-input-wrap fo-count-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">tag</span>
+                                <button type="button" class="fo-stepper-btn" id="countMinus" aria-label="Decrease">−</button>
+                                <input type="number" id="populationCount" class="fo-input fo-count-input" value="1" min="1" required>
+                                <button type="button" class="fo-stepper-btn" id="countPlus" aria-label="Increase">+</button>
+                            </div>
+                            <span class="fo-error" id="populationCountError">Count is required</span>
+                        </div>
+                        <div class="fo-field">
+                            <label class="fo-label">Activity</label>
+                            <div class="fo-input-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">directions_run</span>
+                                <select id="activity" class="fo-input">
+                                    <option value="">Select activity...</option>
+                                    <option value="Feeding">Feeding</option>
+                                    <option value="Resting">Resting</option>
+                                    <option value="Moving">Moving</option>
+                                    <option value="Breeding">Breeding</option>
+                                    <option value="Foraging">Foraging</option>
+                                    <option value="Vocalizing">Vocalizing</option>
+                                    <option value="Other">Other</option>
+                                </select>
                             </div>
                         </div>
                     </div>
+                </section>
 
-                    <!-- SECTION 2: Wildlife Detail -->
-                    <div class="form-section">
-                        <div class="form-section-title">Wildlife Details</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Scientific Name <span class="required">*</span></label>
-                                <input type="text" class="form-input" id="scientificName" placeholder="e.g., Panthera leo" required>
-                                <span class="error-message" id="scientificNameError">Scientific name is required</span>
+                <!-- ====== SECTION 3: LOCATION & ECOSYSTEM ====== -->
+                <section class="fo-section">
+                    <h2 class="fo-section-title">3. Location & Ecosystem</h2>
+
+                    <!-- Row 1: Province, Country, City -->
+                    <div class="fo-grid fo-grid-3">
+                        <div class="fo-field">
+                            <label class="fo-label">Province / State <span class="fo-required">*</span></label>
+                            <div class="fo-input-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">location_on</span>
+                                <select id="provinceState" class="fo-input" required>
+                                    <option value="">Select province...</option>
+                                    <option value="Central Province">Central Province</option>
+                                    <option value="Copperbelt Province">Copperbelt Province</option>
+                                    <option value="Eastern Province">Eastern Province</option>
+                                    <option value="Luapula Province">Luapula Province</option>
+                                    <option value="Lusaka Province">Lusaka Province</option>
+                                    <option value="Muchinga Province">Muchinga Province</option>
+                                    <option value="Northern Province">Northern Province</option>
+                                    <option value="North-Western Province">North-Western Province</option>
+                                    <option value="Southern Province">Southern Province</option>
+                                    <option value="Western Province">Western Province</option>
+                                </select>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Common Name <span class="required">*</span></label>
-                                <input type="text" class="form-input" id="commonName" placeholder="e.g., Lion" required>
-                                <span class="error-message" id="commonNameError">Common name is required</span>
-                            </div>
+                            <span class="fo-error" id="provinceStateError">Province is required</span>
                         </div>
-                    </div>
-
-                    <!-- SECTION 3: Geographic & Ecological Details -->
-                    <div class="form-section">
-                        <div class="form-section-title">Location & Ecology</div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Country <span class="required">*</span></label>
-                                <select class="form-input" id="country" required>
+                        <div class="fo-field">
+                            <label class="fo-label">Country <span class="fo-required">*</span></label>
+                            <div class="fo-input-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">public</span>
+                                <select id="country" class="fo-input" required>
                                     <option value="">Select country...</option>
                                     <option value="Zambia">Zambia</option>
                                     <option value="Tanzania">Tanzania</option>
@@ -109,155 +168,108 @@
                                     <option value="DRC">DR Congo</option>
                                     <option value="Other">Other</option>
                                 </select>
-                                <span class="error-message" id="countryError">Country is required</span>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Province / Region <span class="required">*</span></label>
-                                <select class="form-input" id="administrativeArea" required>
-                                    <option value="">Select province...</option>
-                                    <option value="Central Province">Central Province</option>
-                                    <option value="Copperbelt Province">Copperbelt Province</option>
-                                    <option value="Eastern Province">Eastern Province</option>
-                                    <option value="Luapula Province">Luapula Province</option>
-                                    <option value="Lusaka Province">Lusaka Province</option>
-                                    <option value="Muchinga Province">Muchinga Province</option>
-                                    <option value="Northern Province">Northern Province</option>
-                                    <option value="North-Western Province">North-Western Province</option>
-                                    <option value="Southern Province">Southern Province</option>
-                                    <option value="Western Province">Western Province</option>
-                                </select>
-                                <span class="error-message" id="administrativeAreaError">Province/region is required</span>
+                            <span class="fo-error" id="countryError">Country is required</span>
+                        </div>
+                        <div class="fo-field">
+                            <label class="fo-label">City</label>
+                            <div class="fo-input-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">apartment</span>
+                                <input type="text" id="city" class="fo-input" placeholder="e.g., Kitwe (optional)">
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Protected Area / Reserve</label>
-                                <input type="text" class="form-input" id="protectedArea" placeholder="e.g., Kafue National Park (optional)">
-                                <span class="helper-text">Search or type the reserve/park name</span>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">City / Town</label>
-                                <input type="text" class="form-input" id="city" placeholder="e.g., Kitwe (optional)">
+                    </div>
+
+                    <!-- Row 2: Protected Area, Habitat Type -->
+                    <div class="fo-grid fo-grid-3">
+                        <div class="fo-field">
+                            <label class="fo-label">Protected Area</label>
+                            <div class="fo-input-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">shield</span>
+                                <input type="text" id="protectedArea" class="fo-input" placeholder="e.g., Kafue National Park (optional)">
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Habitat Type <span class="required">*</span></label>
-                                <select class="form-input" id="habitatType" required>
+                        <div class="fo-field">
+                            <label class="fo-label">Habitat Type <span class="fo-required">*</span></label>
+                            <div class="fo-input-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">forest</span>
+                                <select id="habitatType" class="fo-input" required>
                                     <option value="">Select habitat...</option>
-                                    <option value="Grassland">Grassland</option>
-                                    <option value="Savanna">Savanna</option>
                                     <option value="Woodland">Woodland</option>
-                                    <option value="Forest">Forest</option>
+                                    <option value="Grassland">Grassland</option>
                                     <option value="Wetland">Wetland</option>
+                                    <option value="Savanna">Savanna</option>
+                                    <option value="Forest">Forest</option>
                                     <option value="Riverine Forest">Riverine Forest</option>
-                                    <option value="Thicket">Thicket</option>
-                                    <option value="Mountain">Mountain</option>
-                                    <option value="Desert">Desert</option>
-                                    <option value="Agricultural">Agricultural</option>
                                     <option value="Urban">Urban</option>
-                                    <option value="Coastal">Coastal</option>
-                                    <option value="Other">Other</option>
+                                    <option value="Agricultural">Agricultural</option>
                                 </select>
-                                <span class="error-message" id="habitatTypeError">Habitat type is required</span>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Specific Locality</label>
-                                <input type="text" class="form-input" id="localityDescription" placeholder="e.g., Near waterhole, Sector W14 (optional)">
-                            </div>
+                            <span class="fo-error" id="habitatTypeError">Habitat type is required</span>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Latitude</label>
-                                <div class="input-with-icon">
-                                    <input type="number" step="any" class="form-input" id="latitude" placeholder="e.g., -12.8300">
-                                    <span class="material-symbols-outlined input-icon">explore</span>
+                        <div class="fo-field fo-field-gps">
+                            <label class="fo-label">GPS Coordinates</label>
+                            <div class="fo-gps-row">
+                                <div class="fo-input-wrap fo-gps-input">
+                                    <span class="material-symbols-outlined fo-input-icon">explore</span>
+                                    <input type="number" step="any" id="latitude" class="fo-input" placeholder="Lat e.g., -12.83">
                                 </div>
-                                <span class="helper-text">Decimal degrees (e.g., -12.8300)</span>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Longitude</label>
-                                <div class="input-with-icon">
-                                    <input type="number" step="any" class="form-input" id="longitude" placeholder="e.g., 28.2300">
-                                    <span class="material-symbols-outlined input-icon">explore</span>
+                                <div class="fo-input-wrap fo-gps-input">
+                                    <span class="material-symbols-outlined fo-input-icon">explore</span>
+                                    <input type="number" step="any" id="longitude" class="fo-input" placeholder="Lng e.g., 28.23">
                                 </div>
-                                <span class="helper-text">Decimal degrees (e.g., 28.2300)</span>
-                            </div>
-                            <div class="form-group gps-btn-group">
-                                <button type="button" class="btn-gps" id="gpsCaptureBtn">
-                                    <span class="material-symbols-outlined">gps_fixed</span>
-                                    Capture Current GPS
+                                <button type="button" class="fo-gps-btn" id="gpsCaptureBtn" aria-label="Capture GPS" title="Capture Current GPS Location">
+                                    <span class="material-symbols-outlined" id="gpsIcon">explore</span>
                                 </button>
                             </div>
-                        </div>
-                        <div class="form-row" id="mapRow" style="display: none;">
-                            <div class="form-group full-width">
-                                <div id="miniMap" style="height: 200px; border-radius: 8px; border: 1px solid var(--color-border, #ddd);"></div>
-                            </div>
+                            <span class="fo-helper">Click compass icon to capture current GPS</span>
                         </div>
                     </div>
 
-                    <!-- SECTION 4: Field Notes -->
-                    <div class="form-section">
-                        <div class="form-section-title">Field Notes</div>
-                        <div class="form-row">
-                            <div class="form-group full-width">
-                                <textarea class="form-input" id="fieldNotes" placeholder="Behavior, health status, weather conditions, or any additional observations..."></textarea>
+                    <!-- Row 3: Locality Description -->
+                    <div class="fo-grid fo-grid-2">
+                        <div class="fo-field">
+                            <label class="fo-label">Locality Description</label>
+                            <div class="fo-input-wrap fo-textarea-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">description</span>
+                                <textarea id="localityDescription" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Describe the specific location, landmarks, or track markers..."></textarea>
                             </div>
                         </div>
+                        <div class="fo-field"><!-- empty column to match grid-2 layout --></div>
                     </div>
+                </section>
 
-                    <button type="submit" class="submit-btn">Submit Observation</button>
-                </form>
-            </div>
-        </div>
+                <!-- ====== SECTION 4: VERIFICATION & NOTES ====== -->
+                <section class="fo-section">
+                    <div class="fo-notes-header">
+                        <h2 class="fo-section-title">4. Verification & Notes</h2>
+                        <span class="fo-pill fo-pill-amber">● Pending Verification</span>
+                    </div>
+                    <div class="fo-grid fo-grid-2">
+                        <div class="fo-field">
+                            <div class="fo-input-wrap fo-textarea-wrap">
+                                <span class="material-symbols-outlined fo-input-icon">description</span>
+                                <textarea id="fieldNotes" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Behavior details, health status, weather conditions, or any additional observations..."></textarea>
+                            </div>
+                        </div>
+                        <div class="fo-field fo-media-placeholder">
+                            <!-- Reserved for future photo upload -->
+                        </div>
+                    </div>
+                </section>
 
-        <div class="table-section">
-            <div class="table-controls">
-                <div class="pagination-arrows">
-                    <button class="page-arrow disabled" id="prevPage">
-                        <span class="material-symbols-outlined">chevron_left</span>
-                    </button>
-                    <button class="page-arrow disabled" id="nextPage">
-                        <span class="material-symbols-outlined">chevron_right</span>
-                    </button>
+                <!-- ====== ACTIONS ====== -->
+                <div class="fo-actions">
+                    <button type="button" class="fo-btn fo-btn-outline" id="btnCancel">Cancel</button>
+                    <div class="fo-actions-right">
+                        <button type="button" class="fo-btn fo-btn-outline" id="btnSaveDraft">Save Draft</button>
+                        <button type="submit" class="fo-btn fo-btn-primary">Submit Observation</button>
+                    </div>
                 </div>
-                <div class="search-box">
-                    <span class="material-symbols-outlined search-icon">search</span>
-                    <input type="text" class="search-input" id="searchInput" placeholder="Search your observations...">
-                </div>
-            </div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Species</th>
-                        <th>Count</th>
-                        <th>Location</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                </tbody>
-            </table>
-            <div class="table-footer" id="tableFooter">
-                Showing 0 of 0 observations
-            </div>
-        </div>
-    </div>
 
-    <div class="modal-overlay" id="modalOverlay">
-        <div class="modal">
-            <div class="modal-header">
-                <span class="modal-title">Observation Details</span>
-                <button class="modal-close" id="modalClose">
-                    <span class="material-symbols-outlined">close</span>
-                </button>
-            </div>
-            <div class="modal-content" id="modalContent">
-            </div>
-        </div>
-    </div>
+            </div><!-- /fo-card-body -->
+        </form>
+    </main>
 
     <script src="../scripts/data.js"></script>
     <script src="../scripts/app.js"></script>
@@ -266,90 +278,151 @@
         if (window.BioData) {
           var session = BioData.getSession();
           if (session) {
-            var el = document.querySelector('.user-name');
-            if (el) el.textContent = session.name;
+            var userNameEl = document.querySelector('.fo-user-name');
+            if (userNameEl) userNameEl.textContent = session.name;
+
+            var officerEl = document.getElementById('officerName');
+            if (officerEl) officerEl.value = session.name;
+
+            var instEl = document.getElementById('institutionName');
+            if (instEl) instEl.value = session.institution_name || '';
           }
 
-          // Populate province dropdown when country is "Zambia"
+          // Province dropdown — Zambia cascading
           var countrySelect = document.getElementById('country');
-          var provinceSelect = document.getElementById('administrativeArea');
+          var provinceSelect = document.getElementById('provinceState');
           if (countrySelect && provinceSelect) {
-            var defaultProvinceOptions = provinceSelect.innerHTML;
             countrySelect.addEventListener('change', function() {
               if (this.value === 'Zambia') {
-                // Restore Zambia provinces
                 provinceSelect.innerHTML = '<option value="">Select province...</option>';
                 var provinces = BioData.getZambiaProvinces();
                 provinces.forEach(function(p) {
                   var opt = document.createElement('option');
-                  opt.value = p;
-                  opt.textContent = p;
+                  opt.value = p; opt.textContent = p;
                   provinceSelect.appendChild(opt);
                 });
-                provinceSelect.disabled = false;
               } else if (this.value) {
-                // Other country — allow free-text
-                provinceSelect.innerHTML = '<option value="">Enter region/province...</option>';
-                provinceSelect.disabled = false;
+                provinceSelect.innerHTML = '<option value="">Enter region...</option>';
               } else {
-                provinceSelect.innerHTML = defaultProvinceOptions;
-                provinceSelect.disabled = true;
+                provinceSelect.innerHTML = '<option value="">Select province...</option>';
               }
             });
           }
         }
 
+        // Default date/time to now
+        var dateEl = document.getElementById('obsDate');
+        var timeEl = document.getElementById('obsTime');
+        if (dateEl) {
+          var now = new Date();
+          dateEl.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+        }
+        if (timeEl) {
+          var t = new Date();
+          timeEl.value = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+        }
+
+        // Species auto-detect
+        var commonNameEl = document.getElementById('commonName');
+        var scientificNameEl = document.getElementById('scientificName');
+        if (commonNameEl && scientificNameEl) {
+          var autoDetectLocked = false;
+          commonNameEl.addEventListener('input', function() {
+            if (autoDetectLocked) return;
+            var match = window.BioData ? window.BioData.lookupScientificName(this.value) : null;
+            if (match) {
+              scientificNameEl.value = match;
+            }
+          });
+          // If user manually edits scientific name, don't overwrite
+          scientificNameEl.addEventListener('input', function() {
+            if (this.value && commonNameEl.value) {
+              autoDetectLocked = true;
+            }
+          });
+          commonNameEl.addEventListener('change', function() {
+            autoDetectLocked = false;
+          });
+        }
+
         // GPS capture button
         var gpsBtn = document.getElementById('gpsCaptureBtn');
+        var gpsIcon = document.getElementById('gpsIcon');
         if (gpsBtn) {
           gpsBtn.addEventListener('click', function() {
             if (!navigator.geolocation) {
-              alert('GPS is not supported by your browser.');
+              showToast('GPS is not supported by your browser.', 'error');
               return;
             }
+            if (gpsIcon) {
+              gpsIcon.textContent = 'progress_activity';
+              gpsIcon.classList.add('fo-spin');
+            }
             navigator.geolocation.getCurrentPosition(
-              function(position) {
-                var latInput = document.getElementById('latitude');
-                var lngInput = document.getElementById('longitude');
-                if (latInput) latInput.value = position.coords.latitude.toFixed(6);
-                if (lngInput) lngInput.value = position.coords.longitude.toFixed(6);
+              function(pos) {
+                var latEl = document.getElementById('latitude');
+                var lngEl = document.getElementById('longitude');
+                if (latEl) latEl.value = pos.coords.latitude.toFixed(6);
+                if (lngEl) lngEl.value = pos.coords.longitude.toFixed(6);
+                if (gpsIcon) { gpsIcon.textContent = 'explore'; gpsIcon.classList.remove('fo-spin'); }
+                showToast('GPS coordinates captured successfully!', 'success');
               },
-              function(error) {
-                alert('Unable to retrieve GPS location. Error: ' + error.message);
+              function(err) {
+                if (gpsIcon) { gpsIcon.textContent = 'explore'; gpsIcon.classList.remove('fo-spin'); }
+                showToast('GPS error: ' + err.message, 'error');
               }
             );
           });
         }
 
-        // Count stepper buttons
+        // Count stepper
         var countMinus = document.getElementById('countMinus');
         var countPlus = document.getElementById('countPlus');
         var countInput = document.getElementById('populationCount');
         if (countMinus && countInput) {
           countMinus.addEventListener('click', function() {
-            var val = parseInt(countInput.value, 10) || 1;
-            if (val > 1) countInput.value = val - 1;
+            var v = parseInt(countInput.value, 10) || 1;
+            if (v > 1) countInput.value = v - 1;
           });
         }
         if (countPlus && countInput) {
           countPlus.addEventListener('click', function() {
-            var val = parseInt(countInput.value, 10) || 1;
-            countInput.value = val + 1;
+            countInput.value = (parseInt(countInput.value, 10) || 1) + 1;
           });
         }
 
-        // Set default datetime input to now
-        var dateTimeInput = document.getElementById('observationDate');
-        if (dateTimeInput && !dateTimeInput.value) {
-          var now = new Date();
-          var year = now.getFullYear();
-          var month = String(now.getMonth() + 1).padStart(2, '0');
-          var day = String(now.getDate()).padStart(2, '0');
-          var hours = String(now.getHours()).padStart(2, '0');
-          var minutes = String(now.getMinutes()).padStart(2, '0');
-          dateTimeInput.value = year + '-' + month + '-' + day + 'T' + hours + ':' + minutes;
+        // Cancel button — reset form
+        var btnCancel = document.getElementById('btnCancel');
+        if (btnCancel) {
+          btnCancel.addEventListener('click', function() {
+            document.getElementById('observationForm').reset();
+            if (dateEl) {
+              var n = new Date();
+              dateEl.value = n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0');
+            }
+            if (timeEl) {
+              var tn = new Date();
+              timeEl.value = String(tn.getHours()).padStart(2,'0') + ':' + String(tn.getMinutes()).padStart(2,'0');
+            }
+            // Clear errors
+            document.querySelectorAll('.fo-input.error').forEach(function(el) { el.classList.remove('error'); });
+            document.querySelectorAll('.fo-error.show').forEach(function(el) { el.classList.remove('show'); });
+            showToast('Form cleared.', 'success');
+          });
         }
       });
+
+      // Simple toast utility
+      function showToast(message, type) {
+        var container = document.getElementById('toastContainer');
+        if (!container) return;
+        var toast = document.createElement('div');
+        toast.className = 'fo-toast fo-toast-' + (type || 'success');
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(function() { toast.classList.add('fo-toast-out'); }, 2700);
+        setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
+      }
     </script>
 </body>
 </html>
