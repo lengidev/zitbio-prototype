@@ -105,9 +105,36 @@
                     <div class="observation-search-wrapper" id="tabSearchWrapper">
                         <span class="material-symbols-outlined search-icon">search</span>
                         <input type="text" class="search-input" placeholder="Search observations...">
-                        <button class="observation-filter-btn">
+                        <button class="observation-filter-btn" id="colToggleBtn">
                             <span class="material-symbols-outlined">filter_list</span>
                         </button>
+                        <div class="col-toggle-dropdown" id="colToggleDropdown">
+                            <div class="dropdown-header">Toggle Columns</div>
+                            <label class="col-toggle-item">
+                                <input type="checkbox" data-col="coords">
+                                <span class="toggle-label">Coordinates</span>
+                            </label>
+                            <label class="col-toggle-item">
+                                <input type="checkbox" data-col="protected-area">
+                                <span class="toggle-label">Protected Area</span>
+                            </label>
+                            <label class="col-toggle-item">
+                                <input type="checkbox" data-col="locality">
+                                <span class="toggle-label">Location Description</span>
+                            </label>
+                            <label class="col-toggle-item">
+                                <input type="checkbox" data-col="recorded-by">
+                                <span class="toggle-label">Recorded By</span>
+                            </label>
+                            <label class="col-toggle-item">
+                                <input type="checkbox" data-col="institution">
+                                <span class="toggle-label">Institution</span>
+                            </label>
+                            <label class="col-toggle-item">
+                                <input type="checkbox" data-col="obs-id">
+                                <span class="toggle-label">Observation ID</span>
+                            </label>
+                        </div>
                     </div>
                     <button class="observation-export-btn" id="tabExportBtn" style="display: none;">
                         <span class="material-symbols-outlined">file_download</span>

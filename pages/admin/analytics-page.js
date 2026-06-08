@@ -1,6 +1,6 @@
 /**
  * BioMonitor - Analytics Page
- * Tab switching, dynamic table rendering, pagination, and search.
+ * Tab switching, dynamic table rendering, pagination, search, and column toggling.
  * Uses shared observationsRenderer for table rendering.
  */
 
@@ -8,6 +8,16 @@
 var analyticsCurrentPage = 1;
 var analyticsFilteredData = [];
 var analyticsRecordsPerPage = 10;
+
+// Column visibility state
+var analyticsVisibleColumns = {
+    coords: false,
+    'protected-area': false,
+    locality: false,
+    'recorded-by': false,
+    institution: false,
+    'obs-id': false
+};
 
 // Get filtered data from BioData (v2 schema)
 function getAnalyticsFilteredData() {
@@ -53,6 +63,9 @@ function renderAnalyticsTable() {
         paginationSelector: '.page-analytics .observations-pagination'
     });
 
+    // Apply current column visibility state
+    applyColumnVisibility();
+
     // Re-attach page number click handlers (renderSharedPagination creates fresh DOM elements)
     var pageNums = document.querySelectorAll('.page-analytics .page-num');
     pageNums.forEach(function(num) {
@@ -70,6 +83,77 @@ function renderAnalyticsTable() {
 function handleAnalyticsSearch() {
     analyticsCurrentPage = 1;
     renderAnalyticsTable();
+}
+
+// ============================================================
+//  Column Visibility Toggle
+// ============================================================
+
+// Apply current column visibility to the table element
+function applyColumnVisibility() {
+    var table = document.querySelector('.page-analytics .observations-table');
+    if (!table) return;
+
+    for (var col in analyticsVisibleColumns) {
+        if (analyticsVisibleColumns.hasOwnProperty(col)) {
+            table.setAttribute('data-show-' + col, analyticsVisibleColumns[col] ? 'true' : 'false');
+        }
+    }
+}
+
+// Toggle dropdown open/close
+function toggleDropdown() {
+    var dropdown = document.getElementById('colToggleDropdown');
+    var btn = document.getElementById('colToggleBtn');
+    if (!dropdown || !btn) return;
+
+    var isOpen = dropdown.classList.contains('open');
+    dropdown.classList.toggle('open');
+    btn.classList.toggle('active');
+}
+
+// Close dropdown
+function closeDropdown() {
+    var dropdown = document.getElementById('colToggleDropdown');
+    var btn = document.getElementById('colToggleBtn');
+    if (dropdown) dropdown.classList.remove('open');
+    if (btn) btn.classList.remove('active');
+}
+
+// Handle checkbox change
+function handleColumnToggle(e) {
+    var checkbox = e.target;
+    var colName = checkbox.getAttribute('data-col');
+    if (!colName) return;
+
+    analyticsVisibleColumns[colName] = checkbox.checked;
+    applyColumnVisibility();
+}
+
+// Initialize column toggle event listeners
+function initColumnToggle() {
+    var btn = document.getElementById('colToggleBtn');
+    var dropdown = document.getElementById('colToggleDropdown');
+    if (!btn || !dropdown) return;
+
+    // Toggle dropdown on button click
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleDropdown();
+    });
+
+    // Checkbox change handlers
+    var checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(function(cb) {
+        cb.addEventListener('change', handleColumnToggle);
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+            closeDropdown();
+        }
+    });
 }
 
 // Initialize page when DOM is ready
@@ -161,4 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Initialize column toggle (filter button)
+    initColumnToggle();
 });
