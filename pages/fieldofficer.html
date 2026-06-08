@@ -228,7 +228,6 @@
                 <section class="fo-section">
                     <div class="fo-notes-header">
                         <h2 class="fo-section-title">4. Verification & Notes</h2>
-                        <span class="fo-pill fo-pill-amber">● Pending Verification</span>
                     </div>
                     <div class="fo-grid fo-grid-2">
                         <div class="fo-field">
@@ -237,8 +236,19 @@
                                 <textarea id="fieldNotes" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Behavior details, health status, weather conditions, or any additional observations..."></textarea>
                             </div>
                         </div>
-                        <div class="fo-field fo-media-placeholder">
-                            <!-- Reserved for future photo upload -->
+                        <div class="fo-field fo-instructions-panel">
+                            <h3 class="fo-instructions-title">Instructions to Field Officers</h3>
+                            <ul class="fo-instructions-list">
+                                <li>Ensure GPS coordinates are captured before submitting.</li>
+                                <li>Verify species identification before recording.</li>
+                                <li>Provide accurate count estimates — use the stepper or type manually.</li>
+                                <li>Include a detailed locality description with landmarks.</li>
+                                <li>Record notable behavior, health status, or weather conditions in Field Notes.</li>
+                                <li>All fields marked with <span class="fo-required">*</span> are mandatory.</li>
+                            </ul>
+                            <div class="fo-verification-status">
+                                Status: <span class="fo-status-text" id="statusText">Pending</span>
+                            </div>
                         </div>
                     </div>
                 </section>

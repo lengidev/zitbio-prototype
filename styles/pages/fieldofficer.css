@@ -368,27 +368,53 @@ textarea.fo-input.fo-textarea-tall {
   margin-bottom: 0;
 }
 
-/* --- Pill Badge --- */
-.fo-pill {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.fo-pill-amber {
-  background-color: var(--color-warning-light, #fff3e0);
-  color: #92400e;
-}
-
-/* --- Media Placeholder --- */
-.fo-media-placeholder {
-  border: 2px dashed #e5e7eb;
+/* --- Instructions Panel (replaces Media Placeholder) --- */
+.fo-instructions-panel {
+  background-color: var(--color-bg-header, #F9FAFB);
+  border: 1px solid var(--border-color, #e5e7eb);
   border-radius: 8px;
+  padding: 16px 20px;
   min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.fo-instructions-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 0 0 10px 0;
+}
+
+.fo-instructions-list {
+  margin: 0;
+  padding: 0 0 0 16px;
+  list-style: disc;
+  flex: 1;
+}
+
+.fo-instructions-list li {
+  font-size: 13px;
+  color: var(--color-text-secondary, #4b5563);
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
+
+.fo-verification-status {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.fo-status-text {
+  font-weight: 600;
+  color: #92400e; /* amber/warning — default for Pending */
 }
 
 /* --- Actions Row --- */
