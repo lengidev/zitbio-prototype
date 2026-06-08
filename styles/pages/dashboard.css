@@ -277,4 +277,9 @@
     .page-dashboard .chart-placeholder {
         height: 140px;
     }
+
+     /* Horizontal scroll table card on mobile */
+    .page-dashboard .table-card {
+        overflow-x: auto;
+    }
 }
