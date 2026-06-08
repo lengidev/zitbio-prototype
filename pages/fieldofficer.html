@@ -80,7 +80,7 @@
                             <label class="fo-label">Common Name <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
                                 <span class="material-symbols-outlined fo-input-icon">pets</span>
-                                <input type="text" id="commonName" class="fo-input" placeholder="e.g., Lion" required>
+                                <input type="text" id="commonName" class="fo-input" placeholder="Zebra" required>
                             </div>
                             <span class="fo-error" id="commonNameError">Common name is required</span>
                         </div>
@@ -88,7 +88,7 @@
                             <label class="fo-label">Scientific Name <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
                                 <span class="material-symbols-outlined fo-input-icon">Nature</span>
-                                <input type="text" id="scientificName" class="fo-input fo-input-italic" placeholder="e.g., Panthera leo" required>
+                                <input type="text" id="scientificName" class="fo-input fo-input-italic" placeholder="Equus quagga" required>
                             </div>
                             <span class="fo-error" id="scientificNameError">Scientific name is required</span>
                         </div>
@@ -160,7 +160,7 @@
                             <label class="fo-label">City</label>
                             <div class="fo-input-wrap">
                                 <span class="material-symbols-outlined fo-input-icon">location_city</span>
-                                <input type="text" id="city" class="fo-input" placeholder="e.g., Kitwe (optional)">
+                                <input type="text" id="city" class="fo-input" placeholder="Kitwe (optional)">
                             </div>
                         </div>
                     </div>
@@ -171,7 +171,7 @@
                             <label class="fo-label">Protected Area</label>
                             <div class="fo-input-wrap">
                                 <span class="material-symbols-outlined fo-input-icon">nature_people</span>
-                                <input type="text" id="protectedArea" class="fo-input" placeholder="e.g., Kafue National Park (optional)">
+                                <input type="text" id="protectedArea" class="fo-input" placeholder="Kafue National Park (optional)">
                             </div>
                         </div>
                         <div class="fo-field">
@@ -211,17 +211,6 @@
                         </div>
                     </div>
 
-                    <!-- Row 3: Locality Description -->
-                    <div class="fo-grid fo-grid-2">
-                        <div class="fo-field">
-                            <label class="fo-label">Locality Description</label>
-                            <div class="fo-input-wrap fo-textarea-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">map</span>
-                                <textarea id="localityDescription" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Describe the specific location, landmarks, or track markers..."></textarea>
-                            </div>
-                        </div>
-                        <div class="fo-field"><!-- empty column to match grid-2 layout --></div>
-                    </div>
                 </section>
 
                 <!-- ====== SECTION 4: VERIFICATION & NOTES ====== -->
@@ -229,25 +218,37 @@
                     <div class="fo-notes-header">
                         <h2 class="fo-section-title">4. Verification & Notes</h2>
                     </div>
-                    <div class="fo-grid fo-grid-2">
-                        <div class="fo-field">
-                            <div class="fo-input-wrap fo-textarea-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">stylus_note</span>
-                                <textarea id="fieldNotes" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Behavior details, health status, weather conditions, or any additional observations..."></textarea>
+                    <div class="fo-location-row">
+                        <div class="fo-left-col">
+                            <div class="fo-field">
+                                <label class="fo-label">Location Description</label>
+                                <div class="fo-input-wrap fo-textarea-wrap">
+                                    <span class="material-symbols-outlined fo-input-icon">map</span>
+                                    <textarea id="localityDescription" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Describe the specific location, landmarks, or track markers..."></textarea>
+                                </div>
+                            </div>
+                            <div class="fo-field" style="margin-top: 16px;">
+                                <label class="fo-label">Field Notes</label>
+                                <div class="fo-input-wrap fo-textarea-wrap">
+                                    <span class="material-symbols-outlined fo-input-icon">stylus_note</span>
+                                    <textarea id="fieldNotes" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Behavior details, health status, weather conditions, or any additional observations..."></textarea>
+                                </div>
                             </div>
                         </div>
-                        <div class="fo-field fo-instructions-panel">
-                            <h3 class="fo-instructions-title">Instructions to Field Officers</h3>
-                            <ul class="fo-instructions-list">
-                                <li>Ensure GPS coordinates are captured before submitting.</li>
-                                <li>Verify species identification before recording.</li>
-                                <li>Provide accurate count estimates — use the stepper or type manually.</li>
-                                <li>Include a detailed locality description with landmarks.</li>
-                                <li>Record notable behavior, health status, or weather conditions in Field Notes.</li>
-                                <li>All fields marked with <span class="fo-required">*</span> are mandatory.</li>
-                            </ul>
-                            <div class="fo-verification-status">
-                                Status: <span class="fo-status-text" id="statusText">Pending</span>
+                        <div class="fo-right-col">
+                            <div class="fo-field fo-instructions-panel">
+                                <h3 class="fo-instructions-title">Instructions to Field Officers</h3>
+                                <ul class="fo-instructions-list">
+                                    <li>Ensure GPS coordinates are captured before submitting.</li>
+                                    <li>Verify species identification before recording.</li>
+                                    <li>Provide accurate count estimates, you can use the stepper or type manually.</li>
+                                    <li>Include a detailed location description with landmarks.</li>
+                                    <li>Record notable behavior, health status, or weather conditions in Field Notes.</li>
+                                    <li>All fields marked with <span class="fo-required">*</span> are mandatory.</li>
+                                </ul>
+                                <div class="fo-verification-status">
+                                    Status: <span class="fo-status-text" id="statusText">Pending</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -257,7 +258,6 @@
                 <div class="fo-actions">
                     <button type="button" class="fo-btn fo-btn-outline" id="btnCancel">Cancel</button>
                     <div class="fo-actions-right">
-                        <button type="button" class="fo-btn fo-btn-outline" id="btnSaveDraft">Save Draft</button>
                         <button type="submit" class="fo-btn fo-btn-primary">Submit Observation</button>
                     </div>
                 </div>

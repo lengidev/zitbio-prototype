@@ -368,6 +368,23 @@ textarea.fo-input.fo-textarea-tall {
   margin-bottom: 0;
 }
 
+/* --- Location Row — two independent columns --- */
+.fo-location-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.fo-left-col {
+  flex: 3;
+  min-width: 0;
+}
+
+.fo-right-col {
+  flex: 1;
+  min-width: 0;
+}
+
 /* --- Instructions Panel (replaces Media Placeholder) --- */
 .fo-instructions-panel {
   background-color: var(--color-bg-header, #F9FAFB);
