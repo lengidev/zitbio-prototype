@@ -409,28 +409,6 @@
     background-color: var(--color-accent);
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(-100%);
-        width: 260px;
-        min-width: 260px;
-    }
-
-    .sidebar.mobile-open {
-        transform: translateX(0);
-    }
-
-    .main-content {
-        margin-left: 0;
-        width: 100%;
-    }
-
-    .sidebar.collapsed {
-        transform: translateX(-100%);
-    }
-}
-
 /* Legacy sidebar-layout support */
 .sidebar-layout {
     display: flex;
@@ -575,7 +553,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.3);
-  z-index: calc(var(--z-sticky) - 1);
+  z-index: 99;
 }
 
 .sidebar-overlay.open {
@@ -601,6 +579,11 @@
 .hamburger svg {
   width: 22px;
   height: 22px;
+}
+
+/* Sidebar close button - hidden on desktop, shown inside sidebar on mobile */
+#sidebarClose {
+  display: none;
 }
 
 /* ============================================
@@ -848,8 +831,8 @@
   }*/
 }
 
-/* Tablet (768px - 1199px): Stacked vertical blocks, scrollable horizontal tables */
-@media (max-width: 1199px) and (min-width: 768px) {
+/* Tablet (768px - 1023px): Stacked vertical blocks, compact padding */
+@media (max-width: 1023px) and (min-width: 768px) {
   .container {
     max-width: 100%;
     padding: 0 var(--spacing-lg);
@@ -867,10 +850,28 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
+
+  .content-area {
+    padding: 20px 24px;
+  }
+
+  .top-header {
+    padding: 0 var(--spacing-xl);
+  }
+
+  /* Slightly narrower table min-width at tablet to reduce horizontal scroll */
+  .data-table {
+    min-width: 500px;
+  }
 }
 
 /* Mobile (<=767px): Single column, simplified streamlined viewports */
 @media (max-width: 767px) {
+  /* Show sidebar close button on mobile */
+  #sidebarClose {
+    display: inline-flex;
+    margin-left: auto;
+  }
   .container {
     padding: 0 var(--spacing-md);
     min-width: 320px;
@@ -881,8 +882,17 @@
     transform: translateX(-100%);
   }
 
-  .sidebar.open {
+  .sidebar.mobile-open {
     transform: translateX(0);
+  }
+
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
   }
 
   .main-wrapper {
@@ -913,8 +923,17 @@
     padding: var(--spacing-md);
   }
 
+  .content-area {
+    padding: 16px;
+  }
+
   .top-header {
     padding: 0 var(--spacing-md);
+  }
+
+  /* Hide header title on mobile - user requested */
+  .top-header .header-title {
+    display: none;
   }
 
   /* Make tables horizontally scrollable */

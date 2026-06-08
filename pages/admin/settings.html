@@ -27,6 +27,9 @@
             <span class="material-symbols-outlined">menu</span>
         </button>
         <img class="sidebar-logo-img" src="../../assets/favicon/logo-txt3.png" alt="ZitBIO Logo">
+        <button id="sidebarClose" class="sidebar-close" aria-label="Close menu">
+            <span class="material-symbols-outlined">close</span>
+        </button>
     </div>
     <nav class="sidebar-menu">
         <div class="sidebar-nav-group">
@@ -72,9 +75,15 @@
     </div>
     </aside>
 
+    <!-- Sidebar Overlay (mobile close) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <main class="main-content">
         <!-- Top Bar -->
         <header class="top-header">
+            <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
             <div>
                 <h1 class="header-title">Biodiversity Monitoring System</h1>
             </div>

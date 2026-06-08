@@ -10,7 +10,7 @@
    ============================================ */
 .page-dashboard .stats-grid {
     display: grid;
-    grid-template-columns: 402px 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 24px;
     padding: 16px 0 16px 0;
 }
@@ -76,7 +76,7 @@
 }
 
 .page-dashboard .quick-actions-card {
-    width: 402px;
+    width: 100%;
     min-height: 102px;
     box-sizing: border-box;
     padding: 20px;
@@ -230,12 +230,56 @@
 /* ============================================
    Responsive
    ============================================ */
-@media (max-width: 768px) {
+
+/* Tablet: 768px - 1023px */
+@media (max-width: 1023px) and (min-width: 768px) {
+    .page-dashboard .middle-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Mobile: ≤767px */
+@media (max-width: 767px) {
     .page-dashboard .stats-grid {
         grid-template-columns: 1fr;
     }
 
     .page-dashboard .middle-section {
         grid-template-columns: 1fr;
+    }
+
+    /* Compact stat cards on mobile */
+    .page-dashboard .stat-card {
+        padding: 14px 16px;
+    }
+
+    .page-dashboard .stat-value {
+        font-size: 24px;
+    }
+
+    .page-dashboard .stat-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .page-dashboard .stat-icon .material-symbols-outlined {
+        font-size: 20px;
+    }
+
+    .page-dashboard .quick-actions-card {
+        padding: 16px;
+    }
+
+    .page-dashboard .chart-card {
+        padding: 16px;
+    }
+
+    .page-dashboard .chart-placeholder {
+        height: 140px;
+    }
+
+    /* Horizontal scroll table card on mobile */
+    .page-dashboard .table-card {
+        overflow-x: auto;
     }
 }

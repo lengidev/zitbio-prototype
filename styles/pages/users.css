@@ -50,7 +50,8 @@
 
 /* Override search input width on users page */
 .page-users .search-container .search-input {
-    width: 260px;
+    max-width: 260px;
+    width: 100%;
 }
 
 /* Role badges using design system tokens */
@@ -92,11 +93,11 @@
     color: var(--color-danger);
 }
 
-/* Table container border (already in tables.css, but ensure consistency) */
+/* Table container with horizontal scroll for responsiveness */
 .page-users .table-container {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    overflow: hidden;
+    overflow-x: auto;
 }
 
 /* Last Login cell with clock icon */
@@ -119,4 +120,56 @@
 /* Hide pagination footer on Users page only */
 .page-users .pagination-footer {
     display: none;
+}
+
+/* ============================================
+   Responsive - Users Page
+   ============================================ */
+
+/* Tablet: 768px - 1023px */
+@media (max-width: 1023px) and (min-width: 768px) {
+    .page-users .controls-wrapper {
+        flex-wrap: wrap;
+        row-gap: 12px;
+    }
+
+    .page-users .search-container .search-input {
+        width: 200px;
+    }
+
+    .page-users .user-count-display .count-label {
+        font-size: 14px;
+    }
+}
+
+/* Mobile: ≤767px */
+@media (max-width: 767px) {
+    .page-users .controls-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .page-users .user-count-display {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .page-users .user-count-display .count-label {
+        font-size: 14px;
+    }
+
+    .page-users .search-container {
+        width: 100%;
+    }
+
+    .page-users .search-container .search-input {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .page-users .btn-add {
+        width: 100%;
+        justify-content: center;
+    }
 }

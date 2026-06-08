@@ -12,6 +12,14 @@
     margin-top: 24px;
 }
 
+/* Responsive */
+@media (max-width: 1023px) and (min-width: 768px) {
+    .page-observations .search-container .search-input {
+        max-width: 200px;
+        width: 100%;
+    }
+}
+
 /* View button */
 /* Species cell — common name with scientific name subtitle */
 .page-observations .species-cell {
