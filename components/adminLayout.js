@@ -241,6 +241,228 @@ function initHeaderActions() {
   }
 }
 
+/**
+ * Notification system — renders bell icon, badge, and dropdown
+ */
+function initNotifications() {
+  // Only init on admin pages
+  if (!window.BioData) return;
+
+  var headerRight = document.querySelector('.header-right');
+  if (!headerRight) return;
+
+  // Check if notification container already exists to avoid duplicates
+  if (document.querySelector('.notification-container')) return;
+
+  // Create the notification container
+  var container = document.createElement('div');
+  container.className = 'notification-container';
+
+  // Bell button
+  var bellBtn = document.createElement('a');
+  bellBtn.href = '#';
+  bellBtn.className = 'notification-btn';
+  bellBtn.setAttribute('aria-label', 'Notifications');
+  bellBtn.innerHTML =
+    '<span class="material-symbols-outlined">notifications</span>' +
+    '<span class="notification-badge" id="notificationBadge">0</span>';
+
+  // Dropdown panel
+  var dropdown = document.createElement('div');
+  dropdown.className = 'notification-dropdown';
+  dropdown.id = 'notificationDropdown';
+
+  // Insert before the help link if it exists, or at the beginning of header-right
+  var helpLink = headerRight.querySelector('.help-link');
+  if (helpLink) {
+    headerRight.insertBefore(container, helpLink);
+  } else {
+    headerRight.insertBefore(container, headerRight.firstChild);
+  }
+  container.appendChild(bellBtn);
+  container.appendChild(dropdown);
+
+  // Bell click — toggle dropdown
+  bellBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleNotificationDropdown();
+  });
+
+  // Close on outside click
+  document.addEventListener('click', function(e) {
+    if (!container.contains(e.target)) {
+      dropdown.classList.remove('open');
+    }
+  });
+
+  // Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      dropdown.classList.remove('open');
+    }
+  });
+
+  // Initial render
+  renderNotifications();
+}
+
+/**
+ * Toggle notification dropdown open/close
+ */
+function toggleNotificationDropdown() {
+  var dropdown = document.getElementById('notificationDropdown');
+  if (!dropdown) return;
+  dropdown.classList.toggle('open');
+}
+
+/**
+ * Render notifications into the dropdown
+ */
+function renderNotifications() {
+  if (!window.BioData) return;
+
+  var dropdown = document.getElementById('notificationDropdown');
+  if (!dropdown) return;
+
+  var badge = document.getElementById('notificationBadge');
+  var unreadCount = BioData.getUnreadNotificationCount();
+
+  // Update badge
+  if (badge) {
+    if (unreadCount > 0) {
+      badge.textContent = unreadCount;
+      badge.classList.add('show');
+    } else {
+      badge.classList.remove('show');
+    }
+  }
+
+  var notifications = BioData.getNotifications({ limit: 50 });
+  var html = '';
+
+  if (notifications.length === 0) {
+    // Empty state
+    html =
+      '<div class="notification-empty">' +
+        '<span class="material-symbols-outlined">notifications_off</span>' +
+        '<p>No notifications yet</p>' +
+      '</div>';
+  } else {
+    // Header with "Mark all as read"
+    html +=
+      '<div class="notification-dropdown-header">' +
+        '<h3>Notifications</h3>' +
+        (unreadCount > 0 ? '<button class="notification-mark-read-btn" id="markAllReadBtn">Mark all as read</button>' : '') +
+      '</div>';
+
+    // Notification list
+    html += '<div class="notification-list">';
+
+    notifications.forEach(function(n) {
+      var iconClass = '';
+      var iconName = '';
+
+      if (n.type === 'pending_observation') {
+        iconClass = 'pending';
+        iconName = 'pending_actions';
+      } else if (n.type === 'flagged_observation') {
+        iconClass = 'flagged';
+        iconName = 'flag';
+      } else if (n.type === 'new_user') {
+        iconClass = 'new-user';
+        iconName = 'person_add';
+      } else {
+        iconClass = 'pending';
+        iconName = 'notifications';
+      }
+
+      // Format time
+      var timeAgo = formatTimeAgo(n.created_at);
+
+      html +=
+        '<div class="notification-item' + (n.read ? '' : ' unread') + '" data-notif-id="' + n.id + '"' + (n.link ? ' data-link="' + n.link + '"' : '') + '>' +
+          '<div class="notification-icon ' + iconClass + '">' +
+            '<span class="material-symbols-outlined">' + iconName + '</span>' +
+          '</div>' +
+          '<div class="notification-content">' +
+            '<div class="notification-title">' + escapeHtml(n.title) + '</div>' +
+            '<div class="notification-message">' + escapeHtml(n.message) + '</div>' +
+            '<div class="notification-time">' + timeAgo + '</div>' +
+          '</div>' +
+        '</div>';
+    });
+
+    html += '</div>';
+  }
+
+  dropdown.innerHTML = html;
+
+  // Attach click handlers to notification items
+  var items = dropdown.querySelectorAll('.notification-item');
+  items.forEach(function(item) {
+    item.addEventListener('click', function(e) {
+      var id = item.getAttribute('data-notif-id');
+      var link = item.getAttribute('data-link');
+
+      // Mark as read
+      if (id && window.BioData) {
+        BioData.markNotificationRead(id);
+        renderNotifications(); // Re-render to update badge & list
+      }
+
+      // Navigate if link exists
+      if (link) {
+        window.location.href = link;
+      }
+
+      // Close dropdown
+      dropdown.classList.remove('open');
+    });
+  });
+
+  // Attach "Mark all as read" handler
+  var markAllBtn = document.getElementById('markAllReadBtn');
+  if (markAllBtn) {
+    markAllBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (window.BioData) {
+        BioData.markAllNotificationsRead();
+        renderNotifications();
+      }
+    });
+  }
+}
+
+/**
+ * Format a date string into a human-readable "time ago" string
+ */
+function formatTimeAgo(dateStr) {
+  if (!dateStr) return '';
+  var now = new Date();
+  var date = new Date(dateStr);
+  var diffMs = now - date;
+  var diffMin = Math.floor(diffMs / (1000 * 60));
+  var diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+  var diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return diffMin + 'm ago';
+  if (diffHrs < 24) return diffHrs + 'h ago';
+  if (diffDays < 7) return diffDays + 'd ago';
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/**
+ * Simple HTML escaping
+ */
+function escapeHtml(str) {
+  if (!str) return '';
+  var div = document.createElement('div');
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+
 // Initialize when DOM is ready (legacy support)
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', function() {
@@ -248,6 +470,7 @@ if (typeof document !== 'undefined') {
     initUserMenu();
     initHeaderActions();
     initDashboardActions();
+    initNotifications();
   });
 }
 
