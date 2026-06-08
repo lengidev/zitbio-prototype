@@ -226,6 +226,22 @@
 }
 
 /* ============================================
+   Mobile Responsive: Full-width notification dropdown
+   ============================================ */
+@media (max-width: 767px) {
+  .notification-dropdown {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 24px);
+    max-width: 420px;
+    max-height: 70vh;
+    z-index: var(--z-modal);
+  }
+}
+
+/* ============================================
    Status Badge Colors
    ============================================ */
 .notification-badge.pending-badge {
