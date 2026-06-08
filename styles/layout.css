@@ -540,9 +540,9 @@
    Middle Section Layout
    ============================================ */
 .middle-section {
-    display: grid !important;
-    grid-template-columns: 0.48fr 1fr !important;
-    gap: 24px !important;
+    display: grid;
+    grid-template-columns: 0.48fr 1fr;
+    gap: 24px;
 }
 
 /* ============================================

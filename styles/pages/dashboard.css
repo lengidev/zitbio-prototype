@@ -99,8 +99,8 @@
    ============================================ */
 .page-dashboard .middle-section {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
     margin-bottom: 24px;
 }
 
@@ -173,6 +173,7 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: 20px;
+    grid-column: span 2;
 }
 
 .page-dashboard .chart-title {
