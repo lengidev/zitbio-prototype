@@ -17,8 +17,7 @@
     <!-- Top Bar -->
     <header class="fo-topbar">
         <div class="fo-logo">
-            <svg viewBox="0 0 24 24" class="fo-logo-svg"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20c4 0 8.68-4 12-12a5.5 5.5 0 00-3-2zm-8.5 7.5a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0z"/></svg>
-            <span>BioMonitor</span>
+            <img src="../assets/favicon/logo-txt3.png" alt="ZitBIO Logo" class="fo-logo-img">
         </div>
         <div class="fo-user">
             <span class="material-symbols-outlined">person</span>
@@ -52,23 +51,21 @@
                         <div class="fo-field">
                             <label class="fo-label">Institution <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">apartment</span>
+                                <span class="material-symbols-outlined fo-input-icon">domain</span>
                                 <input type="text" id="institutionName" class="fo-input" placeholder="Auto-filled from session" readonly>
                             </div>
                         </div>
                         <div class="fo-field">
                             <label class="fo-label">Date <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">calendar_today</span>
-                                <input type="date" id="obsDate" class="fo-input" required>
+                                <input type="date" id="obsDate" class="fo-input fo-input-date" required>
                             </div>
                             <span class="fo-error" id="obsDateError">Date is required</span>
                         </div>
                         <div class="fo-field">
                             <label class="fo-label">Time <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">schedule</span>
-                                <input type="time" id="obsTime" class="fo-input" required>
+                                <input type="time" id="obsTime" class="fo-input fo-input-date" required>
                             </div>
                             <span class="fo-error" id="obsTimeError">Time is required</span>
                         </div>
@@ -82,7 +79,7 @@
                         <div class="fo-field">
                             <label class="fo-label">Common Name <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">eco</span>
+                                <span class="material-symbols-outlined fo-input-icon">pets</span>
                                 <input type="text" id="commonName" class="fo-input" placeholder="e.g., Lion" required>
                             </div>
                             <span class="fo-error" id="commonNameError">Common name is required</span>
@@ -90,7 +87,7 @@
                         <div class="fo-field">
                             <label class="fo-label">Scientific Name <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">biotech</span>
+                                <span class="material-symbols-outlined fo-input-icon">Nature</span>
                                 <input type="text" id="scientificName" class="fo-input fo-input-italic" placeholder="e.g., Panthera leo" required>
                             </div>
                             <span class="fo-error" id="scientificNameError">Scientific name is required</span>
@@ -98,7 +95,7 @@
                         <div class="fo-field">
                             <label class="fo-label">Count <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap fo-count-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">tag</span>
+                                <span class="material-symbols-outlined fo-input-icon">counter_1</span>
                                 <button type="button" class="fo-stepper-btn" id="countMinus" aria-label="Decrease">−</button>
                                 <input type="number" id="populationCount" class="fo-input fo-count-input" value="1" min="1" required>
                                 <button type="button" class="fo-stepper-btn" id="countPlus" aria-label="Increase">+</button>
@@ -174,7 +171,7 @@
                         <div class="fo-field">
                             <label class="fo-label">City</label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">apartment</span>
+                                <span class="material-symbols-outlined fo-input-icon">location_city</span>
                                 <input type="text" id="city" class="fo-input" placeholder="e.g., Kitwe (optional)">
                             </div>
                         </div>
@@ -185,7 +182,7 @@
                         <div class="fo-field">
                             <label class="fo-label">Protected Area</label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">shield</span>
+                                <span class="material-symbols-outlined fo-input-icon">nature_people</span>
                                 <input type="text" id="protectedArea" class="fo-input" placeholder="e.g., Kafue National Park (optional)">
                             </div>
                         </div>
@@ -231,7 +228,7 @@
                         <div class="fo-field">
                             <label class="fo-label">Locality Description</label>
                             <div class="fo-input-wrap fo-textarea-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">description</span>
+                                <span class="material-symbols-outlined fo-input-icon">map</span>
                                 <textarea id="localityDescription" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Describe the specific location, landmarks, or track markers..."></textarea>
                             </div>
                         </div>
@@ -248,7 +245,7 @@
                     <div class="fo-grid fo-grid-2">
                         <div class="fo-field">
                             <div class="fo-input-wrap fo-textarea-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">description</span>
+                                <span class="material-symbols-outlined fo-input-icon">stylus_note</span>
                                 <textarea id="fieldNotes" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Behavior details, health status, weather conditions, or any additional observations..."></textarea>
                             </div>
                         </div>
