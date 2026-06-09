@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="../../components/ui/forms.css">
     <link rel="stylesheet" href="../../styles/pages/analytics.css">
     <link rel="stylesheet" href="../../styles/components/notifications.css">
+    <link rel="stylesheet" href="../../styles/components/user-dropdown.css">
 </head>
 <body class="page-analytics">
     <div class="app-container">
@@ -94,6 +95,28 @@
                         <span class="material-symbols-outlined">person</span>
                         <span class="user-menu-name">Sarah Chen</span>
                         <span class="material-symbols-outlined user-menu-arrow">expand_more</span>
+
+                        <div class="user-dropdown">
+                            <div class="user-dropdown-header">
+                                <div class="user-dropdown-title">Sarah Chen</div>
+                                <div class="user-dropdown-subtitle">sarah.chen@biodiversity.org</div>
+                            </div>
+                            <div class="user-dropdown-separator"></div>
+                            <div class="user-dropdown-items">
+                                <div class="user-dropdown-item" tabindex="0" data-action="help">
+                                    <span class="material-symbols-outlined dropdown-icon">help</span>
+                                    Help
+                                </div>
+                                <div class="user-dropdown-item user-dropdown-item--destructive" tabindex="0" data-action="logout">
+                                    <span class="material-symbols-outlined dropdown-icon">logout</span>
+                                    Logout
+                                </div>
+                            </div>
+                            <div class="user-dropdown-footer">
+                                <span>Role: Admin</span>
+                                <span>Account ID: ADM-001</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>

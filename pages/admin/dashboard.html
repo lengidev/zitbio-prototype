@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="../../components/ui/tables.css">
     <link rel="stylesheet" href="../../styles/pages/dashboard.css">
     <link rel="stylesheet" href="../../styles/components/notifications.css">
+    <link rel="stylesheet" href="../../styles/components/user-dropdown.css">
 </head>
 <body class="page-dashboard">
 
@@ -93,8 +94,35 @@
                 </a>
                 <div class="user-menu" id="userMenu">
                     <span class="material-symbols-outlined">person</span>
-                    <span class="user-menu-name">Sarah Chen</span>
+                    <span class="user-menu-name">James Wilson</span>
                     <span class="material-symbols-outlined user-menu-arrow">expand_more</span>
+
+                    <div class="user-dropdown">
+                        <!-- Header -->
+                        <div class="user-dropdown-header">
+                            <div class="user-dropdown-title">James Wilson</div>
+                            <div class="user-dropdown-subtitle">james.wilson@biodiversity.org</div>
+                        </div>
+                        <div class="user-dropdown-separator"></div>
+
+                        <!-- Menu Items -->
+                        <div class="user-dropdown-items">
+                            <div class="user-dropdown-item" tabindex="0" data-action="help">
+                                <span class="material-symbols-outlined dropdown-icon">help</span>
+                                Help
+                            </div>
+                            <div class="user-dropdown-item user-dropdown-item--destructive" tabindex="0" data-action="logout">
+                                <span class="material-symbols-outlined dropdown-icon">logout</span>
+                                Logout
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="user-dropdown-footer">
+                            <span>Role: Field Officer</span>
+                            <span>Account ID: FO-001</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>

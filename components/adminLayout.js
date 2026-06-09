@@ -175,14 +175,102 @@ function initUserMenu() {
   const dropdown = userMenu.querySelector('.user-dropdown');
   if (!dropdown) return;
 
+  // Populate dropdown from session data
+  if (window.BioData) {
+    updateUserDropdownFromSession(dropdown);
+  }
+
+  // Toggle dropdown on user menu click
   userMenu.addEventListener('click', function(event) {
     event.stopPropagation();
     dropdown.classList.toggle('open');
   });
 
+  // Close dropdown on outside click
   document.addEventListener('click', function() {
     dropdown.classList.remove('open');
   });
+
+  // Close dropdown on Escape key
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+      dropdown.classList.remove('open');
+    }
+  });
+
+  // Keyboard and click handling for dropdown items
+  const items = dropdown.querySelectorAll('.user-dropdown-item');
+  items.forEach(function(item) {
+    // Click handler
+    item.addEventListener('click', function(event) {
+      event.stopPropagation();
+      handleUserDropdownAction(item);
+      dropdown.classList.remove('open');
+    });
+
+    // Keyboard: Enter or Space to activate
+    item.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        event.stopPropagation();
+        handleUserDropdownAction(item);
+        dropdown.classList.remove('open');
+      }
+    });
+  });
+}
+
+/**
+ * Update user dropdown content from the current session
+ */
+function updateUserDropdownFromSession(dropdown) {
+  var session = BioData.getSession();
+  if (!session) return;
+
+  // Update header title
+  var titleEl = dropdown.querySelector('.user-dropdown-title');
+  if (titleEl) titleEl.textContent = session.name;
+
+  // Update header subtitle
+  var subtitleEl = dropdown.querySelector('.user-dropdown-subtitle');
+  if (subtitleEl) subtitleEl.textContent = session.email;
+
+  // Update user-menu name in the trigger
+  var userNameEl = document.querySelector('.user-menu-name');
+  if (userNameEl) userNameEl.textContent = session.name;
+
+  // Update footer
+  var footerSpans = dropdown.querySelectorAll('.user-dropdown-footer span');
+  if (footerSpans.length >= 2) {
+    // Role
+    var roleLabel = session.role === 'admin' ? 'Admin' : 'Field Officer';
+    footerSpans[0].textContent = 'Role: ' + roleLabel;
+
+    // Account ID - look up user to get their id
+    var user = BioData.getUserByEmail(session.email);
+    if (user) {
+      var prefix = session.role === 'admin' ? 'ADMIN' : 'FO';
+      footerSpans[1].textContent = 'Account ID: ' + prefix + '-' + String(user.id).padStart(3, '0');
+    }
+  }
+}
+
+/**
+ * Handle user dropdown item actions
+ */
+function handleUserDropdownAction(item) {
+  var action = item.getAttribute('data-action');
+  if (action === 'help') {
+    var helpLink = document.querySelector('.help-link');
+    if (helpLink) {
+      helpLink.click();
+    } else {
+      alert('Help documentation would open here.');
+    }
+  } else if (action === 'logout') {
+    alert('Logging out...');
+    window.location.href = '../../index.html';
+  }
 }
 
 /**
@@ -197,7 +285,6 @@ function initDashboardActions() {
   const btnAddUser = document.getElementById('btnAddUser');
   const btnGenerateReport = document.getElementById('btnGenerateReport');
   const btnViewAll = document.getElementById('btnViewAll');
-  const userMenu = document.getElementById('userMenu');
 
   btnNewObservation.addEventListener('click', function() {
     alert('Create New Observation form would open here.');
@@ -221,13 +308,7 @@ function initDashboardActions() {
     });
   }
 
-  if (userMenu) {
-    userMenu.addEventListener('click', function() {
-      alert('User menu: Profile, Settings, Logout');
-    });
-  }
 }
-
 /**
  * Initialize header actions
  */
