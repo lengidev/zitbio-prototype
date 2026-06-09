@@ -519,14 +519,14 @@
     flex-wrap: wrap;
   }
 
-  /* Fix white bar artifact: collapsed borders can show gaps with cell backgrounds */
+  /* Fix white bar artifact: set table background instead of cell backgrounds */
   .data-table {
-    border-collapse: separate;
-    border-spacing: 0;
+    background: var(--color-bg-header, #f9fafb);
   }
 
   .data-table th,
   .data-table td {
+    background: transparent;
     border-color: var(--border-color);
     background-clip: padding-box;
   }
