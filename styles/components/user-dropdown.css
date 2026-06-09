@@ -155,13 +155,3 @@
         z-index: var(--z-modal, 301);
     }
 }
-
-@media (max-width: 480px) {
-    .user-dropdown {
-        position: fixed;
-        top: 56px;
-        right: 8px;
-        left: 8px;
-        width: auto;
-    }
-}
