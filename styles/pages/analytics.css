@@ -318,10 +318,28 @@
 
 .page-analytics .pagi-btn svg,
 .page-analytics .pagi-btn .material-symbols-outlined {
-    width: 14px;
-    height: 14px;
-    font-size: 14px;
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
     display: block;
+}
+
+@media (max-width: 1023px) and (min-width: 768px) {
+    .page-analytics .pagi-btn svg,
+    .page-analytics .pagi-btn .material-symbols-outlined {
+        width: 16px;
+        height: 16px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 767px) {
+    .page-analytics .pagi-btn svg,
+    .page-analytics .pagi-btn .material-symbols-outlined {
+        width: 14px;
+        height: 14px;
+        font-size: 14px;
+    }
 }
 
 .page-analytics .page-numbers {

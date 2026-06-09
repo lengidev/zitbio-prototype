@@ -100,11 +100,27 @@
 
 /* Dropdown item icon */
 .user-dropdown-item .dropdown-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
     color: var(--color-text-secondary, #7F8C8D);
     flex-shrink: 0;
+}
+
+@media (max-width: 1023px) and (min-width: 768px) {
+    .user-dropdown-item .dropdown-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+    }
+}
+
+@media (max-width: 767px) {
+    .user-dropdown-item .dropdown-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+    }
 }
 
 /* ============================================

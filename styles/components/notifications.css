@@ -28,6 +28,23 @@
   font-size: 24px;
 }
 
+@media (max-width: 1023px) and (min-width: 768px) {
+  .notification-btn .material-symbols-outlined {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 767px) {
+  .notification-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .notification-btn .material-symbols-outlined {
+    font-size: 20px;
+  }
+}
+
 /* Badge showing unread count */
 .notification-badge {
   position: absolute;
@@ -48,6 +65,17 @@
 
 .notification-badge.show {
   display: block;
+}
+
+@media (max-width: 767px) {
+  .notification-badge {
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    font-size: 10px;
+    top: 1px;
+    right: 1px;
+  }
 }
 
 /* ============================================
@@ -153,6 +181,10 @@
   font-size: 20px;
 }
 
+.notification-icon .material-symbols-outlined {
+  font-size: 20px;
+}
+
 .notification-icon.pending {
   background-color: var(--color-warning-light);
   color: var(--color-warning);
@@ -166,6 +198,18 @@
 .notification-icon.new-user {
   background-color: var(--color-primary-light);
   color: var(--color-primary);
+}
+
+@media (max-width: 767px) {
+  .notification-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+
+  .notification-icon .material-symbols-outlined {
+    font-size: 18px;
+  }
 }
 
 /* Content */
@@ -209,6 +253,22 @@
   font-size: 48px;
   margin-bottom: 12px;
   color: var(--border-color);
+}
+
+@media (max-width: 1023px) and (min-width: 768px) {
+  .notification-empty .material-symbols-outlined {
+    font-size: 40px;
+  }
+}
+
+@media (max-width: 767px) {
+  .notification-empty .material-symbols-outlined {
+    font-size: 32px;
+  }
+
+  .notification-empty {
+    padding: 24px 16px;
+  }
 }
 
 .notification-empty p {

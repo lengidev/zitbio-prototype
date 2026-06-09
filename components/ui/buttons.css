@@ -35,10 +35,28 @@
 
 .btn svg,
 .btn .material-symbols-outlined {
-  width: 16px;
-  height: 16px;
-  font-size: 16px;
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
   flex-shrink: 0;
+}
+
+@media (max-width: 1023px) and (min-width: 768px) {
+  .btn svg,
+  .btn .material-symbols-outlined {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 767px) {
+  .btn svg,
+  .btn .material-symbols-outlined {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+  }
 }
 
 /* ============================================
@@ -150,6 +168,24 @@
   width: 20px;
   height: 20px;
   font-size: 20px;
+}
+
+@media (max-width: 1023px) and (min-width: 768px) {
+  .btn-icon svg,
+  .btn-icon .material-symbols-outlined {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 767px) {
+  .btn-icon svg,
+  .btn-icon .material-symbols-outlined {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
 }
 
 /* ============================================
@@ -298,10 +334,23 @@
 
 /* Material Symbols icon styling */
 .nav-icon {
-    font-size: 22px;
+    font-size: 24px;
     font-variation-settings: 'wght' 400;
     color: var(--color-text-secondary);
     transition: all var(--transition-fast);
+}
+
+/* Responsive nav icon sizing - same as layout.css for consistency */
+@media (max-width: 1023px) and (min-width: 768px) {
+    .nav-icon {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 767px) {
+    .nav-icon {
+        font-size: 20px;
+    }
 }
 
 /* Hover state – slightly bolder */
@@ -539,4 +588,43 @@
     width: 16px;
     height: 16px;
     font-size: 16px;
+}
+
+@media (max-width: 1023px) and (min-width: 768px) {
+    .btn-export svg, .btn-add svg,
+    .btn-export .material-symbols-outlined, .btn-add .material-symbols-outlined {
+        width: 16px;
+        height: 16px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 767px) {
+    .btn-export svg, .btn-add svg,
+    .btn-export .material-symbols-outlined, .btn-add .material-symbols-outlined {
+        width: 14px;
+        height: 14px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 767px) {
+    .page-btn svg,
+    .page-btn .material-symbols-outlined {
+        width: 16px;
+        height: 16px;
+        font-size: 16px;
+    }
+
+    .search-container svg,
+    .search-container .material-symbols-outlined {
+        width: 14px;
+        height: 14px;
+        font-size: 14px;
+    }
+
+    .search-container .search-input {
+        padding: 9px 12px 9px 32px;
+        max-width: 180px;
+    }
 }
