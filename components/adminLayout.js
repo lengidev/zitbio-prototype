@@ -52,6 +52,7 @@ const SidebarManager = {
   toggle: function() {
     const sidebar = document.getElementById('adminSidebar');
     const overlay = document.getElementById('sidebarOverlay');
+    const hamburger = document.getElementById('hamburgerBtn');
     
     if (!sidebar) return;
 
@@ -60,9 +61,19 @@ const SidebarManager = {
     if (this.isOpen) {
       sidebar.classList.add('mobile-open');
       if (overlay) overlay.classList.add('open');
+      if (hamburger) {
+        hamburger.classList.add('active');
+        const icon = hamburger.querySelector('.material-symbols-outlined');
+        if (icon) icon.textContent = 'close';
+      }
     } else {
       sidebar.classList.remove('mobile-open');
       if (overlay) overlay.classList.remove('open');
+      if (hamburger) {
+        hamburger.classList.remove('active');
+        const icon = hamburger.querySelector('.material-symbols-outlined');
+        if (icon) icon.textContent = 'menu';
+      }
     }
   },
 
@@ -72,12 +83,18 @@ const SidebarManager = {
   open: function() {
     const sidebar = document.getElementById('adminSidebar');
     const overlay = document.getElementById('sidebarOverlay');
+    const hamburger = document.getElementById('hamburgerBtn');
     
     if (!sidebar) return;
 
     this.isOpen = true;
     sidebar.classList.add('mobile-open');
     if (overlay) overlay.classList.add('open');
+    if (hamburger) {
+      hamburger.classList.add('active');
+      const icon = hamburger.querySelector('.material-symbols-outlined');
+      if (icon) icon.textContent = 'close';
+    }
   },
 
   /**
@@ -86,12 +103,18 @@ const SidebarManager = {
   close: function() {
     const sidebar = document.getElementById('adminSidebar');
     const overlay = document.getElementById('sidebarOverlay');
+    const hamburger = document.getElementById('hamburgerBtn');
     
     if (!sidebar) return;
 
     this.isOpen = false;
     sidebar.classList.remove('mobile-open');
     if (overlay) overlay.classList.remove('open');
+    if (hamburger) {
+      hamburger.classList.remove('active');
+      const icon = hamburger.querySelector('.material-symbols-outlined');
+      if (icon) icon.textContent = 'menu';
+    }
   },
 
   /**
