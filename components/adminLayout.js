@@ -268,7 +268,9 @@ function handleUserDropdownAction(item) {
       alert('Help documentation would open here.');
     }
   } else if (action === 'logout') {
-    alert('Logging out...');
+    if (window.BioData) {
+      BioData.logout();
+    }
     window.location.href = '../../index.html';
   }
 }
