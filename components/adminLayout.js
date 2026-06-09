@@ -63,16 +63,12 @@ const SidebarManager = {
       if (overlay) overlay.classList.add('open');
       if (hamburger) {
         hamburger.classList.add('active');
-        const icon = hamburger.querySelector('.material-symbols-outlined');
-        if (icon) icon.textContent = 'close';
       }
     } else {
       sidebar.classList.remove('mobile-open');
       if (overlay) overlay.classList.remove('open');
       if (hamburger) {
         hamburger.classList.remove('active');
-        const icon = hamburger.querySelector('.material-symbols-outlined');
-        if (icon) icon.textContent = 'menu';
       }
     }
   },
@@ -92,8 +88,6 @@ const SidebarManager = {
     if (overlay) overlay.classList.add('open');
     if (hamburger) {
       hamburger.classList.add('active');
-      const icon = hamburger.querySelector('.material-symbols-outlined');
-      if (icon) icon.textContent = 'close';
     }
   },
 
@@ -112,8 +106,6 @@ const SidebarManager = {
     if (overlay) overlay.classList.remove('open');
     if (hamburger) {
       hamburger.classList.remove('active');
-      const icon = hamburger.querySelector('.material-symbols-outlined');
-      if (icon) icon.textContent = 'menu';
     }
   },
 
