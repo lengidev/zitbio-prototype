@@ -1,7 +1,81 @@
 /**
  * BioMonitor - Settings Page Component
- * Logic for password changes and settings interactions
+ * Logic for password changes, session-driven account info, and settings interactions
  */
+
+/**
+ * Format a date string (ISO or locale) into a readable format
+ */
+function formatSettingsDate(dateStr) {
+  if (!dateStr) return '—';
+  var d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+
+/**
+ * Format an ISO timestamp into a readable datetime string
+ */
+function formatSettingsDateTime(isoStr) {
+  if (!isoStr) return '—';
+  var d = new Date(isoStr);
+  if (isNaN(d.getTime())) return isoStr;
+  return d.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+}
+
+/**
+ * Populate Account Information from BioData session
+ */
+function populateAccountInfo() {
+  if (!window.BioData) return;
+
+  var session = BioData.getSession();
+  if (!session) return;
+
+  // Look up full user record
+  var user = BioData.getUserByEmail(session.email);
+  if (!user) return;
+
+  // Determine prefix based on role
+  var prefix = session.role === 'admin' ? 'ADMIN' : 'FO';
+  var roleDisplay = session.role === 'admin' ? 'Administrator' : 'Field Officer';
+
+  // User ID
+  var userIdEl = document.getElementById('settingsUserId');
+  if (userIdEl) {
+    userIdEl.textContent = prefix + '-' + String(user.id).padStart(3, '0');
+  }
+
+  // Role
+  var roleEl = document.getElementById('settingsRole');
+  if (roleEl) {
+    roleEl.textContent = roleDisplay;
+  }
+
+  // Account Created
+  var createdEl = document.getElementById('settingsCreated');
+  if (createdEl && user.created) {
+    createdEl.textContent = formatSettingsDate(user.created);
+  }
+
+  // Last Login
+  var lastLoginEl = document.getElementById('settingsLastLogin');
+  if (lastLoginEl && user.lastLogin) {
+    lastLoginEl.textContent = formatSettingsDateTime(user.lastLogin);
+  }
+}
 
 /**
  * Initialize settings page event listeners
@@ -13,6 +87,9 @@ function initSettingsPage() {
     return; // Not the settings page
   }
 
+  // Populate account info from session
+  populateAccountInfo();
+
   // Password change functionality
   changePwdBtn.addEventListener('click', function() {
     const current = document.getElementById('currentPwd').value;
@@ -20,59 +97,39 @@ function initSettingsPage() {
     const confirm = document.getElementById('confirmPwd').value;
 
     if (!current || !newPwd || !confirm) {
-      alert('Please fill in all password fields.');
+      if (typeof showToast === 'function') {
+        showToast('Please fill in all password fields.', 'error');
+      } else {
+        alert('Please fill in all password fields.');
+      }
       return;
     }
     if (newPwd.length < 8) {
-      alert('New password must be at least 8 characters.');
+      if (typeof showToast === 'function') {
+        showToast('New password must be at least 8 characters.', 'error');
+      } else {
+        alert('New password must be at least 8 characters.');
+      }
       return;
     }
     if (newPwd !== confirm) {
-      alert('New password and confirmation do not match.');
+      if (typeof showToast === 'function') {
+        showToast('New password and confirmation do not match.', 'error');
+      } else {
+        alert('New password and confirmation do not match.');
+      }
       return;
     }
-    alert('Password changed successfully!');
+
+    if (typeof showToast === 'function') {
+      showToast('Password changed successfully!', 'success');
+    } else {
+      alert('Password changed successfully!');
+    }
     document.getElementById('currentPwd').value = '';
     document.getElementById('newPwd').value = '';
     document.getElementById('confirmPwd').value = '';
   });
-
-  // Close button functionality
-  const closeBtn = document.querySelector('.close-btn');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', function() {
-      if (confirm('Close BioMonitor?')) {
-        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:Inter,sans-serif;color:#6b7a8d;font-size:14px;">Session closed. Refresh to reopen.</div>';
-      }
-    });
-  }
-
-  // Navigation items - prevent default behavior
-  const navItems = document.querySelectorAll('.nav-item');
-  navItems.forEach(function(item) {
-    if (item.getAttribute('href') === '#') {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            alert('Page coming soon');
-        });
-    }
-});
-
-  // User dropdown click
-  const userDropdown = document.querySelector('.user-dropdown'); //not functioning yet
-  if (userDropdown) {
-    userDropdown.addEventListener('click', function() {
-      alert('User menu dropdown (mockup)');
-    });
-  }
-
-  // Help button click
-  const helpBtn = document.querySelector('.help-btn');
-  if (helpBtn) {
-    helpBtn.addEventListener('click', function() {
-      alert('Help center (mockup)');
-    });
-  }
 }
 
 // Initialize when DOM is ready
