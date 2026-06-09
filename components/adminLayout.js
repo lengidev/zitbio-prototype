@@ -357,12 +357,17 @@ function initNotifications() {
   dropdown.className = 'notification-dropdown';
   dropdown.id = 'notificationDropdown';
 
-  // Insert before the help link if it exists, or at the beginning of header-right
-  var helpLink = headerRight.querySelector('.help-link');
-  if (helpLink) {
-    headerRight.insertBefore(container, helpLink);
+  // Append after the user menu (notifications appear next to username)
+  var userMenu = headerRight.querySelector('.user-menu');
+  if (userMenu) {
+    // Insert after the user menu
+    if (userMenu.nextSibling) {
+      headerRight.insertBefore(container, userMenu.nextSibling);
+    } else {
+      headerRight.appendChild(container);
+    }
   } else {
-    headerRight.insertBefore(container, headerRight.firstChild);
+    headerRight.appendChild(container);
   }
   container.appendChild(bellBtn);
   container.appendChild(dropdown);

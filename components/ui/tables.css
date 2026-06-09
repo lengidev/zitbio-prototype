@@ -101,6 +101,7 @@
   border-bottom: 1px solid var(--border-color-light);
 }
 
+/* Ensure last row has no bottom border for cleaner look */
 .data-table tbody tr:last-child td {
   border-bottom: none;
 }
@@ -516,6 +517,20 @@
 
   .table-filters {
     flex-wrap: wrap;
+  }
+
+  /* Consistent border colors on mobile */
+  .data-table th,
+  .data-table td {
+    border-color: var(--border-color);
+  }
+
+  .table-container {
+    border-color: var(--border-color);
+  }
+
+  .table-card {
+    border-color: var(--border-color);
   }
 }
 

@@ -368,6 +368,11 @@
         height: 140px;
     }
 
+    /* Hide View All Observations button on mobile */
+    .page-dashboard .view-all-btn {
+        display: none;
+    }
+
     .page-dashboard .chart-placeholder svg,
     .page-dashboard .chart-placeholder .material-symbols-outlined {
         font-size: 32px;

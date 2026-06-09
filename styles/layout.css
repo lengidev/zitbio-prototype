@@ -691,46 +691,6 @@
   gap: 16px;
 }
 
-.help-link {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: color var(--transition-fast);
-}
-
-.help-link:hover {
-  color: var(--color-text-primary);
-}
-
-.help-link svg,
-.help-link .material-symbols-outlined {
-    width: 20px;
-    height: 20px;
-    font-size: 20px;
-}
-
-@media (max-width: 1023px) and (min-width: 768px) {
-    .help-link svg,
-    .help-link .material-symbols-outlined {
-        width: 18px;
-        height: 18px;
-        font-size: 18px;
-    }
-}
-
-@media (max-width: 767px) {
-    .help-link svg,
-    .help-link .material-symbols-outlined {
-        width: 16px;
-        height: 16px;
-        font-size: 16px;
-    }
-}
-
 .user-menu {
   display: flex;
   align-items: center;
