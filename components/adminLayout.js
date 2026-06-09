@@ -357,15 +357,10 @@ function initNotifications() {
   dropdown.className = 'notification-dropdown';
   dropdown.id = 'notificationDropdown';
 
-  // Append after the user menu (notifications appear next to username)
+  // Insert before the user menu (bell on left, username on right)
   var userMenu = headerRight.querySelector('.user-menu');
   if (userMenu) {
-    // Insert after the user menu
-    if (userMenu.nextSibling) {
-      headerRight.insertBefore(container, userMenu.nextSibling);
-    } else {
-      headerRight.appendChild(container);
-    }
+    headerRight.insertBefore(container, userMenu);
   } else {
     headerRight.appendChild(container);
   }

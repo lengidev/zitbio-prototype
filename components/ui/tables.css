@@ -519,10 +519,16 @@
     flex-wrap: wrap;
   }
 
-  /* Consistent border colors on mobile */
+  /* Fix white bar artifact: collapsed borders can show gaps with cell backgrounds */
+  .data-table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
   .data-table th,
   .data-table td {
     border-color: var(--border-color);
+    background-clip: padding-box;
   }
 
   .table-container {
