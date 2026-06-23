@@ -288,13 +288,14 @@
    ============================================ */
 @media (max-width: 767px) {
   .notification-dropdown {
-    position: fixed;
-    top: 70px;
+    position: absolute;
+    top: 100%;
     left: 50%;
     transform: translateX(-50%);
     width: calc(100% - 24px);
     max-width: 420px;
     max-height: 70vh;
+    overflow-y: auto;
     z-index: var(--z-modal);
   }
 }
