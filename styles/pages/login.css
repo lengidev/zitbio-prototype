@@ -250,7 +250,7 @@
 }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 500px) {
+@media (max-width: 767px) {
   .page-login .top-nav {
     top: 16px;
     right: 16px;

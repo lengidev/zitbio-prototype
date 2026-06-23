@@ -188,7 +188,7 @@
 }
 
 /* Responsive */
-@media (max-width: 640px) {
+@media (max-width: 767px) {
     .page-settings .info-row {
         flex-direction: column;
         gap: 4px;

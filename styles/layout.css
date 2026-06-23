@@ -1044,10 +1044,8 @@
     margin: 0 calc(-1 * var(--spacing-md));
     padding: 0 var(--spacing-md);
   }
-}
 
-/* Small Mobile (<=480px): Extra compact */
-@media (max-width: 480px) {
+  /* Extra compact card padding for small screens */
   .card {
     padding: var(--spacing-lg);
   }
