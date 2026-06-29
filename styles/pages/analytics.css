@@ -401,7 +401,7 @@
     .page-analytics .observations-pagination {
         flex-direction: column;
         gap: 12px;
-        align-items: flex-start;
+        align-items: center;
     }
 }
 
@@ -433,7 +433,7 @@
     .page-analytics .observations-pagination {
         flex-direction: column;
         gap: 12px;
-        align-items: flex-start;
+        align-items: center;
     }
     .col-toggle-dropdown {
         right: 0;

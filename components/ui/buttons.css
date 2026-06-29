@@ -627,4 +627,34 @@
         padding: 9px 12px 9px 32px;
         max-width: 180px;
     }
+
+    /* Observations page: stack search above buttons on mobile */
+    .page-observations .controls-right {
+        flex-direction: column;
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .page-observations .controls-right > * {
+        width: 100%;
+        height: 38px;
+        box-sizing: border-box;
+    }
+
+    .page-observations .search-container {
+        width: 100%;
+    }
+
+    .page-observations .search-container .search-input {
+        max-width: none;
+        width: 100%;
+        text-align: center;
+        padding-left: 12px;
+    }
+
+    .page-observations .controls-right .btn-export,
+    .page-observations .controls-right .btn-add {
+        width: 50%;
+        justify-content: center;
+    }
 }
