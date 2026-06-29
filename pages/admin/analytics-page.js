@@ -19,30 +19,12 @@ var analyticsVisibleColumns = {
     'obs-id': false
 };
 
-// Get filtered data from BioData (v2 schema)
+// Get filtered data from BioData using shared search
 function getAnalyticsFilteredData() {
     if (!window.BioData) return [];
-    var allData = window.BioData.getObservations();
     var searchInput = document.querySelector('.page-analytics .search-input');
-    if (!searchInput) return allData.slice();
-    var searchTerm = searchInput.value.toLowerCase().trim();
-    if (!searchTerm) return allData.slice();
-    return allData.filter(function(obs) {
-        var speciesDet = obs.species_details || {};
-        var scientificName = (speciesDet.scientific_name || '').toLowerCase();
-        var commonName = (speciesDet.common_name || '').toLowerCase();
-        var loc = obs.location || {};
-        var country = (loc.country || '').toLowerCase();
-        var adminArea = (loc.administrative_area || '').toLowerCase();
-        var city = (loc.city || '').toLowerCase();
-        var habitat = (loc.habitat_type || '').toLowerCase();
-        return scientificName.includes(searchTerm) ||
-            commonName.includes(searchTerm) ||
-            country.includes(searchTerm) ||
-            adminArea.includes(searchTerm) ||
-            city.includes(searchTerm) ||
-            habitat.includes(searchTerm);
-    });
+    if (!searchInput) return window.BioData.getObservations().slice();
+    return window.BioData.searchObservations(searchInput.value);
 }
 
 // Render the analytics table using the shared renderer

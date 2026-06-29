@@ -9,32 +9,12 @@ var obsCurrentPage = 1;
 var obsFilteredData = [];
 var obsRecordsPerPage = 8;
 
-// Get filtered data from unified data layer (v2 schema)
+// Get filtered data from unified data layer using shared search
 function getObsFilteredData() {
     if (!window.BioData) return [];
-    var allObservations = window.BioData.getObservations();
     var searchInput = document.getElementById('searchInput');
-    if (!searchInput) return allObservations.slice();
-    var searchTerm = searchInput.value.toLowerCase().trim();
-    if (!searchTerm) return allObservations.slice();
-    return allObservations.filter(function(obs) {
-        var speciesDet = obs.species_details || {};
-        var scientificName = (speciesDet.scientific_name || '').toLowerCase();
-        var commonName = (speciesDet.common_name || '').toLowerCase();
-        var loc = obs.location || {};
-        var locationStr = (loc.city || '').toLowerCase() + ' ' + (loc.administrative_area || '').toLowerCase() + ' ' + (loc.country || '').toLowerCase();
-        var observer = (obs.recorded_by || '').toLowerCase();
-        var dateStr = (obs.timestamp || '').toLowerCase();
-        var institution = (obs.institution_name || '').toLowerCase();
-        var habitat = (loc.habitat_type || '').toLowerCase();
-        return scientificName.includes(searchTerm) ||
-            commonName.includes(searchTerm) ||
-            locationStr.includes(searchTerm) ||
-            observer.includes(searchTerm) ||
-            dateStr.includes(searchTerm) ||
-            institution.includes(searchTerm) ||
-            habitat.includes(searchTerm);
-    });
+    if (!searchInput) return window.BioData.getObservations().slice();
+    return window.BioData.searchObservations(searchInput.value);
 }
 
 // Render the table using shared renderer
