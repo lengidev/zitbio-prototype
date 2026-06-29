@@ -623,14 +623,17 @@ textarea.fo-input.fo-textarea-tall {
     padding: 12px 16px;
   }
 
-  /* GPS row: wrap inputs to prevent overflow */
+  /* GPS row: three columns on one line */
   .fo-gps-row {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    flex-wrap: nowrap;
   }
 
   .fo-gps-input {
-    flex: 1 1 calc(50% - 22px);
-    min-width: 120px;
+    min-width: 0;
+    flex: none;
   }
 
   .fo-gps-btn {
@@ -639,15 +642,20 @@ textarea.fo-input.fo-textarea-tall {
     flex-shrink: 0;
   }
 
-  /* Actions: stack vertically */
+  /* Actions: side-by-side buttons using grid */
   .fo-actions {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
 
   .fo-actions-right {
     width: 100%;
-    justify-content: flex-end;
+  }
+
+  .fo-actions-right .fo-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   /* Buttons: full width for primary action */
@@ -656,7 +664,25 @@ textarea.fo-input.fo-textarea-tall {
     font-size: 13px;
   }
 
-  .fo-actions-right .fo-btn {
-    flex: 1;
+  #btnCancel {
+    width: 100%;
+    justify-content: center;
+  }
+
+  #btnCancel:hover,
+  #btnCancel:active {
+    background-color: var(--color-danger-light, #ffebee);
+    border-color: var(--color-danger, #E53935);
+    color: var(--color-danger, #E53935);
+  }
+
+  /* Toast: top-right on mobile */
+  .toast-container {
+    top: 20px;
+    bottom: auto;
+    left: auto;
+    align-items: flex-end;
+    width: auto;
+    height: auto;
   }
 }
