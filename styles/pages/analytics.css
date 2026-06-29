@@ -111,7 +111,7 @@
     align-items: center;
     justify-content: center;
     margin-left: 8px;
-    padding: 6px;
+    padding: 0;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     background: var(--color-bg-white);
@@ -119,6 +119,9 @@
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
+    width: 36px;
+    height: 36px;
+    box-sizing: border-box;
 }
 
 .page-analytics .observation-filter-btn:hover {
@@ -168,6 +171,18 @@
     color: var(--color-text-muted);
     border-bottom: 1px solid var(--border-color-light);
     margin-bottom: 4px;
+}
+
+.col-toggle-dropdown .dropdown-divider {
+    height: 1px;
+    background: var(--border-color-light);
+    margin: 4px 0;
+}
+
+.search-field-item input[type="radio"] {
+    accent-color: var(--color-primary);
+    margin: 0;
+    flex-shrink: 0;
 }
 
 .col-toggle-item {

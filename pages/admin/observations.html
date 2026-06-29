@@ -141,6 +141,32 @@
                         <div class="search-container">
                             <span class="material-symbols-outlined">search</span>
                             <input type="text" class="search-input" id="searchInput" placeholder="Search">
+                            <button class="obs-filter-btn" id="obsFilterBtn">
+                                <span class="material-symbols-outlined">filter_list</span>
+                            </button>
+                            <div class="obs-search-dropdown" id="obsSearchDropdown">
+                                <div class="dropdown-header">Search By</div>
+                                <label class="search-field-item">
+                                    <input type="radio" name="obsSearchField" value="" checked>
+                                    <span>All Fields</span>
+                                </label>
+                                <label class="search-field-item">
+                                    <input type="radio" name="obsSearchField" value="species">
+                                    <span>Species</span>
+                                </label>
+                                <label class="search-field-item">
+                                    <input type="radio" name="obsSearchField" value="province">
+                                    <span>Province</span>
+                                </label>
+                                <label class="search-field-item">
+                                    <input type="radio" name="obsSearchField" value="officer">
+                                    <span>Officer</span>
+                                </label>
+                                <label class="search-field-item">
+                                    <input type="radio" name="obsSearchField" value="institution">
+                                    <span>Institution</span>
+                                </label>
+                            </div>
                         </div>
                         <button class="btn-export">
                             <span class="material-symbols-outlined">file_download</span>

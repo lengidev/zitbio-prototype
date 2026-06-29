@@ -14,7 +14,9 @@ function getObsFilteredData() {
     if (!window.BioData) return [];
     var searchInput = document.getElementById('searchInput');
     if (!searchInput) return window.BioData.getObservations().slice();
-    return window.BioData.searchObservations(searchInput.value);
+    var selectedField = document.querySelector('input[name="obsSearchField"]:checked');
+    var field = selectedField ? selectedField.value : '';
+    return window.BioData.searchObservations(searchInput.value, field || undefined);
 }
 
 // Render the table using shared renderer
@@ -239,6 +241,35 @@ if (typeof document !== 'undefined') {
         var searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.addEventListener('input', handleObsSearch);
+        }
+
+        // Search field filter dropdown
+        var filterBtn = document.getElementById('obsFilterBtn');
+        var searchDropdown = document.getElementById('obsSearchDropdown');
+        if (filterBtn && searchDropdown) {
+            filterBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                searchDropdown.classList.toggle('open');
+                filterBtn.classList.toggle('active');
+            });
+
+            // Radio change triggers re-search
+            var radios = searchDropdown.querySelectorAll('input[type="radio"]');
+            radios.forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    searchDropdown.classList.remove('open');
+                    filterBtn.classList.remove('active');
+                    handleObsSearch();
+                });
+            });
+
+            // Close dropdown on outside click
+            document.addEventListener('click', function(e) {
+                if (!searchDropdown.contains(e.target) && e.target !== filterBtn && !filterBtn.contains(e.target)) {
+                    searchDropdown.classList.remove('open');
+                    filterBtn.classList.remove('active');
+                }
+            });
         }
 
         // Add record button

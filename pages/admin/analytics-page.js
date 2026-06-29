@@ -24,7 +24,10 @@ function getAnalyticsFilteredData() {
     if (!window.BioData) return [];
     var searchInput = document.querySelector('.page-analytics .search-input');
     if (!searchInput) return window.BioData.getObservations().slice();
-    return window.BioData.searchObservations(searchInput.value);
+    // Get the selected search field from the active radio button
+    var selectedField = document.querySelector('input[name="searchField"]:checked');
+    var field = selectedField ? selectedField.value : '';
+    return window.BioData.searchObservations(searchInput.value, field || undefined);
 }
 
 // Render the analytics table using the shared renderer
