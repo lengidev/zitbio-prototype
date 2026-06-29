@@ -1,188 +1,93 @@
 /**
  * BioMonitor - Admin Layout Component
- * Unified sidebar collapse/expand engine with localStorage persistence
+ * Unified sidebar collapse/expand engine with localStorage persistence.
+ * Handles both desktop (collapsible) and mobile (overlay) sidebar behavior.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('adminSidebar');
     const mainContent = document.querySelector('.main-content');
+
+    /* ============================================
+       DESKTOP: Collapse/Expand sidebar
+       Uses #sidebarToggle, persists state to localStorage
+       ============================================ */
     const toggleBtn = document.getElementById('sidebarToggle');
 
-    // 1. RECOVERY: Instantly look up sidebar preference state from localStorage
+    // Recovery: restore collapsed state from localStorage
     const isCollapsed = localStorage.getItem('admin-sidebar-collapsed') === 'true';
-
     if (sidebar && isCollapsed) {
         sidebar.classList.add('collapsed');
         if (mainContent) mainContent.classList.add('expanded');
     }
 
-    // 2. TOGGLE ACTION EVENT HANDLER
+    // Toggle action
     if (toggleBtn && sidebar) {
         toggleBtn.addEventListener('click', () => {
             sidebar.classList.toggle('collapsed');
             if (mainContent) mainContent.classList.toggle('expanded');
-
-            // Save layout choice into memory pool
-            const currentStatus = sidebar.classList.contains('collapsed');
-            localStorage.setItem('admin-sidebar-collapsed', currentStatus);
+            localStorage.setItem('admin-sidebar-collapsed', sidebar.classList.contains('collapsed'));
         });
     }
 
-    // 3. HIGHLIGHT ACTIVE PAGE LINK & ENSURE NATIVE NAV HOPPING
+    /* ============================================
+       MOBILE: Open/Close sidebar overlay
+       Uses #hamburgerBtn, #sidebarClose, #sidebarOverlay
+       ============================================ */
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const sidebarClose = document.getElementById('sidebarClose');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    function openMobileSidebar() {
+        if (!sidebar) return;
+        sidebar.classList.add('mobile-open');
+        if (sidebarOverlay) sidebarOverlay.classList.add('open');
+    }
+
+    function closeMobileSidebar() {
+        if (!sidebar) return;
+        sidebar.classList.remove('mobile-open');
+        if (sidebarOverlay) sidebarOverlay.classList.remove('open');
+    }
+
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', openMobileSidebar);
+    }
+    if (sidebarClose) {
+        sidebarClose.addEventListener('click', closeMobileSidebar);
+    }
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeMobileSidebar);
+    }
+
+    /* ============================================
+       NAV ITEMS: Active page highlighting + close mobile on navigate
+       ============================================ */
     const currentPath = window.location.pathname;
     const navItems = document.querySelectorAll('.sidebar-menu .nav-item');
-    
+
     navItems.forEach(item => {
-        // Ensure standard anchor href transition is completely unblocked
         const itemHref = item.getAttribute('href');
+
+        // Highlight active page
         if (itemHref && currentPath.includes(itemHref)) {
             item.classList.add('active');
         }
+
+        // On click: update active class and close mobile sidebar
+        item.addEventListener('click', function() {
+            navItems.forEach(n => n.classList.remove('active'));
+            this.classList.add('active');
+            if (window.innerWidth <= 768) {
+                closeMobileSidebar();
+            }
+        });
     });
 });
 
-// Legacy SidebarManager for backward compatibility
-const SidebarManager = {
-  isCollapsed: false,
-  isOpen: false,
-
-  /**
-   * Toggle sidebar open/close (mobile)
-   */
-  toggle: function() {
-    const sidebar = document.getElementById('adminSidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const hamburger = document.getElementById('hamburgerBtn');
-    
-    if (!sidebar) return;
-
-    this.isOpen = !this.isOpen;
-    
-    if (this.isOpen) {
-      sidebar.classList.add('mobile-open');
-      if (overlay) overlay.classList.add('open');
-      if (hamburger) {
-        hamburger.classList.add('active');
-      }
-    } else {
-      sidebar.classList.remove('mobile-open');
-      if (overlay) overlay.classList.remove('open');
-      if (hamburger) {
-        hamburger.classList.remove('active');
-      }
-    }
-  },
-
-  /**
-   * Open sidebar
-   */
-  open: function() {
-    const sidebar = document.getElementById('adminSidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const hamburger = document.getElementById('hamburgerBtn');
-    
-    if (!sidebar) return;
-
-    this.isOpen = true;
-    sidebar.classList.add('mobile-open');
-    if (overlay) overlay.classList.add('open');
-    if (hamburger) {
-      hamburger.classList.add('active');
-    }
-  },
-
-  /**
-   * Close sidebar
-   */
-  close: function() {
-    const sidebar = document.getElementById('adminSidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const hamburger = document.getElementById('hamburgerBtn');
-    
-    if (!sidebar) return;
-
-    this.isOpen = false;
-    sidebar.classList.remove('mobile-open');
-    if (overlay) overlay.classList.remove('open');
-    if (hamburger) {
-      hamburger.classList.remove('active');
-    }
-  },
-
-  /**
-   * Collapse sidebar (desktop)
-   */
-  collapse: function() {
-    const sidebar = document.getElementById('adminSidebar');
-    const mainContent = document.querySelector('.main-content');
-    if (!sidebar) return;
-
-    this.isCollapsed = !this.isCollapsed;
-    
-    if (this.isCollapsed) {
-      sidebar.classList.add('collapsed');
-      if (mainContent) mainContent.classList.add('expanded');
-      localStorage.setItem('admin-sidebar-collapsed', 'true');
-    } else {
-      sidebar.classList.remove('collapsed');
-      if (mainContent) mainContent.classList.remove('expanded');
-      localStorage.setItem('admin-sidebar-collapsed', 'false');
-    }
-  }
-};
-
-/**
- * Initialize admin layout event listeners (legacy support)
- */
-function initAdminLayout() {
-  const sidebar = document.getElementById('adminSidebar');
-  if (!sidebar) {
-    return;
-  }
-
-  const hamburgerBtn = document.getElementById('hamburgerBtn');
-  const sidebarClose = document.getElementById('sidebarClose');
-  const sidebarOverlay = document.getElementById('sidebarOverlay');
-
-  if (hamburgerBtn) {
-    hamburgerBtn.addEventListener('click', function() {
-      SidebarManager.open();
-    });
-  }
-
-  if (sidebarClose) {
-    sidebarClose.addEventListener('click', function() {
-      SidebarManager.close();
-    });
-  }
-
-  if (sidebarOverlay) {
-    sidebarOverlay.addEventListener('click', function() {
-      SidebarManager.close();
-    });
-  }
-
-  const navItems = sidebar.querySelectorAll('.nav-item');
-  navItems.forEach(function(item) {
-    item.addEventListener('click', function(e) {
-        const href = item.getAttribute('href');
-        // Only prevent if it's the same page? No, let browser handle.
-        // But we need to ensure active class updates before navigation
-        navItems.forEach(function(nav) {
-            nav.classList.remove('active');
-        });
-        item.classList.add('active');
-        if (window.innerWidth <= 768) {
-            SidebarManager.close();
-        }
-        // Allow default navigation - do nothing else
-    });
-  });
-}
-
-/**
- * Initialize user menu dropdown
- */
+/* ============================================
+   USER MENU DROPDOWN
+   ============================================ */
 function initUserMenu() {
   const userMenu = document.getElementById('userMenu');
   if (!userMenu) return;
@@ -292,9 +197,9 @@ function handleUserDropdownAction(item) {
   }
 }
 
-/**
- * Initialize dashboard actions
- */
+/* ============================================
+   DASHBOARD ACTIONS
+   ============================================ */
 function initDashboardActions() {
   const btnNewObservation = document.getElementById('btnNewObservation');
   if (!btnNewObservation) {
@@ -326,11 +231,11 @@ function initDashboardActions() {
       alert('Navigate to full observations page.');
     });
   }
-
 }
-/**
- * Initialize header actions
- */
+
+/* ============================================
+   HEADER ACTIONS
+   ============================================ */
 function initHeaderActions() {
   const helpLink = document.querySelector('.help-link');
   if (helpLink) {
@@ -341,9 +246,9 @@ function initHeaderActions() {
   }
 }
 
-/**
- * Notification system — renders bell icon, badge, and dropdown
- */
+/* ============================================
+   NOTIFICATION SYSTEM
+   ============================================ */
 function initNotifications() {
   // Only init on admin pages
   if (!window.BioData) return;
@@ -563,10 +468,9 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// Initialize when DOM is ready (legacy support)
+// Initialize when DOM is ready
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', function() {
-    initAdminLayout();
     initUserMenu();
     initHeaderActions();
     initDashboardActions();
@@ -624,5 +528,5 @@ if (navigator.connection) {
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { SidebarManager, initAdminLayout, initUserMenu, initHeaderActions };
+  module.exports = { initUserMenu, initHeaderActions };
 }
