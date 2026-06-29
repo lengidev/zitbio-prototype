@@ -378,7 +378,7 @@
 
 /* Sidebar Footer */
 .sidebar-footer {
-    padding: 12px 24px;
+    padding: 12px 12px;
     margin-top: auto;
     border-top: 1px solid var(--border-color, #e5e7eb);
     font-size: 11px;
@@ -402,6 +402,7 @@
 .footer-left {
     overflow: hidden;
     text-overflow: ellipsis;
+    order: 1;
 }
 
 .footer-right {
@@ -409,6 +410,7 @@
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
+    order: 0;
 }
 
 .status-dot {
