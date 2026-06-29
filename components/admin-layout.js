@@ -31,30 +31,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================
-       MOBILE: Open/Close sidebar overlay
-       Uses #hamburgerBtn, #sidebarClose, #sidebarOverlay
+       MOBILE: Toggle sidebar overlay
+       Uses #hamburgerBtn (toggles open/close + icon swap)
+       and #sidebarOverlay (close only)
        ============================================ */
     const hamburgerBtn = document.getElementById('hamburgerBtn');
-    const sidebarClose = document.getElementById('sidebarClose');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const hamburgerIcon = hamburgerBtn ? hamburgerBtn.querySelector('.material-symbols-outlined') : null;
 
-    function openMobileSidebar() {
+    function toggleMobileSidebar() {
         if (!sidebar) return;
-        sidebar.classList.add('mobile-open');
-        if (sidebarOverlay) sidebarOverlay.classList.add('open');
+        var isOpen = sidebar.classList.toggle('mobile-open');
+        if (sidebarOverlay) sidebarOverlay.classList.toggle('open');
+
+        // Swap icon and toggle active state
+        if (hamburgerBtn) {
+            hamburgerBtn.classList.toggle('active');
+        }
+        if (hamburgerIcon) {
+            hamburgerIcon.textContent = isOpen ? 'close' : 'menu';
+        }
     }
 
     function closeMobileSidebar() {
         if (!sidebar) return;
         sidebar.classList.remove('mobile-open');
         if (sidebarOverlay) sidebarOverlay.classList.remove('open');
+        if (hamburgerBtn) hamburgerBtn.classList.remove('active');
+        if (hamburgerIcon) hamburgerIcon.textContent = 'menu';
     }
 
     if (hamburgerBtn) {
-        hamburgerBtn.addEventListener('click', openMobileSidebar);
-    }
-    if (sidebarClose) {
-        sidebarClose.addEventListener('click', closeMobileSidebar);
+        hamburgerBtn.addEventListener('click', toggleMobileSidebar);
     }
     if (sidebarOverlay) {
         sidebarOverlay.addEventListener('click', closeMobileSidebar);

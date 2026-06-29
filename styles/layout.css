@@ -630,31 +630,6 @@
   color: var(--color-primary, #2563eb);
 }
 
-/* Sidebar close button - hidden on desktop, shown inside sidebar on mobile */
-.sidebar-close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--color-text-primary, #1f2937);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  border-radius: 4px;
-}
-
-.sidebar-close:hover {
-  background-color: var(--color-bg-hover, #f3f4f6);
-}
-
-.sidebar-close .material-symbols-outlined {
-  font-size: 24px;
-}
-
-#sidebarClose {
-  display: none;
-}
-
 /* ============================================
    Admin Dashboard Page Layout
    ============================================ */
@@ -953,11 +928,6 @@
 
 /* Mobile (<=767px): Single column, simplified streamlined viewports */
 @media (max-width: 767px) {
-  /* Show sidebar close button on mobile */
-  #sidebarClose {
-    display: inline-flex;
-    margin-left: auto;
-  }
   .container {
     padding: 0 var(--spacing-md);
     min-width: 320px;
