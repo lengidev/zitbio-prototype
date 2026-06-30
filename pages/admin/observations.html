@@ -194,26 +194,138 @@
         </main>
     </div>
 
-    <!-- View Modal -->
+    <!-- View Modal (Redesigned) -->
     <div class="modal-overlay" id="viewModal">
-        <div class="view-modal">
-            <div class="view-modal-header">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <!-- Header -->
+            <div class="modal-header">
                 <div>
-                    <h3 class="view-modal-title" id="modalSpeciesTitle">Buffalo</h3>
-                    <p class="view-modal-subtitle" id="modalSubtitle">Observation details recorded on 4/7/2026</p>
+                    <div class="header-title-row">
+                        <h2 class="modal-title" id="modalSpeciesTitle">African Elephant</h2>
+                        <span class="badge" id="modalStatusBadge">Approved</span>
+                    </div>
+                    <p class="modal-subtitle" id="modalSubtitle">Loxodonta africana</p>
                 </div>
-                <button class="modal-close" id="closeViewModalBtn">
-                    <span class="material-symbols-outlined">close</span>
-                </button>
+                <div class="header-actions">
+                    <button class="icon-btn icon-btn-edit" id="btnEditRecord" data-tip="Edit Record" aria-label="Edit Record">
+                        <span class="material-symbols-outlined">edit</span>
+                    </button>
+                    <button class="icon-btn icon-btn-approve" id="btnApproveRecord" data-tip="Approve & Verify" aria-label="Approve and Verify">
+                        <span class="material-symbols-outlined">check_circle</span>
+                    </button>
+                    <button class="icon-btn icon-btn-flag" id="btnFlagRecord" data-tip="Flag / Reject" aria-label="Flag or Reject">
+                        <span class="material-symbols-outlined">flag</span>
+                    </button>
+                    <button class="icon-btn" id="closeViewModalBtn" data-tip="Close" aria-label="Close">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
             </div>
-            <div class="view-modal-body" id="modalBody">
-            </div>
-            <div class="view-modal-footer">
-                    <button class="btn-delete" id="btnDeleteObservation">
-                        <span class="material-symbols-outlined">delete</span>
-                        Delete
-                </button>
-                <button class="btn-close-modal" id="closeViewModalFooterBtn">Close</button>
+
+            <!-- Body -->
+            <div class="modal-body" id="modalBody">
+                <!-- Section 1: Observation (always visible) -->
+                <div class="section-static">
+                    <div class="section-heading">
+                        <span class="material-symbols-outlined section-icon">monitoring</span>
+                        Observation
+                    </div>
+                    <div class="field-grid" id="obsFields">
+                        <div class="field-row">
+                            <span class="label">Population</span>
+                            <span class="value" id="fldPopulation">—</span>
+                        </div>
+                        <div class="field-row">
+                            <span class="label">Activity</span>
+                            <span class="value" id="fldActivity">—</span>
+                        </div>
+                        <div class="field-row">
+                            <span class="label">Date</span>
+                            <span class="value" id="fldDate">—</span>
+                        </div>
+                        <div class="field-row">
+                            <span class="label">Time</span>
+                            <span class="value" id="fldTime">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Location (always visible) -->
+                <div class="section-static">
+                    <div class="section-heading">
+                        <span class="material-symbols-outlined section-icon">location_on</span>
+                        Location
+                    </div>
+                    <div class="field-grid" id="locFields">
+                        <div class="field-row">
+                            <span class="label">Country</span>
+                            <span class="value" id="fldCountry">—</span>
+                        </div>
+                        <div class="field-row">
+                            <span class="label">Province</span>
+                            <span class="value" id="fldProvince">—</span>
+                        </div>
+                        <div class="field-row">
+                            <span class="label">City</span>
+                            <span class="value" id="fldCity">—</span>
+                        </div>
+                        <div class="field-row">
+                            <span class="label">Habitat</span>
+                            <span class="value" id="fldHabitat">—</span>
+                        </div>
+                        <div class="field-row">
+                            <span class="label">Protected Area</span>
+                            <span class="value" id="fldProtectedArea">—</span>
+                        </div>
+                        <div class="field-row">
+                            <span class="label">GPS</span>
+                            <span class="value mono" id="fldGps">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Record Details (collapsible) -->
+                <div class="section-collapsible" id="sectionDetails">
+                    <button class="section-toggle" onclick="toggleSection('sectionDetails')">
+                        <span class="material-symbols-outlined toggle-icon">description</span>
+                        Record Details
+                        <span class="chevron material-symbols-outlined">keyboard_arrow_down</span>
+                    </button>
+                    <div class="collapsible-content">
+                        <div class="text-block">
+                            <div class="text-block-header">
+                                <span class="material-symbols-outlined">map</span>
+                                Locality Description
+                            </div>
+                            <div class="text-block-body" id="fldLocality">—</div>
+                        </div>
+                        <div class="text-block">
+                            <div class="text-block-header">
+                                <span class="material-symbols-outlined">edit_note</span>
+                                Field Notes
+                            </div>
+                            <div class="text-block-body" id="fldFieldNotes">—</div>
+                        </div>
+                        <div class="field-grid sub-grid" id="metaFields">
+                            <div class="field-row">
+                                <span class="label">Recorded By</span>
+                                <span class="value" id="fldRecordedBy">—</span>
+                            </div>
+                            <div class="field-row">
+                                <span class="label">Institution</span>
+                                <span class="value" id="fldInstitution">—</span>
+                            </div>
+                            <div class="field-row">
+                                <span class="label">Record ID</span>
+                                <span class="value mono" id="fldRecordId">—</span>
+                            </div>
+                            <div class="field-row">
+                                <span class="label">Status</span>
+                                <span class="value" id="fldRecordStatus">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

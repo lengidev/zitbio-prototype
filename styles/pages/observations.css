@@ -135,3 +135,502 @@
     color: #721c24;
     border: 1px solid #f5c6cb;
 }
+
+/* ============================================
+   Admin Observation View Modal (Redesigned)
+   ============================================ */
+
+/* Overlay */
+.page-observations .modal-overlay#viewModal {
+    z-index: var(--z-modal-backdrop, 300);
+}
+
+/* Modal Card Base */
+.page-observations .modal-card {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateY(12px) scale(0.98);
+    z-index: var(--z-modal, 301);
+    width: 100%;
+    max-width: 620px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-white);
+    border-radius: var(--radius-xl, 16px);
+    box-shadow: var(--shadow-modal, 0 25px 50px -12px rgba(0,0,0,0.25));
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 250ms ease-out, opacity 150ms ease;
+}
+
+.page-observations .modal-card.open,
+.page-observations .modal-overlay#viewModal.active .modal-card {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) translateY(0) scale(1);
+}
+
+.page-observations .modal-overlay#viewModal.active {
+    display: flex;
+}
+
+/* ---- Header ---- */
+.page-observations .modal-header {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 24px 24px 16px;
+    gap: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.page-observations .header-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.page-observations .modal-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.page-observations .modal-subtitle {
+    font-style: italic;
+    color: var(--color-text-muted);
+    font-size: 13px;
+    margin-top: 3px;
+}
+
+/* ---- Status Badge ---- */
+.page-observations .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: var(--radius-full, 9999px);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.page-observations .badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.page-observations .badge-approved {
+    color: var(--color-primary);
+    background: var(--color-success-light);
+    border: 1px solid #c8e6c9;
+}
+
+.page-observations .badge-approved::before {
+    background: var(--color-primary);
+}
+
+.page-observations .badge-pending {
+    color: #92400e;
+    background: var(--color-warning-light);
+    border: 1px solid #fde68a;
+}
+
+.page-observations .badge-pending::before {
+    background: var(--color-warning);
+}
+
+.page-observations .badge-flagged {
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+    border: 1px solid #fecaca;
+}
+
+.page-observations .badge-flagged::before {
+    background: var(--color-danger);
+}
+
+/* ---- Header Actions (Icon Buttons) ---- */
+.page-observations .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.page-observations .icon-btn {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 6px);
+    cursor: pointer;
+    color: var(--color-text-muted);
+    transition: all 150ms ease;
+}
+
+.page-observations .icon-btn .material-symbols-outlined {
+    font-size: 18px;
+}
+
+.page-observations .icon-btn:hover {
+    background: var(--color-bg-header);
+    border-color: var(--border-color-dark);
+}
+
+.page-observations .icon-btn-edit {
+    color: var(--color-text-main);
+}
+
+.page-observations .icon-btn-approve {
+    color: var(--color-primary);
+}
+
+.page-observations .icon-btn-approve:hover {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary-hover);
+}
+
+.page-observations .icon-btn-flag {
+    color: var(--color-danger);
+}
+
+.page-observations .icon-btn-flag:hover {
+    background: var(--color-danger-light);
+    border-color: var(--color-danger);
+    color: var(--color-danger-hover);
+}
+
+/* ---- Tooltips ---- */
+.page-observations .icon-btn::after {
+    content: attr(data-tip);
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background: var(--color-text-main);
+    color: var(--color-text-inverse);
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    border-radius: 5px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease;
+    z-index: var(--z-tooltip, 500);
+}
+
+.page-observations .icon-btn:hover::after {
+    opacity: 1;
+}
+
+/* ---- Body ---- */
+.page-observations .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 24px 24px;
+}
+
+.page-observations .modal-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+.page-observations .modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.page-observations .modal-body::-webkit-scrollbar-thumb {
+    background: var(--border-color-dark);
+    border-radius: var(--radius-full, 9999px);
+}
+
+/* ---- Static Sections (always visible) ---- */
+.page-observations .section-static {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.page-observations .section-static:first-child {
+    padding-top: 0;
+}
+
+.page-observations .section-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-main);
+    margin-bottom: 12px;
+}
+
+.page-observations .section-heading .section-icon {
+    font-size: 18px;
+    color: var(--color-text-muted);
+}
+
+/* ---- Field Grid (2 columns) ---- */
+.page-observations .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 24px;
+}
+
+.page-observations .field-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 5px 6px;
+    border-radius: var(--radius-sm, 6px);
+    transition: background 150ms ease;
+}
+
+.page-observations .field-row:hover {
+    background: var(--color-bg-header);
+}
+
+.page-observations .field-row .label {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
+.page-observations .field-row .value {
+    font-size: 13px;
+    color: var(--color-text-main);
+    font-weight: 600;
+    text-align: right;
+}
+
+.page-observations .field-row .value.mono {
+    font-family: "SF Mono", "Fira Code", "Fira Mono", monospace;
+    font-size: 12px;
+}
+
+/* ---- Collapsible Section ---- */
+.page-observations .section-collapsible {
+    padding: 16px 0;
+}
+
+.page-observations .section-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-main);
+    transition: color 150ms ease;
+    text-align: left;
+}
+
+.page-observations .section-toggle:hover {
+    color: var(--color-primary);
+}
+
+.page-observations .section-toggle .toggle-icon {
+    font-size: 18px;
+    color: var(--color-text-muted);
+}
+
+.page-observations .section-toggle .chevron {
+    margin-left: auto;
+    transition: transform 250ms ease;
+    color: var(--color-text-muted);
+    font-size: 20px;
+}
+
+.page-observations .section-collapsible.open .section-toggle .chevron {
+    transform: rotate(180deg);
+}
+
+.page-observations .collapsible-content {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 250ms ease;
+}
+
+.page-observations .section-collapsible.open .collapsible-content {
+    max-height: 500px;
+    opacity: 1;
+    padding-top: 12px;
+}
+
+/* ---- Text Blocks ---- */
+.page-observations .text-block {
+    background: var(--color-bg-header);
+    border-radius: var(--radius-md, 8px);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+}
+
+.page-observations .text-block:last-child {
+    margin-bottom: 0;
+}
+
+.page-observations .text-block-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.page-observations .text-block-header .material-symbols-outlined {
+    font-size: 15px;
+}
+
+.page-observations .text-block-body {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+/* ---- Sub Grid (below text blocks) ---- */
+.page-observations .sub-grid {
+    margin-top: 12px;
+}
+
+/* ---- Edit Mode Styles ---- */
+.page-observations .field-row.editing .value {
+    display: none;
+}
+
+.page-observations .field-row .edit-input {
+    display: none;
+    width: 100%;
+    text-align: right;
+    font-size: 13px;
+    color: var(--color-text-main);
+    font-weight: 600;
+    padding: 2px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 6px);
+    background: var(--color-bg-white);
+    outline: none;
+}
+
+.page-observations .field-row .edit-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.page-observations .field-row .edit-select {
+    display: none;
+    width: 100%;
+    text-align: right;
+    font-size: 13px;
+    color: var(--color-text-main);
+    font-weight: 600;
+    padding: 2px 4px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 6px);
+    background: var(--color-bg-white);
+    outline: none;
+}
+
+.page-observations .field-row .edit-select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.page-observations .field-row .edit-textarea {
+    display: none;
+    width: 100%;
+    font-size: 13px;
+    color: var(--color-text-main);
+    font-weight: 500;
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 6px);
+    background: var(--color-bg-white);
+    outline: none;
+    resize: vertical;
+    min-height: 60px;
+    font-family: inherit;
+}
+
+.page-observations .field-row .edit-textarea:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.page-observations .field-row.editing .edit-input,
+.page-observations .field-row.editing .edit-select,
+.page-observations .field-row .edit-textarea.editing {
+    display: block;
+}
+
+.page-observations .text-block.editing .text-block-body {
+    display: none;
+}
+
+.page-observations .text-block.editing .edit-textarea {
+    display: block;
+}
+
+/* Edit mode in header */
+.page-observations .header-actions .icon-btn-save {
+    color: var(--color-primary);
+}
+
+.page-observations .header-actions .icon-btn-save:hover {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+}
+
+.page-observations .header-actions .icon-btn-cancel {
+    color: var(--color-danger);
+}
+
+.page-observations .header-actions .icon-btn-cancel:hover {
+    background: var(--color-danger-light);
+    border-color: var(--color-danger);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 560px) {
+    .page-observations .field-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-observations .modal-header {
+        flex-direction: column;
+        padding: 16px 16px 12px;
+    }
+
+    .page-observations .header-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .page-observations .modal-title {
+        font-size: 17px;
+    }
+
+    .page-observations .modal-body {
+        padding: 12px 16px 16px;
+    }
+}
