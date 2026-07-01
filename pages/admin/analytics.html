@@ -131,66 +131,109 @@
                         <button class="analytics-tab" data-tab="graphs">Graphs</button>
                         <button class="analytics-tab" data-tab="report">Report</button>
                     </div>
-                    <div class="observation-search-wrapper" id="tabSearchWrapper">
-                        <span class="material-symbols-outlined search-icon">search</span>
-                        <input type="text" class="search-input" placeholder="Search observations...">
-                        <button class="observation-filter-btn" id="colToggleBtn">
-                            <span class="material-symbols-outlined">filter_list</span>
+                    <div class="tabs-right-group">
+                        <div class="observation-search-wrapper" id="tabSearchWrapper">
+                            <span class="material-symbols-outlined search-icon">search</span>
+                            <input type="text" class="search-input" placeholder="Search observations...">
+                            <button class="observation-filter-btn" id="analyticsFilterToggle">
+                                <span class="material-symbols-outlined">filter_alt</span>
+                                Filters
+                                <span class="filter-count-badge" id="filterCountBadge">0</span>
+                            </button>
+                        </div>
+                        <button class="observation-export-btn" id="tabExportBtn" style="display: none;">
+                            <span class="material-symbols-outlined">file_download</span>
+                            Export
                         </button>
-                        <div class="col-toggle-dropdown" id="colToggleDropdown">
-                            <div class="dropdown-header">Toggle Columns</div>
-                            <label class="col-toggle-item">
-                                <input type="checkbox" data-col="coords">
-                                <span class="toggle-label">Coordinates</span>
-                            </label>
-                            <label class="col-toggle-item">
-                                <input type="checkbox" data-col="protected-area">
-                                <span class="toggle-label">Protected Area</span>
-                            </label>
-                            <label class="col-toggle-item">
-                                <input type="checkbox" data-col="locality">
-                                <span class="toggle-label">Location Description</span>
-                            </label>
-                            <label class="col-toggle-item">
-                                <input type="checkbox" data-col="recorded-by">
-                                <span class="toggle-label">Recorded By</span>
-                            </label>
-                            <label class="col-toggle-item">
-                                <input type="checkbox" data-col="institution">
-                                <span class="toggle-label">Institution</span>
-                            </label>
-                            <label class="col-toggle-item">
-                                <input type="checkbox" data-col="obs-id">
-                                <span class="toggle-label">Observation ID</span>
-                            </label>
-                            <div class="dropdown-divider"></div>
-                            <div class="dropdown-header">Search By</div>
-                            <label class="col-toggle-item search-field-item">
-                                <input type="radio" name="searchField" value="" checked>
-                                <span class="toggle-label">All Fields</span>
-                            </label>
-                            <label class="col-toggle-item search-field-item">
-                                <input type="radio" name="searchField" value="species">
-                                <span class="toggle-label">Species</span>
-                            </label>
-                            <label class="col-toggle-item search-field-item">
-                                <input type="radio" name="searchField" value="province">
-                                <span class="toggle-label">Province</span>
-                            </label>
-                            <label class="col-toggle-item search-field-item">
-                                <input type="radio" name="searchField" value="officer">
-                                <span class="toggle-label">Officer</span>
-                            </label>
-                            <label class="col-toggle-item search-field-item">
-                                <input type="radio" name="searchField" value="institution">
-                                <span class="toggle-label">Institution</span>
-                            </label>
+                    </div>
+                </div>
+
+                <!-- Filter Bar -->
+                <div class="analytics-filters" id="analyticsFilters">
+                    <div class="filter-bar">
+                        <!-- Row 1: Data Filters -->
+                        <div class="filter-row">
+                            <div class="filter-chip-wrapper">
+                                <span class="filter-chip-label">From</span>
+                                <div class="filter-chip">
+                                    <input type="date" id="filterDateFrom" />
+                                </div>
+                            </div>
+                            <div class="filter-chip-wrapper">
+                                <span class="filter-chip-label">To</span>
+                                <div class="filter-chip">
+                                    <input type="date" id="filterDateTo" />
+                                </div>
+                            </div>
+                            <div class="filter-chip-wrapper">
+                                <span class="filter-chip-label">Province</span>
+                                <div class="filter-chip">
+                                    <select id="filterProvince">
+                                        <option value="">All provinces</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="filter-chip-wrapper">
+                                <span class="filter-chip-label">Status</span>
+                                <div class="filter-chip">
+                                    <select id="filterStatus">
+                                        <option value="">All statuses</option>
+                                        <option value="Approved">Approved</option>
+                                        <option value="Pending">Pending</option>
+                                        <option value="Flagged">Flagged</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="filter-chip-wrapper">
+                                <span class="filter-chip-label">Species</span>
+                                <div class="filter-chip">
+                                    <select id="filterSpecies">
+                                        <option value="">All species</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="filter-clear-btn" id="filterClear">Clear all</button>
+                        </div>
+
+                        <div class="filter-divider"></div>
+
+                        <!-- Row 2: Column Toggles -->
+                        <div class="filter-row">
+                            <span class="col-toggles-label">Toggle Columns</span>
+                            <div class="col-toggle-group">
+                            <button class="col-toggle-btn" data-col="coords">
+                                    <span class="material-symbols-outlined check-icon">check_box</span>
+                                    <span class="material-symbols-outlined uncheck-icon">check_box_outline_blank</span>
+                                    Coordinates
+                                </button>
+                                <button class="col-toggle-btn" data-col="protected-area">
+                                    <span class="material-symbols-outlined check-icon">check_box</span>
+                                    <span class="material-symbols-outlined uncheck-icon">check_box_outline_blank</span>
+                                    Protected Area
+                                </button>
+                                <button class="col-toggle-btn" data-col="locality">
+                                    <span class="material-symbols-outlined check-icon">check_box</span>
+                                    <span class="material-symbols-outlined uncheck-icon">check_box_outline_blank</span>
+                                    Location Description
+                                </button>
+                                <button class="col-toggle-btn" data-col="recorded-by">
+                                    <span class="material-symbols-outlined check-icon">check_box</span>
+                                    <span class="material-symbols-outlined uncheck-icon">check_box_outline_blank</span>
+                                    Recorded By
+                                </button>
+                                <button class="col-toggle-btn" data-col="institution">
+                                    <span class="material-symbols-outlined check-icon">check_box</span>
+                                    <span class="material-symbols-outlined uncheck-icon">check_box_outline_blank</span>
+                                    Institution
+                                </button>
+                                <button class="col-toggle-btn" data-col="obs-id">
+                                    <span class="material-symbols-outlined check-icon">check_box</span>
+                                    <span class="material-symbols-outlined uncheck-icon">check_box_outline_blank</span>
+                                    Observation ID
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <button class="observation-export-btn" id="tabExportBtn" style="display: none;">
-                        <span class="material-symbols-outlined">file_download</span>
-                        Export
-                    </button>
                 </div>
 
                 <!-- Tab Content Panels -->

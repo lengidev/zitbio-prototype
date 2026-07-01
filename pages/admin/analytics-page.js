@@ -9,6 +9,15 @@ var analyticsCurrentPage = 1;
 var analyticsFilteredData = [];
 var analyticsRecordsPerPage = 10;
 
+// Filter state
+var analyticsFilters = {
+    dateFrom: '',
+    dateTo: '',
+    province: '',
+    status: '',
+    species: ''
+};
+
 // Column visibility state
 var analyticsVisibleColumns = {
     coords: false,
@@ -19,15 +28,66 @@ var analyticsVisibleColumns = {
     'obs-id': false
 };
 
-// Get filtered data from BioData using shared search
+// Get filtered data from BioData using shared search + filters
 function getAnalyticsFilteredData() {
     if (!window.BioData) return [];
+    
+    // Apply filters first
+    var data = window.BioData.filterObservations(analyticsFilters);
+    
+    // Apply search on top of filtered data
     var searchInput = document.querySelector('.page-analytics .search-input');
-    if (!searchInput) return window.BioData.getObservations().slice();
-    // Get the selected search field from the active radio button
-    var selectedField = document.querySelector('input[name="searchField"]:checked');
-    var field = selectedField ? selectedField.value : '';
-    return window.BioData.searchObservations(searchInput.value, field || undefined);
+    if (searchInput && searchInput.value.trim()) {
+        var selectedField = document.querySelector('input[name="searchField"]:checked');
+        var field = selectedField ? selectedField.value : '';
+        var query = searchInput.value;
+        // Search within already-filtered data
+        var q = query.toLowerCase().trim();
+        data = data.filter(function(obs) {
+            var sd = obs.species_details || {};
+            var loc = obs.location || {};
+            var searchable = [
+                sd.scientific_name || '',
+                sd.common_name || '',
+                loc.city || '',
+                loc.administrative_area || '',
+                loc.country || '',
+                loc.habitat_type || '',
+                obs.recorded_by || '',
+                obs.institution_name || '',
+                obs.timestamp || ''
+            ].join(' ').toLowerCase();
+            return searchable.includes(q);
+        });
+    }
+    
+    return data;
+}
+
+// Count active filters
+function countActiveFilters() {
+    var count = 0;
+    if (analyticsFilters.dateFrom) count++;
+    if (analyticsFilters.dateTo) count++;
+    if (analyticsFilters.province) count++;
+    if (analyticsFilters.status) count++;
+    if (analyticsFilters.species) count++;
+    return count;
+}
+
+// Update filter count badge
+function updateFilterCount() {
+    var badge = document.getElementById('filterCountBadge');
+    if (!badge) return;
+    var count = countActiveFilters();
+    badge.textContent = count;
+}
+
+// Trigger re-render when filters change
+function applyFilters() {
+    analyticsCurrentPage = 1;
+    updateFilterCount();
+    renderAnalyticsTable();
 }
 
 // Render the analytics table using the shared renderer
@@ -51,7 +111,7 @@ function renderAnalyticsTable() {
     // Apply current column visibility state
     applyColumnVisibility();
 
-    // Re-attach page number click handlers (renderSharedPagination creates fresh DOM elements)
+    // Re-attach page number click handlers
     var pageNums = document.querySelectorAll('.page-analytics .page-num');
     pageNums.forEach(function(num) {
         num.addEventListener('click', function() {
@@ -71,10 +131,71 @@ function handleAnalyticsSearch() {
 }
 
 // ============================================================
+//  Filter Bar Toggle
+// ============================================================
+
+function initFilterToggle() {
+    var toggleBtn = document.getElementById('analyticsFilterToggle');
+    var filterBar = document.getElementById('analyticsFilters');
+    if (!toggleBtn || !filterBar) return;
+
+    toggleBtn.addEventListener('click', function() {
+        filterBar.classList.toggle('open');
+        this.classList.toggle('active');
+    });
+
+    // Open by default if filters are active
+    if (countActiveFilters() > 0) {
+        filterBar.classList.add('open');
+        toggleBtn.classList.add('active');
+    }
+}
+
+// ============================================================
+//  Populate Filter Dropdowns
+// ============================================================
+
+function populateFilterDropdowns() {
+    if (!window.BioData) return;
+
+    // Provinces
+    var provinceSelect = document.getElementById('filterProvince');
+    if (provinceSelect) {
+        if (window.BioData.getZambiaProvinces) {
+            var provinces = window.BioData.getZambiaProvinces();
+            provinces.forEach(function(p) {
+                var opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                provinceSelect.appendChild(opt);
+            });
+        }
+    }
+
+    // Species — extract unique common names from observations
+    var speciesSelect = document.getElementById('filterSpecies');
+    if (speciesSelect) {
+        var obs = window.BioData.getObservations();
+        var speciesSet = {};
+        obs.forEach(function(o) {
+            if (o.species_details && o.species_details.common_name) {
+                speciesSet[o.species_details.common_name] = true;
+            }
+        });
+        var sorted = Object.keys(speciesSet).sort();
+        sorted.forEach(function(name) {
+            var opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            speciesSelect.appendChild(opt);
+        });
+    }
+}
+
+// ============================================================
 //  Column Visibility Toggle
 // ============================================================
 
-// Apply current column visibility to the table element
 function applyColumnVisibility() {
     var table = document.querySelector('.page-analytics .observations-table');
     if (!table) return;
@@ -86,59 +207,66 @@ function applyColumnVisibility() {
     }
 }
 
-// Toggle dropdown open/close
-function toggleDropdown() {
-    var dropdown = document.getElementById('colToggleDropdown');
-    var btn = document.getElementById('colToggleBtn');
-    if (!dropdown || !btn) return;
+// ============================================================
+//  Column Toggle Buttons (in filter bar)
+// ============================================================
 
-    var isOpen = dropdown.classList.contains('open');
-    dropdown.classList.toggle('open');
-    btn.classList.toggle('active');
+function initColumnToggleButtons() {
+    var buttons = document.querySelectorAll('.page-analytics .col-toggle-btn');
+    buttons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var col = this.getAttribute('data-col');
+            if (!col) return;
+            
+            // Toggle state
+            analyticsVisibleColumns[col] = !analyticsVisibleColumns[col];
+            this.classList.toggle('active');
+            
+            applyColumnVisibility();
+        });
+    });
 }
 
-// Close dropdown
-function closeDropdown() {
-    var dropdown = document.getElementById('colToggleDropdown');
-    var btn = document.getElementById('colToggleBtn');
-    if (dropdown) dropdown.classList.remove('open');
-    if (btn) btn.classList.remove('active');
-}
+// ============================================================
+//  Filter Event Listeners
+// ============================================================
 
-// Handle checkbox change
-function handleColumnToggle(e) {
-    var checkbox = e.target;
-    var colName = checkbox.getAttribute('data-col');
-    if (!colName) return;
+function initFilterListeners() {
+    var dateFrom = document.getElementById('filterDateFrom');
+    var dateTo = document.getElementById('filterDateTo');
+    var province = document.getElementById('filterProvince');
+    var status = document.getElementById('filterStatus');
+    var species = document.getElementById('filterSpecies');
+    var clearBtn = document.getElementById('filterClear');
 
-    analyticsVisibleColumns[colName] = checkbox.checked;
-    applyColumnVisibility();
-}
+    function onFilterChange() {
+        analyticsFilters.dateFrom = dateFrom ? dateFrom.value : '';
+        analyticsFilters.dateTo = dateTo ? dateTo.value : '';
+        analyticsFilters.province = province ? province.value : '';
+        analyticsFilters.status = status ? status.value : '';
+        analyticsFilters.species = species ? species.value : '';
+        applyFilters();
+    }
 
-// Initialize column toggle event listeners
-function initColumnToggle() {
-    var btn = document.getElementById('colToggleBtn');
-    var dropdown = document.getElementById('colToggleDropdown');
-    if (!btn || !dropdown) return;
+    if (dateFrom) dateFrom.addEventListener('change', onFilterChange);
+    if (dateTo) dateTo.addEventListener('change', onFilterChange);
+    if (province) province.addEventListener('change', onFilterChange);
+    if (status) status.addEventListener('change', onFilterChange);
+    if (species) species.addEventListener('change', onFilterChange);
 
-    // Toggle dropdown on button click
-    btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        toggleDropdown();
-    });
-
-    // Checkbox change handlers
-    var checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
-    checkboxes.forEach(function(cb) {
-        cb.addEventListener('change', handleColumnToggle);
-    });
-
-    // Close dropdown on outside click
-    document.addEventListener('click', function(e) {
-        if (!dropdown.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
-            closeDropdown();
-        }
-    });
+    // Clear all
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            if (dateFrom) dateFrom.value = '';
+            if (dateTo) dateTo.value = '';
+            if (province) province.value = '';
+            if (status) status.value = '';
+            if (species) species.value = '';
+            
+            analyticsFilters = { dateFrom: '', dateTo: '', province: '', status: '', species: '' };
+            applyFilters();
+        });
+    }
 }
 
 // Initialize page when DOM is ready
@@ -166,12 +294,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tabName === 'observations') {
                 if (searchWrapper) searchWrapper.style.display = 'inline-flex';
                 if (exportBtn) exportBtn.style.display = 'none';
-            } else if (tabName === 'report') {
-                if (searchWrapper) searchWrapper.style.display = 'none';
-                if (exportBtn) exportBtn.style.display = 'inline-flex';
             } else {
                 if (searchWrapper) searchWrapper.style.display = 'none';
-                if (exportBtn) exportBtn.style.display = 'none';
+                if (exportBtn) exportBtn.style.display = tabName === 'report' ? 'inline-flex' : 'none';
+                // Close filter bar when leaving Observations tab
+                var filterBar = document.getElementById('analyticsFilters');
+                var toggleBtn = document.getElementById('analyticsFilterToggle');
+                if (filterBar) filterBar.classList.remove('open');
+                if (toggleBtn) toggleBtn.classList.remove('active');
             }
         }
     }
@@ -202,6 +332,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // Initialize filters
+    populateFilterDropdowns();
+    initFilterToggle();
+    initFilterListeners();
+    initColumnToggleButtons();
+    updateFilterCount();
+
     // Render the table
     renderAnalyticsTable();
 
@@ -230,7 +367,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
-    // Initialize column toggle (filter button)
-    initColumnToggle();
 });

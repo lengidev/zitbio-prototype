@@ -107,39 +107,39 @@
 }
 
 .page-analytics .observation-filter-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     margin-left: 8px;
-    padding: 0;
+    padding: 8px 14px;
+    gap: 5px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     background: var(--color-bg-white);
-    color: var(--color-text-muted);
+    color: var(--color-text-secondary);
     cursor: pointer;
     transition: all 0.2s;
-    position: relative;
-    width: 36px;
-    height: 36px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
     box-sizing: border-box;
+    white-space: nowrap;
 }
 
 .page-analytics .observation-filter-btn:hover {
     background: var(--color-bg-header);
-    color: var(--color-primary);
+    border-color: var(--border-color-dark);
+    color: var(--color-text-main);
 }
 
 .page-analytics .observation-filter-btn.active {
-    background: var(--color-bg-header);
-    color: var(--color-primary);
+    background: var(--color-primary-light);
     border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
-.page-analytics .observation-filter-btn svg,
 .page-analytics .observation-filter-btn .material-symbols-outlined {
-    width: 14px;
-    height: 14px;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 /* Column Toggle Dropdown */
@@ -395,6 +395,161 @@
     font-weight: 600;
     color: var(--color-text-main);
 }
+
+/* ============================================
+   Analytics Filter Bar
+   ============================================ */
+
+.page-analytics .tabs-right-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.page-analytics .filter-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: 9999px;
+    margin-left: 2px;
+}
+
+/* Filter Bar (collapsible, blended) */
+.page-analytics .analytics-filters {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 250ms ease;
+}
+.page-analytics .analytics-filters.open {
+    max-height: 400px;
+    opacity: 1;
+}
+
+.page-analytics .filter-bar {
+    padding: 20px 0 16px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.page-analytics .filter-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.page-analytics .filter-row + .filter-row {
+    margin-top: 14px;
+}
+
+/* Vertical label + chip */
+.page-analytics .filter-chip-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-start;
+}
+.page-analytics .filter-chip-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.page-analytics .filter-chip {
+    background: var(--color-bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 5px 10px;
+    min-width: 130px;
+    display: flex;
+    align-items: center;
+    height: 34px;
+}
+.page-analytics .filter-chip input[type="date"],
+.page-analytics .filter-chip select {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: var(--color-text-main);
+    font-weight: 500;
+    outline: none;
+    width: 100%;
+    min-width: 0;
+}
+.page-analytics .filter-chip select { cursor: pointer; }
+.page-analytics .filter-chip input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
+
+.page-analytics .filter-clear-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    transition: color 150ms ease;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+.page-analytics .filter-clear-btn:hover {
+    color: var(--color-danger);
+}
+
+.page-analytics .filter-divider {
+    height: 1px;
+    background: #f1f5f9;
+    margin: 14px 0;
+}
+
+/* Column toggles (text-only checkboxes) */
+.page-analytics .col-toggles-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+.page-analytics .col-toggle-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+.page-analytics .col-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background: none;
+    border: 0;
+    outline: none;
+    box-shadow: none;
+    cursor: pointer;
+    transition: color 150ms ease;
+    white-space: nowrap;
+}
+.page-analytics .col-toggle-btn:hover { color: var(--color-primary); }
+.page-analytics .col-toggle-btn.active { color: var(--color-text-main); font-weight: 600; }
+.page-analytics .col-toggle-btn .material-symbols-outlined { font-size: 17px; }
+.page-analytics .col-toggle-btn .check-icon { display: none; color: var(--color-primary); }
+.page-analytics .col-toggle-btn.active .check-icon { display: inline-block; }
+.page-analytics .col-toggle-btn.active .uncheck-icon { display: none; }
 
 /* Responsive */
 
