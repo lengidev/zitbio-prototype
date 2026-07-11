@@ -278,6 +278,30 @@
     display: table-cell;
 }
 
+/* Placeholder cards (Graphs, Reports tabs) */
+.placeholder-card {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.placeholder-icon {
+    font-size: 48px;
+    color: var(--color-text-muted);
+}
+
+.placeholder-title {
+    margin-top: 16px;
+    color: var(--color-text-main);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.placeholder-desc {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    margin-top: 8px;
+}
+
 /* Tab Content Panels */
 .analytics-tab-content {
     display: none;
@@ -345,6 +369,277 @@
         width: 16px;
         height: 16px;
         font-size: 16px;
+    }
+}
+
+/* ============================================
+   CBU Area Map
+   ============================================ */
+
+#map-container {
+    position: relative;
+    width: 100%;
+    height: 560px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #e8e8e8;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Leaflet overrides for theme compatibility */
+.leaflet-control-attribution {
+    font-size: 10px !important;
+    background: rgba(255,255,255,0.8) !important;
+    padding: 2px 6px !important;
+}
+
+/* Legacy controls hidden — kept for JS proxy clicks */
+#map-controls,
+#map-zoom-controls,
+.map-controls-title,
+.map-controls-group,
+.map-controls-label,
+.map-btn-group,
+.map-btn,
+.map-fit-btn,
+.map-filter-checkboxes,
+#map-controls .map-filter-label,
+#map-controls .map-filter-dot {
+    display: none !important;
+}
+
+/* ============================================
+   Consolidated Map Toolbar (middle-right)
+   ============================================ */
+
+.map-toolbar {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #ffffff;
+    padding: 4px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    border: 1px solid #d1d5db;
+    width: 40px;
+    gap: 2px;
+}
+
+.toolbar-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #374151;
+    transition: background 0.12s, color 0.12s;
+    position: relative;
+    font-size: 0;
+}
+
+.toolbar-btn:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.toolbar-btn:active {
+    background: #e5e7eb;
+}
+
+.toolbar-btn.active {
+    background: #e8f0fe;
+    color: #1a73e8;
+}
+
+.toolbar-btn .material-symbols-outlined {
+    font-size: 20px;
+}
+
+/* Custom tooltip */
+.toolbar-btn::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1f2937;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.2);
+}
+
+.toolbar-btn:hover::after {
+    opacity: 1;
+}
+
+.toolbar-divider {
+    width: 24px;
+    height: 1px;
+    background: #e5e7eb;
+    margin: 3px 0;
+}
+
+/* Bottom-left status bar */
+#map-status {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border-radius: 8px;
+    padding: 8px 14px;
+    display: flex;
+    gap: 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #374151;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+#map-status span {
+    white-space: nowrap;
+}
+
+/* Toast message */
+#map-toast {
+    position: absolute;
+    bottom: 52px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: #ef4444;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(239,68,68,0.3);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+#map-toast.visible {
+    opacity: 1;
+}
+
+/* Marker popup customization */
+.leaflet-popup-content-wrapper {
+    border-radius: 10px !important;
+    padding: 2px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+}
+
+.leaflet-popup-content {
+    margin: 10px 12px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+}
+
+.map-popup-species {
+    font-weight: 700;
+    font-size: 14px;
+    color: #111827;
+    margin-bottom: 4px;
+}
+
+.map-popup-species i {
+    font-style: italic;
+    font-weight: 600;
+}
+
+.map-popup-detail {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 2px;
+}
+
+.map-popup-status {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.map-popup-status.approved {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.map-popup-status.pending {
+    background: #fef9c3;
+    color: #854d0e;
+}
+
+.map-popup-status.flagged {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Custom observation marker icon */
+.map-obs-marker {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.map-obs-marker:hover {
+    transform: scale(1.25);
+}
+
+/* Highlighted marker pulse animation */
+@keyframes marker-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(45, 90, 39, 0.6); }
+    70% { box-shadow: 0 0 0 12px rgba(45, 90, 39, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(45, 90, 39, 0); }
+}
+
+.map-obs-marker.highlighted {
+    animation: marker-pulse 1.5s ease-out 2;
+}
+
+/* Responsive map */
+@media (max-width: 767px) {
+    #map-container {
+        height: 380px;
+    }
+}
+
+@media (max-width: 1023px) and (min-width: 768px) {
+    #map-container {
+        height: 460px;
     }
 }
 

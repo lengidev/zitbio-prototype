@@ -7,6 +7,8 @@
     <link rel="icon" type="image/png" href="../../assets/favicon/logo-64.png">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="../../styles/theme.css">
     <link rel="stylesheet" href="../../styles/global.css">
     <link rel="stylesheet" href="../../styles/layout.css">
@@ -275,31 +277,108 @@
                 </div>
 
                 <div class="analytics-tab-content" id="tab-map">
-                    <div class="analytics-card">
-                        <div class="analytics-card-body" style="text-align: center; padding: 60px 20px;">
-                            <span class="material-symbols-outlined" style="font-size: 48px; color: var(--color-text-muted);">map</span>
-                            <h3 style="margin-top: 16px; color: var(--color-text-main);">Map View</h3>
-                            <p style="color: var(--color-text-secondary); font-size: 13px; margin-top: 8px;">Interactive map coming soon.</p>
+                    <div id="map-container">
+                        <div id="map"></div>
+                        
+                        <!-- Hidden legacy controls (kept for JS proxy) -->
+                        <div id="map-controls" style="display:none !important;">
+                            <div class="map-controls-title">CBU Area Map</div>
+                            <div class="map-controls-group">
+                                <span class="map-controls-label">Area</span>
+                                <div id="map-area-toggle" class="map-btn-group">
+                                    <button class="map-btn active" data-area="park">CBU Nature Park</button>
+                                    <button class="map-btn" data-area="campus">CBU Campus</button>
+                                </div>
+                            </div>
+                            <div class="map-controls-group">
+                                <span class="map-controls-label">Mode</span>
+                                <div id="map-mode-toggle" class="map-btn-group">
+                                    <button class="map-btn active" data-mode="map">Map</button>
+                                    <button class="map-btn" data-mode="satellite">Satellite</button>
+                                </div>
+                            </div>
+                            <button id="map-fit-btn" class="map-fit-btn">
+                                <span class="material-symbols-outlined">fit_screen</span>
+                                Fit Area
+                            </button>
+                            <div class="map-controls-group">
+                                <span class="map-controls-label">Show</span>
+                                <div class="map-filter-checkboxes">
+                                    <label class="map-filter-label" data-status="Approved">
+                                        <span class="map-filter-dot" style="background: #22c55e;"></span>
+                                        Approved
+                                    </label>
+                                    <label class="map-filter-label" data-status="Pending">
+                                        <span class="map-filter-dot" style="background: #eab308;"></span>
+                                        Pending
+                                    </label>
+                                    <label class="map-filter-label" data-status="Flagged">
+                                        <span class="map-filter-dot" style="background: #ef4444;"></span>
+                                        Flagged
+                                    </label>
+                                </div>
+                            </div>
                         </div>
+                        
+                        <!-- Hidden legacy zoom controls (kept for JS proxy) -->
+                        <div id="map-zoom-controls" style="display:none !important;">
+                            <button id="map-zoom-in" class="map-zoom-btn">
+                                <span class="material-symbols-outlined">add</span>
+                            </button>
+                            <button id="map-zoom-out" class="map-zoom-btn">
+                                <span class="material-symbols-outlined">remove</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Consolidated toolbar (middle-right) -->
+                        <div id="map-toolbar" class="map-toolbar">
+                            <button id="toolbar-zoom-in" class="toolbar-btn" data-tooltip="Zoom in">
+                                <span class="material-symbols-outlined">zoom_in</span>
+                            </button>
+                            <button id="toolbar-zoom-out" class="toolbar-btn" data-tooltip="Zoom out">
+                                <span class="material-symbols-outlined">zoom_out</span>
+                            </button>
+                            <div class="toolbar-divider"></div>
+                            <button id="toolbar-focus-toggle" class="toolbar-btn" data-tooltip="Switch to Campus">
+                                <span class="material-symbols-outlined">center_focus_strong</span>
+                            </button>
+                            <button id="toolbar-fit" class="toolbar-btn" data-tooltip="Fit area">
+                                <span class="material-symbols-outlined">fit_screen</span>
+                            </button>
+                            <div class="toolbar-divider"></div>
+                            <button id="toolbar-mode-toggle" class="toolbar-btn" data-tooltip="Switch to Satellite">
+                                <span class="material-symbols-outlined">layers</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Bottom-left status bar -->
+                        <div id="map-status">
+                            <span id="map-status-area">CBU Nature Park</span>
+                            <span id="map-status-zoom">Zoom: 16</span>
+                            <span id="map-status-count">Markers: 0</span>
+                        </div>
+                        
+                        <!-- Toast -->
+                        <div id="map-toast"></div>
                     </div>
                 </div>
 
                 <div class="analytics-tab-content" id="tab-graphs">
                     <div class="analytics-card">
-                        <div class="analytics-card-body" style="text-align: center; padding: 60px 20px;">
-                            <span class="material-symbols-outlined" style="font-size: 48px; color: var(--color-text-muted);">bar_chart</span>
-                            <h3 style="margin-top: 16px; color: var(--color-text-main);">Graphs & Charts</h3>
-                            <p style="color: var(--color-text-secondary); font-size: 13px; margin-top: 8px;">Data visualization features coming soon.</p>
+                        <div class="analytics-card-body placeholder-card">
+                            <span class="material-symbols-outlined placeholder-icon">bar_chart</span>
+                            <h3 class="placeholder-title">Graphs & Charts</h3>
+                            <p class="placeholder-desc">Data visualization features coming soon.</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="analytics-tab-content" id="tab-report">
                     <div class="analytics-card">
-                        <div class="analytics-card-body" style="text-align: center; padding: 60px 20px;">
-                            <span class="material-symbols-outlined" style="font-size: 48px; color: var(--color-text-muted);">description</span>
-                            <h3 style="margin-top: 16px; color: var(--color-text-main);">Reports</h3>
-                            <p style="color: var(--color-text-secondary); font-size: 13px; margin-top: 8px;">Generate and download reports coming soon.</p>
+                        <div class="analytics-card-body placeholder-card">
+                            <span class="material-symbols-outlined placeholder-icon">description</span>
+                            <h3 class="placeholder-title">Reports</h3>
+                            <p class="placeholder-desc">Generate and download reports coming soon.</p>
                         </div>
                     </div>
                 </div>

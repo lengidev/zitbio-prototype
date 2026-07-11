@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="../../styles/pages/dashboard.css">
     <link rel="stylesheet" href="../../styles/components/notifications.css">
     <link rel="stylesheet" href="../../styles/components/user-dropdown.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body class="page-dashboard">
 
@@ -182,9 +183,12 @@
                 </div>
 
                 <div class="chart-card">
-                    <h3 class="chart-title">Observations (Last 4 weeks)</h3>
+                    <div class="chart-title-row">
+                        <h3 class="chart-title">This Week's Observations</h3>
+                        <span class="trend-badge" id="trendBadge"></span>
+                    </div>
                     <div class="chart-placeholder">
-                        <span class="material-symbols-outlined chart-icon">bar_chart</span>
+                        <canvas id="weeklyChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -216,40 +220,7 @@
 
 <script src="../../scripts/data.js"></script>
 <script src="../../components/admin-layout.js"></script>
-<script>
-  // Populate dashboard stats from unified data layer
-  document.addEventListener('DOMContentLoaded', function() {
-    if (window.BioData) {
-      // Set header to actual logged-in user
-      var session = BioData.getSession();
-      if (session) {
-        var userNameEl = document.querySelector('.user-menu-name');
-        if (userNameEl) userNameEl.textContent = session.name;
-      }
-
-      document.getElementById('statTotalUsers').textContent = BioData.totalUsers();
-      document.getElementById('statTotalObservations').textContent = BioData.totalObservations();
-      document.getElementById('statLast7Days').textContent = BioData.observationsLast7Days();
-
-      // Render recent activity table
-      var tbody = document.getElementById('recentActivityBody');
-      if (tbody) {
-        var activities = BioData.recentActivity(5);
-        var html = '';
-        activities.forEach(function(act) {
-          html += '<tr>' +
-            '<td class="date-cell">' + act.date + '</td>' +
-            '<td class="species-cell">' + act.species + '</td>' +
-            '<td class="location-cell">' + act.location + '</td>' +
-            '<td class="officer-cell">' + act.officer + '</td>' +
-            '</tr>';
-        });
-        tbody.innerHTML = html;
-      }
-    }
-  });
-</script>
+<script src="../../scripts/page-dashboard.js"></script>
 
 </body>
 </html>
-

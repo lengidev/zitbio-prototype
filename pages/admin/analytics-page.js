@@ -368,3 +368,538 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// ============================================================
+//  CBU Area Map — Leaflet Interactive Map
+//  Initialized when the Map tab is first activated
+// ============================================================
+
+(function() {
+    'use strict';
+
+    var mapInitialized = false;
+    var mapInstance = null;
+    var tileLayer = null;
+    var parkPolygon = null;
+    var campusPolygon = null;
+    var obsMarkers = [];
+    var mapActiveArea = 'park';
+    var mapMode = 'map';
+
+    // Polygon definitions ([lat, lng] format for Leaflet)
+    var CBU_NATURE_PARK_COORDS = [
+        [-12.80030, 28.24032],
+        [-12.80126, 28.23867],
+        [-12.80255, 28.23877],
+        [-12.80325, 28.23913],
+        [-12.80286, 28.23984],
+        [-12.80295, 28.24106],
+        [-12.80232, 28.24181],
+        [-12.80136, 28.24090],
+        [-12.80030, 28.24032]
+    ];
+
+    var CBU_CAMPUS_COORDS = [
+        [-12.80326, 28.23502],
+        [-12.80415, 28.23564],
+        [-12.80642, 28.23719],
+        [-12.80826, 28.23845],
+        [-12.81019, 28.23980],
+        [-12.80985, 28.24278],
+        [-12.80960, 28.24565],
+        [-12.80935, 28.24853],
+        [-12.80909, 28.25140],
+        [-12.80813, 28.25161],
+        [-12.80716, 28.25181],
+        [-12.80620, 28.25201],
+        [-12.80523, 28.25221],
+        [-12.80472, 28.24987],
+        [-12.80421, 28.24753],
+        [-12.80370, 28.24519],
+        [-12.80318, 28.24285],
+        [-12.80241, 28.24226],
+        [-12.80198, 28.24159],
+        [-12.80114, 28.24102],
+        [-12.80009, 28.24048],
+        [-12.80053, 28.23893],
+        [-12.80103, 28.23686],
+        [-12.80214, 28.23694],
+        [-12.80326, 28.23502]
+    ];
+
+    var statusFilterState = {
+        Approved: true,
+        Pending: true,
+        Flagged: true
+    };
+
+    function getStatusColor(status) {
+        var s = (status || '').toLowerCase();
+        if (s === 'approved') return '#22c55e';
+        if (s === 'pending') return '#eab308';
+        if (s === 'flagged') return '#ef4444';
+        return '#6b7280';
+    }
+
+    function buildPopupContent(obs) {
+        var loc = obs.location || {};
+        var sd = obs.species_details || {};
+        var sciName = sd.scientific_name || 'Unknown';
+        var commonName = sd.common_name || '';
+        var status = obs.verification_status || 'Unknown';
+        var date = obs.timestamp ? obs.timestamp.split('T')[0] : '';
+        var officer = obs.recorded_by || '';
+        var statusClass = status.toLowerCase();
+
+        var html = '<div class="map-popup-species">';
+        if (commonName) {
+            html += commonName + ' <i>(' + sciName + ')</i>';
+        } else {
+            html += '<i>' + sciName + '</i>';
+        }
+        html += '</div>';
+        if (date) html += '<div class="map-popup-detail">' + date + '</div>';
+        if (officer) html += '<div class="map-popup-detail">' + officer + '</div>';
+        html += '<div style="margin-top:4px;"><span class="map-popup-status ' + statusClass + '">' + status + '</span></div>';
+        return html;
+    }
+
+    function plotObservations() {
+        // Clear existing markers
+        obsMarkers.forEach(function(m) { mapInstance.removeLayer(m); });
+        obsMarkers = [];
+
+        if (!window.BioData) return;
+
+        var allObs = window.BioData.getObservations();
+        if (!allObs) return;
+
+        allObs.forEach(function(obs) {
+            var loc = obs.location || {};
+            var lat = loc.latitude;
+            var lng = loc.longitude;
+            if (lat == null || lng == null) return;
+
+            var status = obs.verification_status || 'Approved';
+            // Check status filter
+            if (!statusFilterState[status]) return;
+
+            var color = getStatusColor(status);
+
+            var icon = L.divIcon({
+                className: '',
+                html: '<div class="map-obs-marker" style="background:' + color + ';"></div>',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7]
+            });
+
+            var marker = L.marker([lat, lng], { icon: icon });
+            marker.bindPopup(buildPopupContent(obs));
+            marker._obsId = obs.observation_id;
+            marker._status = status;
+
+            marker.addTo(mapInstance);
+            obsMarkers.push(marker);
+        });
+
+        updateMarkerCount();
+    }
+
+    function updateMarkerCount() {
+        var visible = obsMarkers.filter(function(m) { return mapInstance.hasLayer(m); }).length;
+        var el = document.getElementById('map-status-count');
+        if (el) el.textContent = 'Markers: ' + visible;
+    }
+
+    function updateZoomDisplay() {
+        var el = document.getElementById('map-status-zoom');
+        if (el) el.textContent = 'Zoom: ' + mapInstance.getZoom().toFixed(1);
+    }
+
+    function renderPolygons(activeArea) {
+        var parkStyle = {
+            color: '#f59e0b',
+            fillColor: '#f59e0b',
+            fillOpacity: activeArea === 'park' ? 0.2 : 0.08,
+            weight: activeArea === 'park' ? 3 : 1.5,
+            opacity: activeArea === 'park' ? 0.9 : 0.4
+        };
+
+        var campusStyle = {
+            color: '#06b6d4',
+            fillColor: '#06b6d4',
+            fillOpacity: activeArea === 'campus' ? 0.2 : 0.08,
+            weight: activeArea === 'campus' ? 3 : 1.5,
+            opacity: activeArea === 'campus' ? 0.9 : 0.4
+        };
+
+        if (!parkPolygon) {
+            parkPolygon = L.polygon(CBU_NATURE_PARK_COORDS, parkStyle).addTo(mapInstance);
+        } else {
+            parkPolygon.setStyle(parkStyle);
+        }
+
+        if (!campusPolygon) {
+            campusPolygon = L.polygon(CBU_CAMPUS_COORDS, campusStyle).addTo(mapInstance);
+        } else {
+            campusPolygon.setStyle(campusStyle);
+        }
+
+        // Add vertex dots for both polygons (once only)
+        if (!parkPolygon._vertexDotsAdded) {
+            CBU_NATURE_PARK_COORDS.forEach(function(c) {
+                L.circleMarker(c, {
+                    radius: 3,
+                    color: '#f59e0b',
+                    fillColor: '#f59e0b',
+                    fillOpacity: 0.8,
+                    weight: 1
+                }).addTo(mapInstance)._isVertex = true;
+            });
+            parkPolygon._vertexDotsAdded = true;
+        }
+
+        if (!campusPolygon._vertexDotsAdded) {
+            CBU_CAMPUS_COORDS.forEach(function(c) {
+                L.circleMarker(c, {
+                    radius: 3,
+                    color: '#06b6d4',
+                    fillColor: '#06b6d4',
+                    fillOpacity: 0.8,
+                    weight: 1
+                }).addTo(mapInstance)._isVertex = true;
+            });
+            campusPolygon._vertexDotsAdded = true;
+        }
+    }
+
+    function fitActiveArea() {
+        if (!mapInstance) return;
+        var poly = mapActiveArea === 'park' ? parkPolygon : campusPolygon;
+        if (poly) {
+            mapInstance.fitBounds(poly.getBounds(), { padding: [80, 80] });
+            updateZoomDisplay();
+        }
+    }
+
+    function switchMapMode(mode) {
+        var tileUrl;
+        var attribution;
+
+        if (mode === 'satellite') {
+            tileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+            attribution = '&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
+        } else {
+            tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+            attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+        }
+
+        if (tileLayer) {
+            mapInstance.removeLayer(tileLayer);
+        }
+
+        tileLayer = L.tileLayer(tileUrl, {
+            maxZoom: 18,
+            minZoom: 16,
+            attribution: attribution
+        }).addTo(mapInstance);
+
+        mapMode = mode;
+    }
+
+    function initMap() {
+        var mapEl = document.getElementById('map');
+        if (!mapEl || mapInitialized) return;
+
+        mapInstance = L.map('map', {
+            center: [-12.805, 28.240],
+            zoom: 16,
+            minZoom: 16,
+            maxZoom: 18,
+            zoomSnap: 0.1,
+            zoomControl: false,
+            attributionControl: true
+        });
+
+        // Default tile layer (OSM)
+        switchMapMode('map');
+
+        // Render polygons
+        renderPolygons('park');
+
+        // Plot observations
+        plotObservations();
+
+        // Update zoom display on move
+        mapInstance.on('moveend', function() {
+            updateZoomDisplay();
+        });
+
+        mapInitialized = true;
+
+        // Initial status bar update
+        updateZoomDisplay();
+        updateMarkerCount();
+        var areaLabel = document.getElementById('map-status-area');
+        if (areaLabel) areaLabel.textContent = 'CBU Nature Park';
+    }
+
+    // ---- Bind UI Controls ----
+
+    // Area toggle
+    var areaToggle = document.getElementById('map-area-toggle');
+    if (areaToggle) {
+        areaToggle.addEventListener('click', function(e) {
+            var btn = e.target.closest('.map-btn');
+            if (!btn || !btn.hasAttribute('data-area')) return;
+
+            var area = btn.getAttribute('data-area');
+            if (area === mapActiveArea) return;
+            mapActiveArea = area;
+
+            // Update button states
+            areaToggle.querySelectorAll('.map-btn').forEach(function(b) {
+                b.classList.toggle('active', b.getAttribute('data-area') === area);
+            });
+
+            // Update polygon styles
+            renderPolygons(area);
+
+            // Update status bar
+            var areaLabel = document.getElementById('map-status-area');
+            if (areaLabel) {
+                areaLabel.textContent = area === 'park' ? 'CBU Nature Park' : 'CBU Campus';
+            }
+        });
+    }
+
+    // Mode toggle
+    var modeToggle = document.getElementById('map-mode-toggle');
+    if (modeToggle) {
+        modeToggle.addEventListener('click', function(e) {
+            var btn = e.target.closest('.map-btn');
+            if (!btn || !btn.hasAttribute('data-mode')) return;
+
+            var mode = btn.getAttribute('data-mode');
+            if (mode === mapMode) return;
+
+            modeToggle.querySelectorAll('.map-btn').forEach(function(b) {
+                b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+            });
+
+            switchMapMode(mode);
+        });
+    }
+
+    // Fit area button
+    var fitBtn = document.getElementById('map-fit-btn');
+    if (fitBtn) {
+        fitBtn.addEventListener('click', fitActiveArea);
+    }
+
+    // Zoom buttons with 0.1 step, clamped 16.0–18.0
+    function stepZoom(delta) {
+        if (!mapInstance) return;
+        var current = mapInstance.getZoom();
+        var next = Math.round((current + delta) * 10) / 10;
+        next = Math.max(16, Math.min(18, next));
+        mapInstance.setZoom(next);
+    }
+
+    var zoomIn = document.getElementById('map-zoom-in');
+    var zoomOut = document.getElementById('map-zoom-out');
+    if (zoomIn) {
+        zoomIn.addEventListener('click', function() { stepZoom(0.1); });
+    }
+    if (zoomOut) {
+        zoomOut.addEventListener('click', function() { stepZoom(-0.1); });
+    }
+
+    // Status filter labels
+    document.querySelectorAll('.map-filter-label').forEach(function(label) {
+        label.addEventListener('click', function() {
+            var status = this.getAttribute('data-status');
+            if (!status) return;
+
+            statusFilterState[status] = !statusFilterState[status];
+            this.classList.toggle('disabled', !statusFilterState[status]);
+
+            // Re-plot markers with current filters
+            if (mapInstance) plotObservations();
+        });
+    });
+
+    // Initialize map when Map tab is activated
+    var origActivateTab = null;
+    // Find the activateTab function (it's in a closure, so we hook via mutation observer)
+    var mapTabBtn = document.querySelector('.analytics-tab[data-tab="map"]');
+    if (mapTabBtn) {
+        mapTabBtn.addEventListener('click', function() {
+            // Defer init to let the tab panel become visible first
+            setTimeout(function() {
+                if (!mapInitialized) {
+                    initMap();
+                } else {
+                    // Invalidate size in case tab switch changed layout
+                    if (mapInstance) {
+                        setTimeout(function() { mapInstance.invalidateSize(); }, 50);
+                    }
+                    updateMarkerCount();
+                }
+            }, 100);
+        });
+    }
+
+    // Expose function for table-to-map sync
+    window.flyToObservation = function(obsId) {
+        // Always switch to Map tab first
+        var mapTab = document.querySelector('.analytics-tab[data-tab="map"]');
+        if (mapTab) {
+            // Trigger click on the Map tab button
+            mapTab.click();
+        }
+
+        if (!mapInitialized) {
+            // Wait for init, then fly
+            var checkInterval = setInterval(function() {
+                if (mapInitialized && mapInstance) {
+                    clearInterval(checkInterval);
+                    doFly(obsId);
+                }
+            }, 100);
+            setTimeout(function() { clearInterval(checkInterval); }, 5000);
+        } else {
+            // Small delay to let tab panel become visible
+            setTimeout(function() {
+                doFly(obsId);
+            }, 200);
+        }
+    };
+
+    function doFly(obsId) {
+        if (!mapInstance || !obsId) return;
+        // Find marker
+        for (var i = 0; i < obsMarkers.length; i++) {
+            var m = obsMarkers[i];
+            if (m._obsId === obsId) {
+                mapInstance.flyTo(m.getLatLng(), 17, { duration: 1 });
+                // Highlight marker
+                var iconEl = m.getElement();
+                if (iconEl) {
+                    var dot = iconEl.querySelector('.map-obs-marker');
+                    if (dot) {
+                        dot.classList.add('highlighted');
+                        setTimeout(function() {
+                            dot.classList.remove('highlighted');
+                        }, 3000);
+                    }
+                }
+                setTimeout(function() { m.openPopup(); }, 1200);
+                break;
+            }
+        }
+    }
+
+    // Hook into table row clicks to sync with map
+    document.addEventListener('click', function(e) {
+        var row = e.target.closest('.page-analytics .observation-row');
+        if (!row) return;
+
+        // Extract observation ID from the <code> element in the col-obs-id cell
+        var codeEl = row.querySelector('.col-obs-id code');
+        if (!codeEl) return;
+        var obsId = codeEl.textContent.trim();
+        if (obsId && window.flyToObservation) {
+            window.flyToObservation(obsId);
+        }
+    });
+})();
+
+// ============================================================
+//  Toolbar UI — Consolidated controls
+//  Proxies clicks to hidden legacy controls
+// ============================================================
+
+(function() {
+    'use strict';
+
+    // Zoom in
+    var zoomInBtn = document.getElementById('toolbar-zoom-in');
+    var zoomOutBtn = document.getElementById('toolbar-zoom-out');
+    var focusBtn = document.getElementById('toolbar-focus-toggle');
+    var fitBtn = document.getElementById('toolbar-fit');
+    var modeBtn = document.getElementById('toolbar-mode-toggle');
+    // Hidden proxy targets
+    var hiddenZoomIn = document.getElementById('map-zoom-in');
+    var hiddenZoomOut = document.getElementById('map-zoom-out');
+    var hiddenFitBtn = document.getElementById('map-fit-btn');
+
+    if (zoomInBtn && hiddenZoomIn) {
+        zoomInBtn.addEventListener('click', function() { hiddenZoomIn.click(); });
+    }
+    if (zoomOutBtn && hiddenZoomOut) {
+        zoomOutBtn.addEventListener('click', function() { hiddenZoomOut.click(); });
+    }
+    if (fitBtn && hiddenFitBtn) {
+        fitBtn.addEventListener('click', function() { hiddenFitBtn.click(); });
+    }
+
+    // Focus toggle — cycles between park and campus
+    if (focusBtn) {
+        focusBtn.addEventListener('click', function() {
+            var areaToggle = document.getElementById('map-area-toggle');
+            if (!areaToggle) return;
+            var btns = areaToggle.querySelectorAll('.map-btn');
+            var currentActive = areaToggle.querySelector('.map-btn.active');
+            if (!currentActive) { btns[0].click(); return; }
+            var idx = Array.prototype.indexOf.call(btns, currentActive);
+            var next = btns[(idx + 1) % btns.length];
+            if (next) next.click();
+        });
+    }
+
+    // Mode toggle — cycles between map and satellite
+    if (modeBtn) {
+        modeBtn.addEventListener('click', function() {
+            var modeToggle = document.getElementById('map-mode-toggle');
+            if (!modeToggle) return;
+            var btns = modeToggle.querySelectorAll('.map-btn');
+            var currentActive = modeToggle.querySelector('.map-btn.active');
+            if (!currentActive) { btns[0].click(); return; }
+            var idx = Array.prototype.indexOf.call(btns, currentActive);
+            var next = btns[(idx + 1) % btns.length];
+            if (next) next.click();
+        });
+    }
+
+    // Update toolbar tooltips when area changes
+    var areaToggle = document.getElementById('map-area-toggle');
+    if (areaToggle && focusBtn) {
+        areaToggle.addEventListener('click', function(e) {
+            var btn = e.target.closest('.map-btn');
+            if (!btn) return;
+            var area = btn.getAttribute('data-area');
+            if (area === 'park') {
+                focusBtn.setAttribute('data-tooltip', 'Switch to Campus');
+            } else {
+                focusBtn.setAttribute('data-tooltip', 'Switch to Nature Park');
+            }
+        });
+    }
+
+    // Update toolbar tooltips when mode changes
+    var modeToggleParent = document.getElementById('map-mode-toggle');
+    if (modeToggleParent && modeBtn) {
+        modeToggleParent.addEventListener('click', function(e) {
+            var btn = e.target.closest('.map-btn');
+            if (!btn) return;
+            var mode = btn.getAttribute('data-mode');
+            if (mode === 'map') {
+                modeBtn.setAttribute('data-tooltip', 'Switch to Satellite');
+            } else {
+                modeBtn.setAttribute('data-tooltip', 'Switch to Map');
+            }
+        });
+    }
+
+})();
