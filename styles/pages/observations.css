@@ -610,6 +610,12 @@
     border-color: var(--color-danger);
 }
 
+.page-observations .header-actions .icon-btn-delete:hover {
+    background: var(--color-danger-light);
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 560px) {
     .page-observations .field-grid {

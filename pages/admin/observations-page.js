@@ -579,6 +579,10 @@ if (typeof document !== 'undefined') {
         var btnFlag = document.getElementById('btnFlagRecord');
         if (btnFlag) btnFlag.addEventListener('click', handleFlag);
 
+        // Delete button
+        var btnDelete = document.getElementById('btnDeleteRecord');
+        if (btnDelete) btnDelete.addEventListener('click', handleDelete);
+
         // Close add modal buttons
         var closeAddBtn = document.getElementById('closeAddModalBtn');
         var closeAddFooterBtn = document.getElementById('closeAddModalFooterBtn');
