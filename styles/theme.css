@@ -27,6 +27,7 @@
   --color-bg-card: #ffffff;
   --color-bg-input: #f3f3f5;  /* subtle gray for inputs */
   --color-bg-header: #F9FAFB; /* table header background */
+  --color-bg-hover: #f3f4f6;  /* hover state background */
 
   /* Text Colors – Dark Slate (#2C3E50) for main, Gray (#7F8C8D) for muted */
   --color-text-main: #2C3E50;

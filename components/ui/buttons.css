@@ -254,7 +254,7 @@
 
 .action-btn.primary {
     background: var(--color-primary);
-    color: white;
+    color: var(--color-text-inverse);
     border-color: var(--color-primary);
 }
 
@@ -662,7 +662,7 @@
 .btn-add {
     background: var(--color-primary);
     border: none;
-    color: white;
+    color: var(--color-text-inverse);
 }
 
 .btn-add:hover {

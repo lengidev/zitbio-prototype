@@ -12,12 +12,12 @@
     right: 0;
     width: 224px;
     padding: 4px;
-    background: rgb(255, 255, 255);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 6px;
-    box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
+    background: var(--color-bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
     font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-    z-index: var(--z-dropdown, 100);
+    z-index: var(--z-dropdown);
     display: none;
     flex-direction: column;
     opacity: 0;
@@ -36,20 +36,20 @@
    Dropdown Header
    ============================================ */
 .user-dropdown-header {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--border-color-light);
     padding: 6px 8px 8px;
 }
 
 .user-dropdown-title {
     font-size: 14px;
     font-weight: 500;
-    color: var(--color-text-main, #2C3E50);
+    color: var(--color-text-main);
     line-height: 1.4;
 }
 
 .user-dropdown-subtitle {
     font-size: 12px;
-    color: #6B7280;
+    color: var(--color-text-secondary);
     line-height: 1.4;
     margin-top: 2px;
 }
@@ -76,11 +76,11 @@
     height: 32px;
     padding: 6px 8px;
     gap: 8px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 14px;
     font-weight: 400;
-    color: var(--color-text-main, #2C3E50);
+    color: var(--color-text-main);
     transition: background-color 0.15s ease;
     outline: none;
     user-select: none;
@@ -88,7 +88,7 @@
 
 .user-dropdown-item:hover,
 .user-dropdown-item:focus-visible {
-    background: rgb(244, 244, 245);
+    background: var(--color-bg-hover);
 }
 
 .user-dropdown-item:focus-visible {
@@ -100,7 +100,7 @@
     font-size: 18px;
     width: 18px;
     height: 18px;
-    color: var(--color-text-secondary, #7F8C8D);
+    color: var(--color-text-secondary);
     flex-shrink: 0;
 }
 
@@ -124,23 +124,23 @@
    Destructive Item (Logout)
    ============================================ */
 .user-dropdown-item--destructive {
-    color: var(--color-danger, #E53935);
+    color: var(--color-danger);
 }
 
 .user-dropdown-item--destructive .dropdown-icon {
-    color: var(--color-danger, #E53935);
+    color: var(--color-danger);
 }
 
 .user-dropdown-item--destructive:hover,
 .user-dropdown-item--destructive:focus-visible {
-    background: var(--color-danger-light, #ffebee);
+    background: var(--color-danger-light);
 }
 
 /* ============================================
    Dropdown Footer
    ============================================ */
 .user-dropdown-footer {
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: 1px solid var(--border-color-light);
     margin-top: 4px;
     margin-left: -4px;
     margin-right: -4px;
@@ -152,7 +152,7 @@
 
 .user-dropdown-footer span {
     font-size: 10px;
-    color: #6B7280;
+    color: var(--color-text-secondary);
     line-height: 1.4;
 }
 
@@ -171,6 +171,6 @@
         width: 224px;
         max-height: 80vh;
         overflow-y: auto;
-        z-index: var(--z-modal, 301);
+        z-index: var(--z-modal);
     }
 }

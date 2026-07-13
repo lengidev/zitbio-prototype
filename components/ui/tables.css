@@ -50,31 +50,8 @@
   border-collapse: collapse;
 }
 
-.data-table th {
-    background-color: #f9fafb;  /* rgb(249, 250, 251) */
-    padding: 12px 16px;         /* vertical 12px, horizontal 16px */
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--color-text-secondary);
-    border-bottom: 1px solid #e5e7eb;  /* slightly darker */
-    text-align: left;
-}
-
-/* Body cells */
-.data-table td {
-    background-color: #f9fafb;  /* same light gray background as header */
-    padding: 12px 16px;
-    font-size: 14px;
-    color: var(--color-text-main);
-    border-bottom: 1px solid #f1f5f9;  /* lighter separator */
-}
-
-.data-table tbody tr:hover td {
-    background-color: #f3f4f6;   /* light gray on hover */
-}
-
 .data-table thead th {
-  padding: 14px 20px; /*increased padding */
+  padding: 14px 20px;
   text-align: left;
   font-size: 12px;
   font-weight: 500;
@@ -87,11 +64,12 @@
 }
 
 .data-table tbody tr {
-  transition: background var(--transition-fast);
+  transition: background-color 0.15s ease-out;
+  will-change: background-color;
 }
 
 .data-table tbody tr:hover {
-  background: var(--color-bg-sidebar);
+  background-color: var(--color-bg-hover);
 }
 
 .data-table tbody td {
@@ -99,6 +77,7 @@
   font-size: 13px;
   color: var(--color-text-main);
   border-bottom: 1px solid var(--border-color-light);
+  transition: none;
 }
 
 /* Ensure last row has no bottom border for cleaner look */
@@ -112,8 +91,8 @@
 
 
 .table-container {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--color-bg-white);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     overflow: hidden;
     margin: 0;
@@ -161,12 +140,12 @@
 .status-cell.active,
 .status-cell.published {
   background: var(--color-success-light);
-  color: #2e7d32;
+  color: var(--color-primary);
 }
 
 .status-cell.pending {
   background: var(--color-warning-light);
-  color: #f57c00;
+  color: var(--color-warning);
 }
 
 .status-cell.inactive,
@@ -333,7 +312,7 @@
 }
 
 .page-arrow:hover:not(.disabled) {
-  background-color: var(--color-bg-header);
+  background-color: var(--color-bg-hover);
   border-color: var(--border-color-dark);
 }
 
@@ -367,7 +346,7 @@
 }
 
 .page-number:hover {
-  background-color: var(--color-bg-header);
+  background-color: var(--color-bg-hover);
 }
 
 .page-number.active {
@@ -415,7 +394,7 @@
 }
 
 .data-table.striped tbody tr:hover {
-  background: var(--color-bg-header);
+  background: var(--color-bg-hover);
 }
 
 /* ============================================
@@ -471,7 +450,7 @@
   transform: translateY(-50%);
   width: 12px;
   height: 12px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='7 15 12 10 17 15'%3E%3C/polyline%3E%3Cpolyline points='7 9 12 14 17 9'%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='7 15 12 10 17 15'%3E%3Cpolyline points='7 9 12 14 17 9'%3E%3C/svg%3E");
   background-size: contain;
   background-repeat: no-repeat;
   opacity: 0.5;
@@ -521,7 +500,7 @@
 
   /* Fix white bar artifact: set table background instead of cell backgrounds */
   .data-table {
-    background: var(--color-bg-header, #f9fafb);
+    background: var(--color-bg-header);
   }
 
   .data-table th,

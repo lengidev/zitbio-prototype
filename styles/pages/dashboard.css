@@ -154,7 +154,7 @@
 }
 
 .page-dashboard .action-btn.primary:hover {
-    background: rgba(46, 125, 50, 0.9);
+    background: var(--color-primary-hover);
 }
 
 .page-dashboard .action-btn.secondary {
@@ -206,7 +206,7 @@
 
 .page-dashboard .trend-badge.up {
     background: var(--color-success-light);
-    color: #2E7D32;
+    color: var(--color-primary);
 }
 
 .page-dashboard .trend-badge.down {

@@ -54,7 +54,7 @@
   height: 18px;
   padding: 0 5px;
   background-color: var(--color-danger);
-  color: #ffffff;
+  color: var(--color-text-inverse);
   font-size: 11px;
   font-weight: 600;
   line-height: 18px;
@@ -166,7 +166,7 @@
 }
 
 .notification-item.unread:hover {
-  background-color: #e0f0e0;
+  background-color: var(--color-primary-lighter);
 }
 
 /* Icon per notification type */

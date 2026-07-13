@@ -201,10 +201,6 @@ td {
   color: var(--color-text-main);
 }
 
-tr:hover td {
-  background-color: var(--color-bg-sidebar);
-}
-
 /* ============================================
    Utility Classes
    ============================================ */
