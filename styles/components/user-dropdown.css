@@ -104,22 +104,6 @@
     flex-shrink: 0;
 }
 
-@media (max-width: 1023px) and (min-width: 768px) {
-    .user-dropdown-item .dropdown-icon {
-        font-size: 16px;
-        width: 16px;
-        height: 16px;
-    }
-}
-
-@media (max-width: 767px) {
-    .user-dropdown-item .dropdown-icon {
-        font-size: 16px;
-        width: 16px;
-        height: 16px;
-    }
-}
-
 /* ============================================
    Destructive Item (Logout)
    ============================================ */

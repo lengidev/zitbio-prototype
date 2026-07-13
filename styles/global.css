@@ -264,3 +264,72 @@ td {
   font-size: 14px;
   font-weight: 500;
 }
+
+/* ============================================
+   Responsive Icon Scaling (consolidated)
+   Prevents duplicate media queries across files
+   ============================================ */
+
+/* Tablet: shrink icons */
+@media (max-width: 1023px) and (min-width: 768px) {
+  /* Large icons: 24px → 22px */
+  .nav-icon,
+  .hamburger .material-symbols-outlined,
+  .notification-btn .material-symbols-outlined {
+    font-size: 22px;
+  }
+
+  /* Medium icons: 20px → 18px */
+  .btn-icon svg, .btn-icon .material-symbols-outlined,
+  .user-menu svg, .user-menu .material-symbols-outlined,
+  .notification-icon .material-symbols-outlined,
+  .user-dropdown-item .dropdown-icon {
+    width: 18px; height: 18px; font-size: 18px;
+  }
+
+  /* Small icons: 18px → 16px */
+  .btn svg, .btn .material-symbols-outlined,
+  .page-btn svg, .page-btn .material-symbols-outlined,
+  .pagi-btn svg, .pagi-btn .material-symbols-outlined,
+  .btn-export svg, .btn-add svg,
+  .btn-export .material-symbols-outlined, .btn-add .material-symbols-outlined,
+  .user-menu-arrow {
+    width: 16px; height: 16px; font-size: 16px;
+  }
+
+  .notification-empty .material-symbols-outlined {
+    font-size: 40px;
+  }
+}
+
+/* Mobile: shrink icons */
+@media (max-width: 767px) {
+  /* Large icons: 24px → 20px */
+  .nav-icon,
+  .hamburger .material-symbols-outlined,
+  .notification-btn .material-symbols-outlined {
+    font-size: 20px;
+  }
+
+  /* Medium icons: 20px → 16px */
+  .btn-icon svg, .btn-icon .material-symbols-outlined,
+  .user-menu svg, .user-menu .material-symbols-outlined,
+  .notification-icon .material-symbols-outlined,
+  .user-dropdown-item .dropdown-icon {
+    width: 16px; height: 16px; font-size: 16px;
+  }
+
+  /* Small icons: 18px → 14px */
+  .btn svg, .btn .material-symbols-outlined,
+  .page-btn svg, .page-btn .material-symbols-outlined,
+  .pagi-btn svg, .pagi-btn .material-symbols-outlined,
+  .btn-export svg, .btn-add svg,
+  .btn-export .material-symbols-outlined, .btn-add .material-symbols-outlined,
+  .user-menu-arrow {
+    width: 14px; height: 14px; font-size: 14px;
+  }
+
+  .notification-empty .material-symbols-outlined {
+    font-size: 32px;
+  }
+}

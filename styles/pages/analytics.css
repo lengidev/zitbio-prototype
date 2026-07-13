@@ -363,15 +363,6 @@
     display: block;
 }
 
-@media (max-width: 1023px) and (min-width: 768px) {
-    .page-analytics .pagi-btn svg,
-    .page-analytics .pagi-btn .material-symbols-outlined {
-        width: 16px;
-        height: 16px;
-        font-size: 16px;
-    }
-}
-
 /* ============================================
    CBU Area Map
    ============================================ */
@@ -636,15 +627,6 @@
 @media (max-width: 1023px) and (min-width: 768px) {
     #map-container {
         height: 460px;
-    }
-}
-
-@media (max-width: 767px) {
-    .page-analytics .pagi-btn svg,
-    .page-analytics .pagi-btn .material-symbols-outlined {
-        width: 14px;
-        height: 14px;
-        font-size: 14px;
     }
 }
 

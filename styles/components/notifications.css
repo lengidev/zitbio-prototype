@@ -28,23 +28,6 @@
   font-size: 24px;
 }
 
-@media (max-width: 1023px) and (min-width: 768px) {
-  .notification-btn .material-symbols-outlined {
-    font-size: 22px;
-  }
-}
-
-@media (max-width: 767px) {
-  .notification-btn {
-    width: 36px;
-    height: 36px;
-  }
-
-  .notification-btn .material-symbols-outlined {
-    font-size: 20px;
-  }
-}
-
 /* Badge showing unread count */
 .notification-badge {
   position: absolute;
@@ -200,18 +183,6 @@
   color: var(--color-primary);
 }
 
-@media (max-width: 767px) {
-  .notification-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 18px;
-  }
-
-  .notification-icon .material-symbols-outlined {
-    font-size: 18px;
-  }
-}
-
 /* Content */
 .notification-content {
   flex: 1;
@@ -255,17 +226,7 @@
   color: var(--border-color);
 }
 
-@media (max-width: 1023px) and (min-width: 768px) {
-  .notification-empty .material-symbols-outlined {
-    font-size: 40px;
-  }
-}
-
 @media (max-width: 767px) {
-  .notification-empty .material-symbols-outlined {
-    font-size: 32px;
-  }
-
   .notification-empty {
     padding: 24px 16px;
   }

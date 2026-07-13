@@ -267,21 +267,6 @@
     font-variation-settings: 'wght' 400;;
 }
 
-/* Responsive nav icon sizing */
-@media (max-width: 1023px) and (min-width: 768px) {
-    .nav-icon {
-        font-size: 22px;
-        min-width: 22px;
-    }
-}
-
-@media (max-width: 767px) {
-    .nav-icon {
-        font-size: 20px;
-        min-width: 20px;
-    }
-}
-
 .nav-text {
     white-space: nowrap;
     transition: opacity 0.2s ease, visibility 0.2s ease;
@@ -578,18 +563,6 @@
     font-size: 24px;
 }
 
-@media (max-width: 1023px) and (min-width: 768px) {
-    .hamburger .material-symbols-outlined {
-        font-size: 22px;
-    }
-}
-
-@media (max-width: 767px) {
-    .hamburger .material-symbols-outlined {
-        font-size: 20px;
-    }
-}
-
 /* ============================================
    Overlay/Modal Backdrop
    ============================================ */
@@ -742,24 +715,6 @@
     color: var(--color-text-secondary);
 }
 
-@media (max-width: 1023px) and (min-width: 768px) {
-    .user-menu svg,
-    .user-menu .material-symbols-outlined {
-        width: 18px;
-        height: 18px;
-        font-size: 18px;
-    }
-}
-
-@media (max-width: 767px) {
-    .user-menu svg,
-    .user-menu .material-symbols-outlined {
-        width: 16px;
-        height: 16px;
-        font-size: 16px;
-    }
-}
-
 .user-menu-name {
   font-size: 13px;
   color: var(--color-text-primary);
@@ -771,22 +726,6 @@
     height: 18px;
     font-size: 18px;
     color: var(--color-text-muted);
-}
-
-@media (max-width: 1023px) and (min-width: 768px) {
-    .user-menu-arrow {
-        width: 16px;
-        height: 16px;
-        font-size: 16px;
-    }
-}
-
-@media (max-width: 767px) {
-    .user-menu-arrow {
-        width: 14px;
-        height: 14px;
-        font-size: 14px;
-    }
 }
 
 
