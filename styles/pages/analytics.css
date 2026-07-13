@@ -501,22 +501,18 @@
     margin: 3px 0;
 }
 
-/* Bottom-left status bar */
+/* Top-left status bar */
 #map-status {
     position: absolute;
-    bottom: 12px;
-    left: 12px;
+    top: 0px;
+    left: 0px;
     z-index: 1000;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(8px);
-    border-radius: 8px;
-    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.75);
+    padding: 2px 16px;
     display: flex;
-    gap: 14px;
+    column-gap: 16px;
     font-size: 11px;
-    font-weight: 600;
-    color: #374151;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    font-weight: 500;
 }
 
 #map-status span {
