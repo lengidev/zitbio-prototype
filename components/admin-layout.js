@@ -1,7 +1,15 @@
 /**
- * BioMonitor - Admin Layout Component
+ * BioMonitor — Admin Layout Component
  * Unified sidebar collapse/expand engine with localStorage persistence.
  * Handles both desktop (collapsible) and mobile (overlay) sidebar behavior.
+ *
+ * Design decisions:
+ *   - Sidebar state is persisted in localStorage so returning users
+ *     find their preferred layout.
+ *   - Uses CSS class switching rather than inline style manipulation
+ *     for both performance and maintainability.
+ *   - Connection status is polled every 30s so admins are immediately
+ *     aware of network issues when entering data in the field.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -10,11 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ============================================
        DESKTOP: Collapse/Expand sidebar
-       Uses #sidebarToggle, persists state to localStorage
+       Persists the collapsed state so users returning to the app
+       find their preferred layout without re-toggling.
        ============================================ */
     const toggleBtn = document.getElementById('sidebarToggle');
 
-    // Recovery: restore collapsed state from localStorage
+    // Restore persisted sidebar state from previous session
     const isCollapsed = localStorage.getItem('admin-sidebar-collapsed') === 'true';
     if (sidebar && isCollapsed) {
         sidebar.classList.add('collapsed');
@@ -31,8 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================
-       MOBILE: Open/Close sidebar overlay
-       Uses #hamburgerBtn, #sidebarClose, #sidebarOverlay
+       MOBILE: Open/Close sidebar as overlay
+       Hamburger opens; close button and overlay click both dismiss.
+       Designed to feel native on touch devices.
        ============================================ */
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     const sidebarClose = document.getElementById('sidebarClose');
@@ -62,6 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ============================================
        NAV ITEMS: Active page highlighting + close mobile on navigate
+       Highlights the current page's nav item so admins always know
+       where they are in the hierarchy.
        ============================================ */
     const currentPath = window.location.pathname;
     const navItems = document.querySelectorAll('.sidebar-menu .nav-item');
@@ -87,6 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* ============================================
    USER MENU DROPDOWN
+   Populated dynamically from BioData session so the displayed
+   name/role/ID always reflects the logged-in user.
    ============================================ */
 function initUserMenu() {
   const userMenu = document.getElementById('userMenu');
@@ -140,9 +154,11 @@ function initUserMenu() {
   });
 }
 
-/**
- * Update user dropdown content from the current session
- */
+  /**
+   * Update user dropdown content from the current session.
+   * Pulls name, email, role, and a generated Account ID from BioData
+   * so the dropdown is always in sync with the session state.
+   */
 function updateUserDropdownFromSession(dropdown) {
   var session = BioData.getSession();
   if (!session) return;
@@ -175,9 +191,10 @@ function updateUserDropdownFromSession(dropdown) {
   }
 }
 
-/**
- * Handle user dropdown item actions
- */
+  /**
+   * Handle user dropdown item actions.
+   * Currently supports Help (placeholder) and Logout (clears session + redirects).
+   */
 function handleUserDropdownAction(item) {
   var action = item.getAttribute('data-action');
   if (action === 'help') {
@@ -191,7 +208,7 @@ function handleUserDropdownAction(item) {
     if (window.BioData) {
       BioData.logout();
     }
-    // Determine correct relative path based on page depth
+  // Determine correct relative path based on page depth (admin/ vs index.html)
     var isAdminPage = window.location.pathname.indexOf('/admin/') !== -1;
     window.location.href = isAdminPage ? '../../index.html' : '../index.html';
   }
@@ -248,9 +265,12 @@ function initHeaderActions() {
 
 /* ============================================
    NOTIFICATION SYSTEM
+   Creates and manages the bell-icon notification dropdown from
+   BioData's notification system. Used on all admin pages to surface
+   pending/flagged observations and new user registrations.
    ============================================ */
 function initNotifications() {
-  // Only init on admin pages
+  // Guard: only init on admin pages (BioData must be loaded)
   if (!window.BioData) return;
 
   var headerRight = document.querySelector('.header-right');
@@ -479,8 +499,10 @@ if (typeof document !== 'undefined') {
 }
 
 /**
- * Update connection status indicator in sidebar footer
- * States: Connected (green), Slow (amber), Disconnected (red)
+ * Update connection status indicator in sidebar footer.
+ * States: Connected (green), Slow (amber), Disconnected (red).
+ * Polls every 30s and listens for browser online/offline events so
+ * admins working in remote areas see network changes immediately.
  */
 function updateConnectionStatus() {
   var dot = document.getElementById('statusDot');
@@ -494,7 +516,7 @@ function updateConnectionStatus() {
     return;
   }
 
-  // Check connection type for slow detection
+  // Check connection type for slow detection (Chrome-based browsers)
   var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (connection) {
     // effectiveType: 'slow-2g', '2g', '3g', '4g'

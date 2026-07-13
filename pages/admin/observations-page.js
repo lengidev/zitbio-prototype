@@ -1,10 +1,13 @@
 /**
- * BioMonitor - Observations Page Logic
+ * BioMonitor — Observations Page Logic
  * Reads from unified BioData layer via shared observationsRenderer.
  * Handles table rendering, pagination, search, and modal interactions.
+ * Uses the same renderer as the Analytics tab to ensure visual consistency
+ * between the two views.
  */
 
-// State
+// View-model state for the observations page — tracks pagination,
+// the currently filtered dataset, and the observation being viewed/edited.
 var obsCurrentPage = 1;
 var obsFilteredData = [];
 var obsRecordsPerPage = 8;
@@ -210,6 +213,9 @@ function toggleSection(id) {
 }
 
 // ───── APPROVE / FLAG ACTIONS ─────
+// These update the verification_status in the data layer, which immediately
+// refreshes the table and sends a notification to the admin sidebar.
+// Approve = verified as accurate; Flag = suspected issue (e.g., wrong species ID).
 
 function handleApprove() {
     if (!window.BioData || !currentObsId) return;
@@ -448,7 +454,9 @@ function saveChanges() {
 }
 
 function parseCoords(str) {
-    // Supports formats: "15.6000°S, 29.4000°E" and "15.6000, 29.4000"
+    // Support both human-readable (DMS-like) and decimal formats to accommodate
+    // data imported from legacy GPS handhelds vs. modern browser APIs.
+    // Handles formats: "15.6000°S, 29.4000°E", "-15.6, 29.4", "15.6°S, 29.4°E"
     var regex = /([\-0-9.]+)\s*(?:°)?([NSEWnsew])?[, ]+\s*([\-0-9.]+)\s*(?:°)?([NSEWnsew])?/;
     var match = str.match(regex);
     if (!match) {
@@ -469,7 +477,8 @@ function parseCoords(str) {
     return { lat: lat, lng: lng };
 }
 
-// Handle delete action
+// Handle delete — confirms with user, then removes from data layer
+// and refreshes the table. A notification is not generated for deletion.
 function handleDelete() {
     if (!window.BioData) return;
     var obsId = document.getElementById('viewModal').getAttribute('data-obs-id');

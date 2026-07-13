@@ -1,15 +1,25 @@
 /**
- * BioMonitor - Analytics Page
+ * BioMonitor — Analytics Page
  * Tab switching, dynamic table rendering, pagination, search, and column toggling.
- * Uses shared observationsRenderer for table rendering.
+ * Uses the shared observationsRenderer for table rendering (same as the admin
+ * Observations page), ensuring visual consistency.
+ *
+ * Design decisions:
+ *   - Column toggles let analysts customise the table for different reporting
+ *     contexts (e.g., hide coordinates when sharing publicly).
+ *   - Filters are preserved across tab switches so analysts don't lose context.
+ *   - The map tab uses Leaflet with OSM + Satellite basemaps and shows
+ *     observations with colour-coded status markers.
  */
 
-// State
+// View-model state for the analytics page — tracks pagination position,
+// filtered dataset, and UI preferences (filters + column visibility).
 var analyticsCurrentPage = 1;
 var analyticsFilteredData = [];
 var analyticsRecordsPerPage = 10;
 
-// Filter state
+// Active filter values — when set, they're passed to BioData.filterObservations()
+// to narrow the dataset before rendering.
 var analyticsFilters = {
     dateFrom: '',
     dateTo: '',
@@ -18,7 +28,8 @@ var analyticsFilters = {
     species: ''
 };
 
-// Column visibility state
+// Column visibility toggles — stored here rather than in the DOM so they
+// survive table re-renders (which would otherwise reset checkbox states).
 var analyticsVisibleColumns = {
     coords: false,
     'protected-area': false,
@@ -28,7 +39,9 @@ var analyticsVisibleColumns = {
     'obs-id': false
 };
 
-// Get filtered data from BioData using shared search + filters
+// Get filtered data — applies BioData filters first, then scoped search on top.
+// This two-phase approach means the filter count badge shows active filters
+// even when no search term is entered.
 function getAnalyticsFilteredData() {
     if (!window.BioData) return [];
     
@@ -64,7 +77,8 @@ function getAnalyticsFilteredData() {
     return data;
 }
 
-// Count active filters
+// Count active filters — used to show a badge on the filter toggle button
+// so users know at a glance that filtering is applied.
 function countActiveFilters() {
     var count = 0;
     if (analyticsFilters.dateFrom) count++;
@@ -75,7 +89,7 @@ function countActiveFilters() {
     return count;
 }
 
-// Update filter count badge
+// Update the filter-count badge on the toggle button
 function updateFilterCount() {
     var badge = document.getElementById('filterCountBadge');
     if (!badge) return;
@@ -83,7 +97,7 @@ function updateFilterCount() {
     badge.textContent = count;
 }
 
-// Trigger re-render when filters change
+// Re-render the table when any filter changes, resetting to page 1
 function applyFilters() {
     analyticsCurrentPage = 1;
     updateFilterCount();
@@ -91,6 +105,7 @@ function applyFilters() {
 }
 
 // Render the analytics table using the shared renderer
+// (same as the admin Observations page, ensuring visual consistency).
 function renderAnalyticsTable() {
     if (!window.BioData) return;
 
@@ -131,7 +146,8 @@ function handleAnalyticsSearch() {
 }
 
 // ============================================================
-//  Filter Bar Toggle
+//  Filter Bar Toggle — opens/closes the filter panel
+//  Auto-opens if any filters are already active.
 // ============================================================
 
 function initFilterToggle() {
@@ -152,7 +168,9 @@ function initFilterToggle() {
 }
 
 // ============================================================
-//  Populate Filter Dropdowns
+//  Populate Filter Dropdowns — fills province and species selects
+//  from BioData reference data so they stay in sync with the rest
+//  of the application.
 // ============================================================
 
 function populateFilterDropdowns() {
@@ -194,6 +212,9 @@ function populateFilterDropdowns() {
 
 // ============================================================
 //  Column Visibility Toggle
+//  Analytics exposes 12 columns by default; 6 are hidden via CSS
+//  until the user toggles them on. This lets analysts customise
+//  the table for different reporting contexts.
 // ============================================================
 
 function applyColumnVisibility() {
@@ -208,7 +229,7 @@ function applyColumnVisibility() {
 }
 
 // ============================================================
-//  Column Toggle Buttons (in filter bar)
+//  Column Toggle Buttons — in the filter bar for easy access
 // ============================================================
 
 function initColumnToggleButtons() {
@@ -228,7 +249,8 @@ function initColumnToggleButtons() {
 }
 
 // ============================================================
-//  Filter Event Listeners
+//  Filter Event Listeners — each filter dropdown triggers a
+//  re-render on change (not on every keystroke, to avoid churn).
 // ============================================================
 
 function initFilterListeners() {
@@ -371,7 +393,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ============================================================
 //  CBU Area Map — Leaflet Interactive Map
-//  Initialized when the Map tab is first activated
+//  Lazy-initialized when the Map tab is first activated to avoid
+//  loading Leaflet resources on pages that don't need them.
+//  Shows observation markers colour-coded by verification status,
+//  with polygon overlays for CBU Nature Park and CBU Campus.
 // ============================================================
 
 (function() {
@@ -817,7 +842,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ============================================================
 //  Toolbar UI — Consolidated controls
-//  Proxies clicks to hidden legacy controls
+//  Proxies clicks to hidden legacy controls so the new toolbar
+//  works without refactoring the existing Leaflet controller logic.
 // ============================================================
 
 (function() {

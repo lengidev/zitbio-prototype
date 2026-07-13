@@ -1,10 +1,14 @@
 /**
- * Users Page Logic
- * Reads/writes from unified BioData layer instead of local array.
+ * BioMonitor — Users Page Logic
+ * Reads/writes from unified BioData layer instead of a local array.
+ * All user CRUD operations go through the data layer so changes are
+ * immediately reflected across the entire application.
  */
 
 /**
  * Converts a Date object into a relative time string (e.g., "1 hour ago").
+ * Used in the "Last Login" column to give admins an at-a-glance sense of
+ * user activity without needing to parse absolute timestamps.
  * @param {Date} date
  * @returns {string}
  */
@@ -52,7 +56,8 @@ function renderTable() {
         filteredData = allUsers.slice();
     }
 
-    // Update the total user count badge (always shows total registered, not filtered)
+    // Update the total user count badge — always shows total registered,
+    // not filtered count, so admins see the overall system size at a glance.
     document.getElementById('userCountBadge').textContent = window.BioData.totalUsers();
 
     const totalPages = Math.ceil(filteredData.length / recordsPerPage);
@@ -75,7 +80,8 @@ function renderTable() {
         var roleDisplay = getRoleDisplayName(user.role);
         var roleClass = roleDisplay === 'Administrator' ? 'admin' : 'officer';
 
-        // Use real lastLogin from data layer, or show "Never" if null
+        // Use real lastLogin from data layer, or show "Never" if the user
+        // has never logged in (seed accounts or newly created users).
         var relativeTime;
         if (user.lastLogin) {
           relativeTime = getRelativeTime(new Date(user.lastLogin));
@@ -124,7 +130,8 @@ function closeAddUserModal() {
     document.getElementById('addUserModal').classList.remove('active');
 }
 
-// Edit/delete handlers
+// Edit/delete handler — delegates to BioData CRUD methods
+// so user deletions immediately affect the data layer and notification system.
 document.addEventListener('click', function(e) {
     if (!window.BioData) return;
 

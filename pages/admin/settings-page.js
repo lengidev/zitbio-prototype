@@ -1,10 +1,13 @@
 /**
- * BioMonitor - Settings Page Component
- * Logic for password changes, session-driven account info, and settings interactions
+ * BioMonitor — Settings Page Component
+ * Logic for password changes, session-driven account info, and settings interactions.
+ * Account information is populated from the BioData session so it always
+ * reflects the currently logged-in user without requiring a page reload.
  */
 
 /**
- * Format a date string (ISO or locale) into a readable format
+ * Format a date string (ISO or locale) into a readable format.
+ * Used in the Account Information section for the "Created" field.
  */
 function formatSettingsDate(dateStr) {
   if (!dateStr) return '—';
@@ -18,7 +21,8 @@ function formatSettingsDate(dateStr) {
 }
 
 /**
- * Format an ISO timestamp into a readable datetime string
+ * Format an ISO timestamp into a readable datetime string.
+ * Used for the "Last Login" field, which comes from BioData as ISO 8601.
  */
 function formatSettingsDateTime(isoStr) {
   if (!isoStr) return '—';
@@ -81,7 +85,7 @@ function populateAccountInfo() {
  * Initialize settings page event listeners
  */
 function initSettingsPage() {
-  // Guard: Check if we're on the settings page
+  // Guard: only run on the settings page (detected by the change password button)
   const changePwdBtn = document.getElementById('changePwdBtn');
   if (!changePwdBtn) {
     return; // Not the settings page
