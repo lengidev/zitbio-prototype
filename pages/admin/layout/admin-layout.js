@@ -208,8 +208,9 @@ function handleUserDropdownAction(item) {
     if (window.BioData) {
       BioData.logout();
     }
-  // Redirect to login page (root index.html)
-    window.location.href = '../../../index.html';
+  // Determine correct relative path based on page depth
+    var isAdminPage = window.location.pathname.indexOf('/admin/') !== -1;
+    window.location.href = isAdminPage ? '../../../index.html' : '../../index.html';
   }
 }
 
