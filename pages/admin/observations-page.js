@@ -24,6 +24,66 @@ function getObsFilteredData() {
 }
 
 // Render the table using shared renderer
+// Column definitions for the Admin Observations table (7 columns + Actions)
+function getObsColumns() {
+    return [
+        {
+            label: 'Species',
+            cellClass: 'species-cell',
+            render: function(obs) {
+                var sd = obs.species_details || {};
+                return '<span class="species-common">' + escapeHtmlObs(sd.common_name || sd.scientific_name) + '</span>' +
+                    '<span class="species-scientific">' + escapeHtmlObs(sd.scientific_name) + '</span>';
+            }
+        },
+        {
+            label: 'Count',
+            cellClass: 'count-cell',
+            render: function(obs) {
+                return obs.count || 0;
+            }
+        },
+        {
+            label: 'Location',
+            cellClass: 'location-cell',
+            render: function(obs) {
+                var loc = obs.location || {};
+                var locationDisplay = loc.city || '';
+                if (loc.administrative_area) {
+                    locationDisplay += (locationDisplay ? ', ' : '') + loc.administrative_area;
+                }
+                if (loc.country && !locationDisplay) {
+                    locationDisplay = loc.country;
+                }
+                return escapeHtmlObs(locationDisplay || '—');
+            }
+        },
+        {
+            label: 'Date',
+            cellClass: 'date-cell',
+            render: function(obs) {
+                var dateStr = obs.timestamp ? obs.timestamp.split('T')[0] : null;
+                return formatObsDate(dateStr);
+            }
+        },
+        {
+            label: 'Recorded By',
+            cellClass: 'recorded-by-cell',
+            render: function(obs) {
+                return escapeHtmlObs(obs.recorded_by);
+            }
+        },
+        {
+            label: 'Verification Status',
+            render: function(obs) {
+                var status = obs.verification_status || 'Pending';
+                var statusClass = 'status-' + status.toLowerCase();
+                return '<span class="status-badge ' + statusClass + '">' + escapeHtmlObs(status) + '</span>';
+            }
+        }
+    ];
+}
+
 function renderObsTable() {
     if (!window.BioData) return;
 
@@ -33,11 +93,21 @@ function renderObsTable() {
     if (obsCurrentPage > totalPages) obsCurrentPage = totalPages || 1;
 
     var result = renderObservationsTable({
-        viewMode: 'admin',
         data: obsFilteredData,
         page: obsCurrentPage,
         perPage: obsRecordsPerPage,
-        tableSelector: '.page-observations .data-table'
+        tableSelector: '.page-observations .data-table',
+        paginationSelector: '.page-observations .observations-pagination',
+        paginationStyle: 'centered',
+        columns: getObsColumns(),
+        rowActions: [
+            {
+                label: 'View',
+                class: 'btn-view btnViewRecord',
+                attrName: 'data-id',
+                attrValue: function(obs) { return obs.observation_id; }
+            }
+        ]
     });
 
     // Update prev/next buttons
@@ -49,7 +119,7 @@ function renderObsTable() {
     // Observations page uses .page-item with centered layout — render separately
     renderObsPagination(result.totalPages);
 
-    // Attach event listeners to View buttons (using data-id now)
+    // Attach event listeners to View buttons
     var viewButtons = document.querySelectorAll('.page-observations .btnViewRecord');
     viewButtons.forEach(function(btn) {
         btn.addEventListener('click', function() {

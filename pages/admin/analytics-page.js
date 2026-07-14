@@ -104,6 +104,104 @@ function applyFilters() {
     renderAnalyticsTable();
 }
 
+// Column definitions for the Analytics Observations table (12 columns)
+function getAnalyticsColumns() {
+    return [
+        {
+            label: 'Scientific Name',
+            cellClass: 'sci-name',
+            render: function(obs) {
+                var sd = obs.species_details || {};
+                return escapeHtmlObs(sd.scientific_name || '');
+            }
+        },
+        {
+            label: 'Common Name',
+            cellClass: 'common-name',
+            render: function(obs) {
+                var sd = obs.species_details || {};
+                return escapeHtmlObs(sd.common_name || '—');
+            }
+        },
+        {
+            label: 'Region / Province',
+            render: function(obs) {
+                var loc = obs.location || {};
+                return escapeHtmlObs(loc.administrative_area || '—');
+            }
+        },
+        {
+            label: 'Habitat Type',
+            render: function(obs) {
+                var loc = obs.location || {};
+                return escapeHtmlObs(loc.habitat_type || '—');
+            }
+        },
+        {
+            label: 'Total Count',
+            cellClass: 'count-cell',
+            render: function(obs) {
+                return obs.count || 0;
+            }
+        },
+        {
+            label: 'Date Recorded',
+            render: function(obs) {
+                var dateStr = obs.timestamp ? obs.timestamp.split('T')[0] : null;
+                return formatObsDate(dateStr);
+            }
+        },
+        {
+            label: 'Coordinates',
+            toggleKey: 'coords',
+            render: function(obs) {
+                var loc = obs.location || {};
+                var lat = loc.latitude != null ? Math.abs(loc.latitude).toFixed(4) + (loc.latitude >= 0 ? '°N' : '°S') : null;
+                var lng = loc.longitude != null ? Math.abs(loc.longitude).toFixed(4) + (loc.longitude >= 0 ? '°E' : '°W') : null;
+                var coordsStr = loc.latitude != null ? lat + ', ' + lng : '—';
+                return '<span class="coords-text">' + coordsStr + '</span>';
+            }
+        },
+        {
+            label: 'Protected Area',
+            toggleKey: 'protected-area',
+            render: function(obs) {
+                var loc = obs.location || {};
+                return escapeHtmlObs(loc.protected_area || '—');
+            }
+        },
+        {
+            label: 'Location Description',
+            toggleKey: 'locality',
+            render: function(obs) {
+                var loc = obs.location || {};
+                return escapeHtmlObs(loc.locality_description || '—');
+            }
+        },
+        {
+            label: 'Recorded By',
+            toggleKey: 'recorded-by',
+            render: function(obs) {
+                return escapeHtmlObs(obs.recorded_by || '—');
+            }
+        },
+        {
+            label: 'Institution',
+            toggleKey: 'institution',
+            render: function(obs) {
+                return escapeHtmlObs(obs.institution_name || '—');
+            }
+        },
+        {
+            label: 'Observation ID',
+            toggleKey: 'obs-id',
+            render: function(obs) {
+                return '<code>' + escapeHtmlObs(obs.observation_id || '') + '</code>';
+            }
+        }
+    ];
+}
+
 // Render the analytics table using the shared renderer
 // (same as the admin Observations page, ensuring visual consistency).
 function renderAnalyticsTable() {
@@ -115,12 +213,13 @@ function renderAnalyticsTable() {
     if (analyticsCurrentPage > totalPages) analyticsCurrentPage = totalPages || 1;
 
     renderObservationsTable({
-        viewMode: 'analytics',
         data: analyticsFilteredData,
         page: analyticsCurrentPage,
         perPage: analyticsRecordsPerPage,
         tableSelector: '.page-analytics .observations-table',
-        paginationSelector: '.page-analytics .observations-pagination'
+        paginationSelector: '.page-analytics .observations-pagination',
+        paginationStyle: 'bar',
+        columns: getAnalyticsColumns()
     });
 
     // Apply current column visibility state
