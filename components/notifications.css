@@ -249,12 +249,14 @@
    ============================================ */
 @media (max-width: 767px) {
   .notification-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 24px);
-    max-width: 420px;
+    /* Position relative to the viewport (not the tiny bell container)
+       so it spans the full screen width with safe side margins. */
+    position: fixed;
+    top: 56px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
     max-height: 70vh;
     overflow-y: auto;
     z-index: var(--z-modal);
