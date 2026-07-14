@@ -123,11 +123,88 @@ function handleSearch() {
 }
 
 function openAddUserModal() {
+    // Reset fields for a fresh entry
+    document.getElementById('addUserName').value = '';
+    document.getElementById('addUserEmail').value = '';
+    document.getElementById('addUserRole').value = 'field_officer';
+    document.getElementById('addUserInstitution').value = '';
     document.getElementById('addUserModal').classList.add('active');
 }
 
 function closeAddUserModal() {
     document.getElementById('addUserModal').classList.remove('active');
+}
+
+function openEditUserModal(id) {
+    if (!window.BioData) return;
+    var user = window.BioData.getUserById(parseInt(id, 10));
+    if (!user) return;
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('editUserName').value = user.name || '';
+    document.getElementById('editUserEmail').value = user.email || '';
+    document.getElementById('editUserRole').value = user.role || 'field_officer';
+    document.getElementById('editUserInstitution').value = user.institution_name || '';
+    document.getElementById('editUserSubtitle').textContent = 'Editing ' + (user.name || 'user');
+    document.getElementById('editUserModal').classList.add('active');
+}
+
+function closeEditUserModal() {
+    document.getElementById('editUserModal').classList.remove('active');
+}
+
+// Persist a new user via the BioData layer, then refresh the table.
+function handleSaveAddUser() {
+    if (!window.BioData) return;
+    var name = document.getElementById('addUserName').value.trim();
+    var email = document.getElementById('addUserEmail').value.trim();
+    var role = document.getElementById('addUserRole').value;
+    var institution = document.getElementById('addUserInstitution').value.trim();
+
+    if (!name) {
+        alert('Please enter a name.');
+        return;
+    }
+    if (!email) {
+        alert('Please enter an email.');
+        return;
+    }
+
+    window.BioData.addUser({
+        name: name,
+        email: email,
+        role: role,
+        institution_name: institution
+    });
+    closeAddUserModal();
+    renderTable();
+}
+
+// Persist edits to an existing user via the BioData layer, then refresh.
+function handleSaveEditUser() {
+    if (!window.BioData) return;
+    var id = parseInt(document.getElementById('editUserId').value, 10);
+    var name = document.getElementById('editUserName').value.trim();
+    var email = document.getElementById('editUserEmail').value.trim();
+    var role = document.getElementById('editUserRole').value;
+    var institution = document.getElementById('editUserInstitution').value.trim();
+
+    if (!name) {
+        alert('Please enter a name.');
+        return;
+    }
+    if (!email) {
+        alert('Please enter an email.');
+        return;
+    }
+
+    window.BioData.updateUser(id, {
+        name: name,
+        email: email,
+        role: role,
+        institution_name: institution
+    });
+    closeEditUserModal();
+    renderTable();
 }
 
 // Edit/delete handler — delegates to BioData CRUD methods
@@ -137,10 +214,7 @@ document.addEventListener('click', function(e) {
 
     if (e.target.closest('.edit-user')) {
         var id = e.target.closest('.edit-user').getAttribute('data-id');
-        var user = window.BioData.getUserById(parseInt(id, 10));
-        if (user) {
-            alert('Edit user: ' + user.name + '\n(email: ' + user.email + ') \u2013 coming soon.');
-        }
+        openEditUserModal(id);
     }
     if (e.target.closest('.delete-user')) {
         var id = e.target.closest('.delete-user').getAttribute('data-id');
@@ -163,12 +237,31 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnAddUser').addEventListener('click', openAddUserModal);
     document.getElementById('closeAddUserModalBtn').addEventListener('click', closeAddUserModal);
     document.getElementById('closeAddUserModalFooterBtn').addEventListener('click', closeAddUserModal);
+    document.getElementById('saveAddUserBtn').addEventListener('click', handleSaveAddUser);
 
-    // Close modal on overlay click
-    var modal = document.getElementById('addUserModal');
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) closeAddUserModal();
+    document.getElementById('closeEditUserModalBtn').addEventListener('click', closeEditUserModal);
+    document.getElementById('closeEditUserModalFooterBtn').addEventListener('click', closeEditUserModal);
+    document.getElementById('saveEditUserBtn').addEventListener('click', handleSaveEditUser);
+
+    // Close modals on overlay click
+    var addModal = document.getElementById('addUserModal');
+    if (addModal) {
+        addModal.addEventListener('click', function(e) {
+            if (e.target === addModal) closeAddUserModal();
         });
     }
+    var editModal = document.getElementById('editUserModal');
+    if (editModal) {
+        editModal.addEventListener('click', function(e) {
+            if (e.target === editModal) closeEditUserModal();
+        });
+    }
+
+    // Close modals on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAddUserModal();
+            closeEditUserModal();
+        }
+    });
 });

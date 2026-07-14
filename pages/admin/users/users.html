@@ -166,20 +166,113 @@
         </main>
     </div>
 
-    <!-- Add User Modal -->
+    <!-- Add User Modal (styled to match the Observation view modal) -->
     <div class="modal-overlay" id="addUserModal">
-        <div class="add-modal">
-            <div class="add-modal-header">
-                <h3 class="add-modal-title">Add New User</h3>
-                <button class="modal-close" id="closeAddUserModalBtn">
-                    <span class="material-symbols-outlined">close</span>
+        <div class="modal-card user-modal-card">
+            <div class="modal-header user-modal-header">
+                <div>
+                    <div class="header-title-row">
+                        <h2 class="modal-title">Add New User</h2>
+                    </div>
+                    <p class="modal-subtitle">Create a new system account</p>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" id="closeAddUserModalBtn" data-tip="Close" aria-label="Close">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body user-modal-body">
+                <div class="section-static">
+                    <div class="section-heading">
+                        <span class="material-symbols-outlined section-icon">person_add</span>
+                        User Details
+                    </div>
+                    <div class="user-form-grid">
+                        <div class="form-field form-field-full">
+                            <label class="form-label" for="addUserName">Full Name</label>
+                            <input type="text" id="addUserName" class="form-input" placeholder="e.g. Jane Doe">
+                        </div>
+                        <div class="form-field form-field-full">
+                            <label class="form-label" for="addUserEmail">Email</label>
+                            <input type="email" id="addUserEmail" class="form-input" placeholder="name@zitbio.org">
+                        </div>
+                        <div class="form-field form-field-full">
+                            <label class="form-label" for="addUserRole">Role</label>
+                            <select id="addUserRole" class="form-input">
+                                <option value="field_officer">Field Officer</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                        <div class="form-field form-field-full">
+                            <label class="form-label" for="addUserInstitution">Institution</label>
+                            <input type="text" id="addUserInstitution" class="form-input" placeholder="e.g. The Copperbelt University">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer user-modal-footer">
+                <button class="btn-export" id="closeAddUserModalFooterBtn">Cancel</button>
+                <button class="btn-add" id="saveAddUserBtn">
+                    <span class="material-symbols-outlined">check</span>
+                    Save User
                 </button>
             </div>
-            <div class="add-modal-body">
-                <p>This feature is coming soon. Please contact your administrator to add new users.</p>
-                <div class="modal-footer">
-                    <button class="btn-export" id="closeAddUserModalFooterBtn">Close</button>
+        </div>
+    </div>
+
+    <!-- Edit User Modal (styled to match the Observation view modal) -->
+    <div class="modal-overlay" id="editUserModal">
+        <div class="modal-card user-modal-card">
+            <div class="modal-header user-modal-header">
+                <div>
+                    <div class="header-title-row">
+                        <h2 class="modal-title">Edit User</h2>
+                    </div>
+                    <p class="modal-subtitle" id="editUserSubtitle">Update account details</p>
                 </div>
+                <div class="header-actions">
+                    <button class="icon-btn" id="closeEditUserModalBtn" data-tip="Close" aria-label="Close">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body user-modal-body">
+                <input type="hidden" id="editUserId">
+                <div class="section-static">
+                    <div class="section-heading">
+                        <span class="material-symbols-outlined section-icon">edit</span>
+                        User Details
+                    </div>
+                    <div class="user-form-grid">
+                        <div class="form-field form-field-full">
+                            <label class="form-label" for="editUserName">Full Name</label>
+                            <input type="text" id="editUserName" class="form-input">
+                        </div>
+                        <div class="form-field form-field-full">
+                            <label class="form-label" for="editUserEmail">Email</label>
+                            <input type="email" id="editUserEmail" class="form-input">
+                        </div>
+                        <div class="form-field form-field-full">
+                            <label class="form-label" for="editUserRole">Role</label>
+                            <select id="editUserRole" class="form-input">
+                                <option value="field_officer">Field Officer</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                        <div class="form-field form-field-full">
+                            <label class="form-label" for="editUserInstitution">Institution</label>
+                            <input type="text" id="editUserInstitution" class="form-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer user-modal-footer">
+                <button class="btn-export" id="closeEditUserModalFooterBtn">Cancel</button>
+                <button class="btn-add" id="saveEditUserBtn">
+                    <span class="material-symbols-outlined">check</span>
+                    Save
+                </button>
             </div>
         </div>
     </div>
