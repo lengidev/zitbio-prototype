@@ -32,7 +32,7 @@ var analyticsFilters = {
 // survive table re-renders (which would otherwise reset checkbox states).
 var analyticsVisibleColumns = {
     coords: false,
-    'protected-area': false,
+    'focus-area': false,
     locality: false,
     'recorded-by': false,
     institution: false,
@@ -163,11 +163,11 @@ function getAnalyticsColumns() {
             }
         },
         {
-            label: 'Protected Area',
-            toggleKey: 'protected-area',
+            label: 'Focus Area',
+            toggleKey: 'focus-area',
             render: function(obs) {
                 var loc = obs.location || {};
-                return escapeHtmlObs(loc.protected_area || '—');
+                return escapeHtmlObs(loc.focus_area || '—');
             }
         },
         {

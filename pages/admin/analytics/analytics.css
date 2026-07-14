@@ -270,7 +270,7 @@
 
 /* Show toggleable columns when the table has the corresponding data attribute */
 .page-analytics .observations-table[data-show-coords="true"] .col-toggle.col-coords,
-.page-analytics .observations-table[data-show-protected-area="true"] .col-toggle.col-protected-area,
+.page-analytics .observations-table[data-show-focus-area="true"] .col-toggle.col-focus-area,
 .page-analytics .observations-table[data-show-locality="true"] .col-toggle.col-locality,
 .page-analytics .observations-table[data-show-recorded-by="true"] .col-toggle.col-recorded-by,
 .page-analytics .observations-table[data-show-institution="true"] .col-toggle.col-institution,

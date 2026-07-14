@@ -23,14 +23,14 @@
         </div>
         <div class="user-menu" id="userMenu">
             <span class="material-symbols-outlined">person</span>
-            <span class="user-menu-name">James Wilson</span>
+            <span class="user-menu-name">Wangu Ng'ambi</span>
             <span class="material-symbols-outlined user-menu-arrow">expand_more</span>
 
             <div class="user-dropdown">
                 <!-- Header -->
                 <div class="user-dropdown-header">
-                    <div class="user-dropdown-title">James Wilson</div>
-                    <div class="user-dropdown-subtitle">james.wilson@biodiversity.org</div>
+                    <div class="user-dropdown-title">Wangu Ng'ambi</div>
+                    <div class="user-dropdown-subtitle">wangu@zitbio.org</div>
                 </div>
                 <div class="user-dropdown-separator"></div>
 
@@ -49,7 +49,7 @@
                 <!-- Footer -->
                 <div class="user-dropdown-footer">
                     <span>Role: Field Officer</span>
-                    <span>Account ID: FO-002</span>
+                    <span>Account ID: FO-003</span>
                 </div>
             </div>
         </div>
@@ -161,29 +161,14 @@
                             <label class="fo-label">Province / State <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
                                 <span class="material-symbols-outlined fo-input-icon">location_on</span>
-                                <select id="provinceState" class="fo-input" required>
-                                    <option value="">Select province...</option>
-                                    <option value="Central Province">Central Province</option>
-                                    <option value="Copperbelt Province">Copperbelt Province</option>
-                                    <option value="Eastern Province">Eastern Province</option>
-                                    <option value="Luapula Province">Luapula Province</option>
-                                    <option value="Lusaka Province">Lusaka Province</option>
-                                    <option value="Muchinga Province">Muchinga Province</option>
-                                    <option value="Northern Province">Northern Province</option>
-                                    <option value="North-Western Province">North-Western Province</option>
-                                    <option value="Southern Province">Southern Province</option>
-                                    <option value="Western Province">Western Province</option>
-                                </select>
+                                <input type="text" id="provinceState" class="fo-input" value="Copperbelt Province" readonly>
                             </div>
-                            <span class="fo-error" id="provinceStateError">Province is required</span>
                         </div>
                         <div class="fo-field">
                             <label class="fo-label">Country</label>
                             <div class="fo-input-wrap">
                                 <span class="material-symbols-outlined fo-input-icon">public</span>
-                                <select id="country" class="fo-input" disabled>
-                                    <option value="Zambia" selected>Zambia</option>
-                                </select>
+                                <input type="text" id="country" class="fo-input" value="Zambia" readonly>
                             </div>
                         </div>
                         <div class="fo-field">
@@ -195,14 +180,19 @@
                         </div>
                     </div>
 
-                    <!-- Row 2: Protected Area, Habitat Type -->
+                    <!-- Row 2: Focus Area, Habitat Type -->
                     <div class="fo-grid fo-grid-3">
                         <div class="fo-field">
-                            <label class="fo-label">Protected Area</label>
+                            <label class="fo-label">Focus Area <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
                                 <span class="material-symbols-outlined fo-input-icon">nature_people</span>
-                                <input type="text" id="protectedArea" class="fo-input" placeholder="Kafue National Park (optional)">
+                                <select id="focusArea" class="fo-input" required>
+                                    <option value="">Select focus area...</option>
+                                    <option value="The CBU Nature Park">The CBU Nature Park</option>
+                                    <option value="The Copperbelt University Campus">The Copperbelt University Campus</option>
+                                </select>
                             </div>
+                            <span class="fo-error" id="focusAreaError">Focus area is required</span>
                         </div>
                         <div class="fo-field">
                             <label class="fo-label">Habitat Type <span class="fo-required">*</span></label>
@@ -212,12 +202,8 @@
                                     <option value="">Select habitat...</option>
                                     <option value="Woodland">Woodland</option>
                                     <option value="Grassland">Grassland</option>
-                                    <option value="Wetland">Wetland</option>
-                                    <option value="Savanna">Savanna</option>
-                                    <option value="Forest">Forest</option>
                                     <option value="Riverine Forest">Riverine Forest</option>
                                     <option value="Urban">Urban</option>
-                                    <option value="Agricultural">Agricultural</option>
                                 </select>
                             </div>
                             <span class="fo-error" id="habitatTypeError">Habitat type is required</span>

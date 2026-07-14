@@ -247,7 +247,7 @@ function viewRecordById(id) {
     document.getElementById('fldProvince').textContent = loc.administrative_area || '—';
     document.getElementById('fldCity').textContent = loc.city || '—';
     document.getElementById('fldHabitat').textContent = loc.habitat_type || '—';
-    document.getElementById('fldProtectedArea').textContent = loc.protected_area || 'None';
+    document.getElementById('fldProtectedArea').textContent = loc.focus_area || 'None';
     document.getElementById('fldGps').textContent = formatCoords(loc.latitude, loc.longitude);
 
     // Record Details (collapsible)
@@ -390,8 +390,8 @@ function makeFieldsEditable(enable) {
         { id: 'fldCountry', type: 'text', value: loc.country || '' },
         { id: 'fldProvince', type: 'select', value: loc.administrative_area || '', options: getProvinceOptions() },
         { id: 'fldCity', type: 'text', value: loc.city || '' },
-        { id: 'fldHabitat', type: 'select', value: loc.habitat_type || '', options: ['', 'Woodland', 'Grassland', 'Wetland', 'Savanna', 'Forest', 'Riverine Forest', 'Urban', 'Agricultural', 'Thicket'] },
-        { id: 'fldProtectedArea', type: 'text', value: loc.protected_area || '' },
+        { id: 'fldHabitat', type: 'select', value: loc.habitat_type || '', options: ['', 'Woodland', 'Grassland', 'Riverine Forest', 'Urban'] },
+        { id: 'fldProtectedArea', type: 'text', value: loc.focus_area || '' },
         { id: 'fldGps', type: 'text', value: formatCoords(loc.latitude, loc.longitude) },
         { id: 'fldLocality', type: 'textarea', value: loc.locality_description || '' },
         { id: 'fldFieldNotes', type: 'textarea', value: obs.field_notes || '' }
@@ -486,7 +486,7 @@ function saveChanges() {
     var province = getEditValue('fldProvince');
     var city = getEditValue('fldCity');
     var habitat = getEditValue('fldHabitat');
-    var protectedArea = getEditValue('fldProtectedArea');
+    var focusArea = getEditValue('fldProtectedArea');
     var gpsStr = getEditValue('fldGps');
     var locality = getEditValue('fldLocality');
     var fieldNotes = getEditValue('fldFieldNotes');
@@ -510,7 +510,7 @@ function saveChanges() {
             administrative_area: province,
             city: city,
             habitat_type: habitat,
-            protected_area: protectedArea,
+            focus_area: focusArea,
             locality_description: locality
         }
     };

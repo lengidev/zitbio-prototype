@@ -47,6 +47,7 @@ function validateForm() {
     { id: 'populationCount', errorId: 'populationCountError', message: 'Count is required' },
     { id: 'provinceState', errorId: 'provinceStateError', message: 'Province is required' },
     { id: 'country', errorId: 'countryError', message: 'Country is required' },
+    { id: 'focusArea', errorId: 'focusAreaError', message: 'Focus area is required' },
     { id: 'habitatType', errorId: 'habitatTypeError', message: 'Habitat type is required' }
   ];
 
@@ -106,19 +107,8 @@ function initFieldOfficer() {
       if (instEl) instEl.value = session.institution_name || '';
     }
 
-    // Province dropdown — populated from BioData's Zambia reference data
-    // so the list is always in sync with the admin pages.
-    var provinceSelect = document.getElementById('provinceState');
-    if (provinceSelect) {
-      provinceSelect.innerHTML = '<option value="">Select province...</option>';
-      var provinces = CentralDataStore.getZambiaProvinces();
-      provinces.forEach(function(p) {
-        var opt = document.createElement('option');
-        opt.value = p;
-        opt.textContent = p;
-        provinceSelect.appendChild(opt);
-      });
-    }
+    // Province and Country are locked to Copperbelt/Zambia for current scope.
+    // See [[futureupdates#10-Province Expansion|futureupdates.md]] for expansion plans.
   }
 
   // --- Default date/time to now ---
@@ -298,7 +288,7 @@ function initFieldOfficer() {
         country: document.getElementById('country').value,
         administrative_area: document.getElementById('provinceState').value,
         city: document.getElementById('city').value || '',
-        protected_area: document.getElementById('protectedArea').value || null,
+        focus_area: document.getElementById('focusArea').value || null,
         habitat_type: document.getElementById('habitatType').value,
         locality_description: document.getElementById('localityDescription').value || ''
       },
@@ -317,6 +307,7 @@ function initFieldOfficer() {
     if (CentralDataStore) {
       CentralDataStore.addObservation({
         count: parseInt(document.getElementById('populationCount').value, 10),
+        source: 'field_observation',
         species_details: observation.taxon,
         location: observation.location,
         recorded_by: observation.recorded_by,
