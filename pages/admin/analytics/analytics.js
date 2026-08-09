@@ -430,8 +430,16 @@ document.addEventListener('DOMContentLoaded', function() {
     tabs.forEach(function(tab) {
         tab.addEventListener('click', function(e) {
             activateTab(this);
+            // Persist the active tab so switching pages and coming back
+            // restores where the user left off (Issue #23).
+            var tabName = this.getAttribute('data-tab');
+            if (tabName) {
+                try { localStorage.setItem('biodata_analytics_tab', tabName); } catch (err) { /* storage unavailable */ }
+            }
         });
     });
+
+    var hashTabMatched = false;
 
     function handleHashChange() {
         var hash = window.location.hash;
@@ -440,12 +448,28 @@ document.addEventListener('DOMContentLoaded', function() {
             var matchingTab = document.querySelector('.analytics-tab[data-tab="' + tabName + '"]');
             if (matchingTab) {
                 activateTab(matchingTab);
+                hashTabMatched = true;
             }
         }
     }
 
     window.addEventListener('hashchange', handleHashChange);
     handleHashChange();
+
+    // Restore the previously active tab when returning to the page,
+    // unless an explicit hash deep-link already selected one — the
+    // hash takes precedence. Using .click() also triggers tab-specific
+    // init (e.g. lazy Leaflet map) and re-persists the restored tab.
+    if (!hashTabMatched) {
+        var savedTab = null;
+        try { savedTab = localStorage.getItem('biodata_analytics_tab'); } catch (err) { /* storage unavailable */ }
+        if (savedTab) {
+            var savedTabEl = document.querySelector('.analytics-tab[data-tab="' + savedTab + '"]');
+            if (savedTabEl) {
+                savedTabEl.click();
+            }
+        }
+    }
 
     // --- Dynamic table rendering ---
     if (!window.BioData) {

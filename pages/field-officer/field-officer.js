@@ -313,6 +313,7 @@ function initFieldOfficer() {
         recorded_by: observation.recorded_by,
         timestamp: observation.timestamp,
         institution_name: observation.institution_name,
+        activity: observation.activity,
         field_notes: observation.field_notes
       });
     }
