@@ -581,6 +581,60 @@ document.addEventListener('DOMContentLoaded', function() {
         Flagged: true
     };
 
+    // =====================================================
+    // MAP STATE PERSISTENCE
+    // Persists the map view to localStorage so navigating away
+    // from Analytics and back restores the exact same view:
+    // active area, map/satellite mode, zoom/center, status
+    // filters, and the focused observation (Issue #33).
+    // =====================================================
+    var MAP_STATE_KEY = 'biodata_analytics_map';
+
+    // The observation currently focused via doFly (persisted so the
+    // map can re-focus it after navigating back to the page).
+    var focusedObsId = null;
+
+    function saveMapState() {
+        var state = {
+            area: mapActiveArea,
+            mode: mapMode,
+            statusFilters: statusFilterState,
+            focusedObsId: focusedObsId
+        };
+        if (mapInstance) {
+            state.zoom = mapInstance.getZoom();
+            state.center = [mapInstance.getCenter().lat, mapInstance.getCenter().lng];
+        }
+        try {
+            localStorage.setItem(MAP_STATE_KEY, JSON.stringify(state));
+        } catch (err) { /* storage unavailable — ignore */ }
+    }
+
+    function loadMapState() {
+        try {
+            var raw = localStorage.getItem(MAP_STATE_KEY);
+            if (!raw) return null;
+            var state = JSON.parse(raw);
+            // Validate + coerce to safe values
+            if (state.area !== 'park' && state.area !== 'campus') state.area = 'park';
+            if (state.mode !== 'map' && state.mode !== 'satellite') state.mode = 'map';
+            if (typeof state.zoom !== 'number' || isNaN(state.zoom)) state.zoom = 16;
+            if (!Array.isArray(state.center) || state.center.length !== 2) state.center = [-12.805, 28.240];
+            if (state.statusFilters && typeof state.statusFilters === 'object') {
+                state.statusFilters = {
+                    Approved: state.statusFilters.Approved !== false,
+                    Pending: state.statusFilters.Pending !== false,
+                    Flagged: state.statusFilters.Flagged !== false
+                };
+            } else {
+                state.statusFilters = { Approved: true, Pending: true, Flagged: true };
+            }
+            return state;
+        } catch (err) {
+            return null;
+        }
+    }
+
     function getStatusColor(status) {
         var s = (status || '').toLowerCase();
         if (s === 'approved') return '#22c55e';
@@ -759,9 +813,13 @@ document.addEventListener('DOMContentLoaded', function() {
         var mapEl = document.getElementById('map');
         if (!mapEl || mapInitialized) return;
 
+        // Restore previously saved map state (area/mode/zoom/center/filters/
+        // focused observation) so returning to the page shows the same view.
+        var savedState = loadMapState();
+
         mapInstance = L.map('map', {
-            center: [-12.805, 28.240],
-            zoom: 16,
+            center: savedState ? savedState.center : [-12.805, 28.240],
+            zoom: savedState ? savedState.zoom : 16,
             minZoom: 16,
             maxZoom: 18,
             zoomSnap: 0.1,
@@ -769,18 +827,33 @@ document.addEventListener('DOMContentLoaded', function() {
             attributionControl: true
         });
 
-        // Default tile layer (OSM)
-        switchMapMode('map');
+        // Apply saved mode (defaults to OSM if none)
+        switchMapMode(savedState ? savedState.mode : 'map');
 
-        // Render polygons
-        renderPolygons('park');
+        // Render polygons with the saved (or default) active area
+        mapActiveArea = savedState ? savedState.area : 'park';
+        renderPolygons(mapActiveArea);
 
-        // Plot observations
+        // Apply saved status filters
+        if (savedState && savedState.statusFilters) {
+            statusFilterState = savedState.statusFilters;
+            document.querySelectorAll('.map-filter-label').forEach(function(label) {
+                var status = label.getAttribute('data-status');
+                if (status && statusFilterState[status] === false) {
+                    label.classList.add('disabled');
+                } else if (status) {
+                    label.classList.remove('disabled');
+                }
+            });
+        }
+
+        // Plot observations (respects the restored status filters)
         plotObservations();
 
-        // Update zoom display on move
+        // Update zoom display + persist on move
         mapInstance.on('moveend', function() {
             updateZoomDisplay();
+            saveMapState();
         });
 
         mapInitialized = true;
@@ -789,7 +862,17 @@ document.addEventListener('DOMContentLoaded', function() {
         updateZoomDisplay();
         updateMarkerCount();
         var areaLabel = document.getElementById('map-status-area');
-        if (areaLabel) areaLabel.textContent = 'CBU Nature Park';
+        if (areaLabel) {
+            areaLabel.textContent = mapActiveArea === 'park' ? 'CBU Nature Park' : 'CBU Campus';
+        }
+
+        // After the map is fully settled, restore the previously focused
+        // observation (if any) so the user lands right back where they were.
+        if (savedState && savedState.focusedObsId) {
+            setTimeout(function() {
+                doFly(savedState.focusedObsId);
+            }, 300);
+        }
     }
 
     // ---- Bind UI Controls ----
@@ -818,6 +901,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (areaLabel) {
                 areaLabel.textContent = area === 'park' ? 'CBU Nature Park' : 'CBU Campus';
             }
+
+            // Persist the new active area
+            saveMapState();
         });
     }
 
@@ -836,13 +922,20 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             switchMapMode(mode);
+
+            // Persist the new map mode
+            saveMapState();
         });
     }
 
     // Fit area button
     var fitBtn = document.getElementById('map-fit-btn');
     if (fitBtn) {
-        fitBtn.addEventListener('click', fitActiveArea);
+        fitBtn.addEventListener('click', function() {
+            fitActiveArea();
+            // fitBounds triggers moveend which persists; be explicit for safety
+            saveMapState();
+        });
     }
 
     // Zoom buttons with 0.1 step, clamped 16.0–18.0
@@ -874,6 +967,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Re-plot markers with current filters
             if (mapInstance) plotObservations();
+
+            // Persist the new filter state
+            saveMapState();
         });
     });
 
@@ -931,6 +1027,10 @@ document.addEventListener('DOMContentLoaded', function() {
             var m = obsMarkers[i];
             if (m._obsId === obsId) {
                 mapInstance.flyTo(m.getLatLng(), 17, { duration: 1 });
+                // Track the focused observation so the map view can be
+                // restored after navigating away and back (Issue #33)
+                focusedObsId = obsId;
+                saveMapState();
                 // Highlight marker
                 var iconEl = m.getElement();
                 if (iconEl) {
