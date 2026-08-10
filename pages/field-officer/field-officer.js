@@ -12,6 +12,14 @@
  *     data entry errors when officers are working in the field.
  */
 
+// Format numbers to at least 2 digits (e.g. 5 -> "05").
+// Dependency-free replacement for String.prototype.padStart, which
+// throws on older engines/webviews and can take the page down.
+function pad2(num) {
+  var s = String(num);
+  return s.length < 2 ? '0' + s : s;
+}
+
 /* ============================================
    TOAST UTILITY
    Displays transient notifications without blocking the user's workflow.
@@ -116,11 +124,11 @@ function initFieldOfficer() {
   var timeEl = document.getElementById('obsTime');
   if (dateEl) {
     var now = new Date();
-    dateEl.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    dateEl.value = now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate());
   }
   if (timeEl) {
     var t = new Date();
-    timeEl.value = String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
+    timeEl.value = pad2(t.getHours()) + ':' + pad2(t.getMinutes());
   }
 
   // --- Species auto-detect from common name ---
@@ -237,11 +245,11 @@ function initFieldOfficer() {
       document.getElementById('observationForm').reset();
       if (dateEl) {
         var n = new Date();
-        dateEl.value = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
+        dateEl.value = n.getFullYear() + '-' + pad2(n.getMonth() + 1) + '-' + pad2(n.getDate());
       }
       if (timeEl) {
         var tn = new Date();
-        timeEl.value = String(tn.getHours()).padStart(2, '0') + ':' + String(tn.getMinutes()).padStart(2, '0');
+        timeEl.value = pad2(tn.getHours()) + ':' + pad2(tn.getMinutes());
       }
       // Clear errors
       document.querySelectorAll('.fo-input.error').forEach(function(el) { el.classList.remove('error'); });
@@ -335,11 +343,11 @@ function initFieldOfficer() {
     // Reset date/time to now
     if (dateEl) {
       var n = new Date();
-      dateEl.value = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
+      dateEl.value = n.getFullYear() + '-' + pad2(n.getMonth() + 1) + '-' + pad2(n.getDate());
     }
     if (timeEl) {
       var tn = new Date();
-      timeEl.value = String(tn.getHours()).padStart(2, '0') + ':' + String(tn.getMinutes()).padStart(2, '0');
+      timeEl.value = pad2(tn.getHours()) + ':' + pad2(tn.getMinutes());
     }
 
     // Clear all errors

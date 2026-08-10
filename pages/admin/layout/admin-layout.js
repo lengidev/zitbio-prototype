@@ -186,7 +186,12 @@ function updateUserDropdownFromSession(dropdown) {
     var user = BioData.getUserByEmail(session.email);
     if (user) {
       var prefix = session.role === 'admin' ? 'ADMIN' : 'FO';
-      footerSpans[1].textContent = 'Account ID: ' + prefix + '-' + String(user.id).padStart(3, '0');
+      // padZero is a shared dependency-free helper exposed on BioData;
+      // guard against it being unavailable so this never throws.
+      var accountId = (window.BioData && typeof window.BioData.padZero === 'function')
+        ? prefix + '-' + window.BioData.padZero(user.id, 3)
+        : prefix + '-' + user.id;
+      footerSpans[1].textContent = 'Account ID: ' + accountId;
     }
   }
 }
@@ -342,6 +347,24 @@ function toggleNotificationDropdown() {
 }
 
 /**
+ * Extract the obs=<id> query parameter from a notification link, or null
+ * if absent. Dependency-free (no URLSearchParams required).
+ */
+function getObsFromLink(link) {
+  if (!link) return null;
+  var qPos = link.indexOf('?');
+  if (qPos === -1) return null;
+  var qs = link.slice(qPos + 1).split('&');
+  for (var i = 0; i < qs.length; i++) {
+    var kv = qs[i].split('=');
+    if (kv[0] === 'obs' && kv.length > 1) {
+      try { return decodeURIComponent(kv[1]); } catch (e) { return kv[1]; }
+    }
+  }
+  return null;
+}
+
+/**
  * Render notifications into the dropdown
  */
 function renderNotifications() {
@@ -436,9 +459,20 @@ function renderNotifications() {
         renderNotifications(); // Re-render to update badge & list
       }
 
-      // Navigate if link exists
-      if (link) {
-        window.location.href = link;
+      // Same-page deep-link: if we're already on the observations page and
+      // the notification points there with an ?obs= param, open the modal
+      // directly — navigating would only change the URL and would NOT re-run
+      // the load-time deep-link handler, so the modal would never appear.
+      var isOnObservationsPage = document.body && document.body.classList.contains('page-observations');
+      var linkObs = isOnObservationsPage ? getObsFromLink(link) : null;
+      if (isOnObservationsPage && linkObs && typeof window.openObservationById === 'function') {
+        window.openObservationById(linkObs);
+      } else {
+        // Navigate if link exists (first-time load / other pages — the
+        // observations page opens the modal via its load-time deep-link).
+        if (link) {
+          window.location.href = link;
+        }
       }
 
       // Close dropdown

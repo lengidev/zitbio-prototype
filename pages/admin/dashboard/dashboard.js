@@ -53,37 +53,46 @@ document.addEventListener('DOMContentLoaded', function() {
   if (!ctx) return;
   if (typeof Chart === 'undefined') return;
 
-  // Aggregate observations by day of week for the last 7 days
-  var dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // Aggregate observations by rolling calendar day over the last 7 days,
+  // ending today — a sliding window so "today" is always the rightmost bar
+  // (Issue #26). Labels are the weekday names for those actual dates.
+  var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   var dayCounts = [0, 0, 0, 0, 0, 0, 0];
+  var labels = [];
   var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // Build the last 7 rolling dates + their weekday labels (oldest → today)
+  var windowDays = [];
+  for (var i = 6; i >= 0; i--) {
+    var d = new Date(today);
+    d.setDate(today.getDate() - i);
+    windowDays.push(d);
+    labels.push(dayNames[d.getDay()]);
+  }
 
   if (window.BioData) {
     var allObs = BioData.getObservations();
     if (allObs && allObs.length > 0) {
-      var sevenDaysAgo = new Date(now);
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
       allObs.forEach(function(obs) {
         if (!obs.timestamp) return;
-        var d = new Date(obs.timestamp);
-        if (isNaN(d.getTime())) return;
-        if (d < sevenDaysAgo) return;
-        var dayIdx = d.getDay(); // 0=Sun, 1=Mon, ...
-        dayCounts[dayIdx]++;
+        var ts = new Date(obs.timestamp);
+        if (isNaN(ts.getTime())) return;
+        // Count the observation into its matching rolling day
+        for (var w = 0; w < windowDays.length; w++) {
+          if (ts.getFullYear() === windowDays[w].getFullYear() &&
+              ts.getMonth() === windowDays[w].getMonth() &&
+              ts.getDate() === windowDays[w].getDate()) {
+            dayCounts[w]++;
+            break;
+          }
+        }
       });
     }
   }
 
-  // Build label array in Mon–Sun order (index 1..6, then 0)
-  var labels = [];
-  var dataValues = [];
-  for (var i = 1; i <= 6; i++) {
-    labels.push(dayLabels[i]);
-    dataValues.push(dayCounts[i]);
-  }
-  labels.push(dayLabels[0]);
-  dataValues.push(dayCounts[0]);
+  // Chart data mirrors the rolling window (oldest → today)
+  var dataValues = dayCounts;
 
   // Compute trend: last 7 days vs prior 7 days
   var thisWeekTotal = dataValues.reduce(function(a, b) { return a + b; }, 0);

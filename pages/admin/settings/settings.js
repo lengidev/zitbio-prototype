@@ -56,10 +56,14 @@ function populateAccountInfo() {
   var prefix = session.role === 'admin' ? 'ADMIN' : 'FO';
   var roleDisplay = session.role === 'admin' ? 'Administrator' : 'Field Officer';
 
-  // User ID
+  // User ID — padZero is a shared dependency-free helper exposed on BioData;
+  // guard against it being unavailable so this never throws.
   var userIdEl = document.getElementById('settingsUserId');
   if (userIdEl) {
-    userIdEl.textContent = prefix + '-' + String(user.id).padStart(3, '0');
+    var accountId = (window.BioData && typeof window.BioData.padZero === 'function')
+      ? prefix + '-' + window.BioData.padZero(user.id, 3)
+      : prefix + '-' + user.id;
+    userIdEl.textContent = accountId;
   }
 
   // Role

@@ -561,6 +561,46 @@ function handleDelete() {
     }
 }
 
+// Parse the ?obs= query param with a manual fallback (URLSearchParams is
+// ES2017 — absent on some older engines).
+function getObsParam() {
+    var obsParam = null;
+    if (typeof URLSearchParams === 'function') {
+        obsParam = new URLSearchParams(window.location.search).get('obs');
+    } else {
+        var qsPos = window.location.search.indexOf('?');
+        if (qsPos !== -1) {
+            var qs = window.location.search.slice(qsPos + 1).split('&');
+            for (var qi = 0; qi < qs.length; qi++) {
+                var kv = qs[qi].split('=');
+                if (kv[0] === 'obs' && kv.length > 1) {
+                    obsParam = decodeURIComponent(kv[1]);
+                    break;
+                }
+            }
+        }
+    }
+    return obsParam;
+}
+
+// Open the observation record modal for the given id, if it exists.
+function openObservationById(obsId) {
+    if (!obsId || !window.BioData) return;
+    var deepObs = window.BioData.getObservationById(obsId);
+    if (deepObs) {
+        viewRecordById(obsId);
+    }
+}
+
+// Open the record modal implied by the current URL's ?obs= param.
+// Exposed globally so the notification handler can call it even when the
+// page is already loaded (Issue: notification clicks on the active
+// observations page must still open the modal, not just change the URL).
+function openObservationDeepLink() {
+    openObservationById(getObsParam());
+}
+window.openObservationDeepLink = openObservationDeepLink;
+
 // Open add modal
 function openAddModal() {
     if (!window.BioData) return;
@@ -581,6 +621,13 @@ if (typeof document !== 'undefined') {
         }
 
         renderObsTable();
+
+        // Deep-link: if the URL carries ?obs=..., open that observation's
+        // record modal directly (Issue #25 — notifications navigate here
+        // with the observation id). Runs on first page load; the same
+        // function is called by the notification handler when the page is
+        // already active.
+        openObservationDeepLink();
 
         // Search input
         var searchInput = document.getElementById('searchInput');

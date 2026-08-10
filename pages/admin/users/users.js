@@ -70,7 +70,7 @@ function renderTable() {
     const footer = document.getElementById('paginationFooter');
 
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="table-empty-cell">No users found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="table-empty-cell">No users found</td></tr>';
         footer.textContent = 'Showing 0 of 0 users';
         return;
     }
@@ -93,6 +93,7 @@ function renderTable() {
             '<td class="name-cell">' + user.name + '</td>' +
             '<td class="email-cell">' + user.email + '</td>' +
             '<td><span class="role-badge ' + roleClass + '">' + roleDisplay + '</span></td>' +
+            '<td class="institution-cell">' + (user.institution_name || '—') + '</td>' +
             '<td class="date-cell">' + user.created + '</td>' +
             '<td class="last-login-cell">' +
                 '<span class="last-login-wrapper">' +
