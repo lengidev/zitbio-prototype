@@ -514,6 +514,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Re-render the analytics table after the Supabase sync layer seeds cloud data.
+if (typeof window !== 'undefined') {
+  window.addEventListener('biodata:synced', function() {
+    if (typeof renderAnalyticsTable === 'function') {
+      applyFilters(); // re-apply active filters against the refreshed dataset
+    }
+  });
+}
+
 // ============================================================
 //  CBU Area Map — Leaflet Interactive Map
 //  Lazy-initialized when the Map tab is first activated to avoid

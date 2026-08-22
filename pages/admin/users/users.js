@@ -127,6 +127,8 @@ function openAddUserModal() {
     // Reset fields for a fresh entry
     document.getElementById('addUserName').value = '';
     document.getElementById('addUserEmail').value = '';
+    var pwdEl = document.getElementById('addUserPassword');
+    if (pwdEl) pwdEl.value = '';
     document.getElementById('addUserRole').value = 'field_officer';
     document.getElementById('addUserInstitution').value = '';
     document.getElementById('addUserModal').classList.add('active');
@@ -138,7 +140,9 @@ function closeAddUserModal() {
 
 function openEditUserModal(id) {
     if (!window.BioData) return;
-    var user = window.BioData.getUserById(parseInt(id, 10));
+    // Cloud-backed profiles use UUID string ids; legacy seeded users use
+    // numeric ids. getUserById handles both via loose equality.
+    var user = window.BioData.getUserById(String(id)) || window.BioData.getUserById(parseInt(id, 10));
     if (!user) return;
     document.getElementById('editUserId').value = user.id;
     document.getElementById('editUserName').value = user.name || '';
@@ -153,39 +157,71 @@ function closeEditUserModal() {
     document.getElementById('editUserModal').classList.remove('active');
 }
 
-// Persist a new user via the BioData layer, then refresh the table.
+// Create a REAL Supabase Auth user via the admin-users Edge Function, then
+// refresh the table from the cloud. Falls back to the local cache if the
+// function is not deployed yet.
 function handleSaveAddUser() {
     if (!window.BioData) return;
     var name = document.getElementById('addUserName').value.trim();
     var email = document.getElementById('addUserEmail').value.trim();
+    var passwordEl = document.getElementById('addUserPassword');
+    var password = passwordEl ? passwordEl.value : '';
     var role = document.getElementById('addUserRole').value;
     var institution = document.getElementById('addUserInstitution').value.trim();
 
-    if (!name) {
-        alert('Please enter a name.');
-        return;
+    function notice(text, isError) {
+        if (isError && typeof showToast === 'function') {
+            showToast(text, 'error');
+        } else if (typeof showToast === 'function') {
+            showToast(text, 'success');
+        } else {
+            alert(text);
+        }
     }
-    if (!email) {
-        alert('Please enter an email.');
+
+    if (!name) { alert('Please enter a name.'); return; }
+    if (!email) { alert('Please enter an email.'); return; }
+    if (!password || password.length < 8) {
+        alert('Please set a temporary password of at least 8 characters.');
         return;
     }
 
-    window.BioData.addUser({
-        name: name,
-        email: email,
-        role: role,
-        institution_name: institution
-    });
-    closeAddUserModal();
-    renderTable();
+    if (window.BioSync && typeof window.BioSync.adminUsers === 'function' && window.BioSync.getAdminUsersUrl()) {
+        window.BioSync.adminUsers('create', {
+            email: email,
+            password: password,
+            full_name: name,
+            role: role,
+            institution: institution
+        }).then(function() {
+            notice('User created. They can sign in now.');
+            closeAddUserModal();
+            // Refresh from cloud so the table shows the real auth user + profile.
+            return window.BioSync.loadFromCloud();
+        }).then(function() {
+            renderTable();
+        }).catch(function(err) {
+            alert(err && err.message ? err.message : 'Unable to create user.');
+        });
+    } else {
+        // Function not deployed — keep local-cache behaviour so the page
+        // still works, and tell the admin the cloud step is pending.
+        window.BioData.addUser({ name: name, email: email, role: role, institution_name: institution });
+        notice('User saved locally. Deploy admin-users function to create in Supabase.');
+        closeAddUserModal();
+        renderTable();
+    }
 }
 
-// Persist edits to an existing user via the BioData layer, then refresh.
+// Persist edits to an existing user through the admin-users Edge Function,
+// then refresh the table from the cloud. Falls back to the local cache if
+// the function is not deployed yet.
 function handleSaveEditUser() {
     if (!window.BioData) return;
-    var id = parseInt(document.getElementById('editUserId').value, 10);
+    // Preserve the id as a string — cloud-backed profiles use UUIDs, while
+    // legacy seeded users use numeric ids.
+    var id = document.getElementById('editUserId').value;
     var name = document.getElementById('editUserName').value.trim();
-    var email = document.getElementById('editUserEmail').value.trim();
     var role = document.getElementById('editUserRole').value;
     var institution = document.getElementById('editUserInstitution').value.trim();
 
@@ -193,19 +229,26 @@ function handleSaveEditUser() {
         alert('Please enter a name.');
         return;
     }
-    if (!email) {
-        alert('Please enter an email.');
-        return;
-    }
 
-    window.BioData.updateUser(id, {
-        name: name,
-        email: email,
-        role: role,
-        institution_name: institution
-    });
-    closeEditUserModal();
-    renderTable();
+    if (window.BioSync && typeof window.BioSync.adminUsers === 'function' && window.BioSync.getAdminUsersUrl()) {
+        window.BioSync.adminUsers('update', {
+            id: id,
+            full_name: name,
+            role: role,
+            institution: institution
+        }).then(function() {
+            closeEditUserModal();
+            return window.BioSync.loadFromCloud();
+        }).then(function() {
+            renderTable();
+        }).catch(function(err) {
+            alert(err && err.message ? err.message : 'Unable to update user.');
+        });
+    } else {
+        window.BioData.updateUser(id, { name: name, role: role, institution_name: institution });
+        closeEditUserModal();
+        renderTable();
+    }
 }
 
 // Edit/delete handler — delegates to BioData CRUD methods
@@ -219,13 +262,37 @@ document.addEventListener('click', function(e) {
     }
     if (e.target.closest('.delete-user')) {
         var id = e.target.closest('.delete-user').getAttribute('data-id');
-        var user = window.BioData.getUserById(parseInt(id, 10));
+        // Look up by string (cloud UUID) or numeric (legacy) id.
+        var user = window.BioData.getUserById(String(id)) || window.BioData.getUserById(parseInt(id, 10));
         if (user && confirm('Delete user "' + user.name + '" (ID: ' + id + ')?')) {
-            window.BioData.deleteUser(parseInt(id, 10));
-            renderTable();
+            var doDelete = function() {
+                if (window.BioSync && typeof window.BioSync.adminUsers === 'function' && window.BioSync.getAdminUsersUrl()) {
+                    return window.BioSync.adminUsers('delete', { id: id });
+                }
+                return Promise.resolve({ ok: false, skipped: true });
+            };
+            doDelete().then(function() {
+                // Remove from local cache regardless (cloud deleted or fallback),
+                // then refresh from the cloud to reflect the authoritative state.
+                window.BioData.deleteUser(String(id));
+                return window.BioSync && typeof window.BioSync.loadFromCloud === 'function'
+                    ? window.BioSync.loadFromCloud()
+                    : Promise.resolve();
+            }).then(function() {
+                renderTable();
+            }).catch(function(err) {
+                alert(err && err.message ? err.message : 'Unable to delete user.');
+            });
         }
     }
 });
+
+// Re-render the table after the Supabase sync layer seeds cloud data.
+if (typeof window !== 'undefined') {
+  window.addEventListener('biodata:synced', function() {
+    renderTable();
+  });
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     if (!window.BioData) {

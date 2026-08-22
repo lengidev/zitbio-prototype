@@ -35,9 +35,6 @@
                     placeholder="your.email@example.com"
                     autocomplete="email"
                 >
-                <p class="helper-text">
-Demo: Use any of these emails — <code>lenganji@zitbio.org</code> (Admin), <code>wangu@zitbio.org</code> (Officer)
-                </p>
             </div>
 
             <div class="form-group">
@@ -54,9 +51,6 @@ Demo: Use any of these emails — <code>lenganji@zitbio.org</code> (Admin), <cod
                         <span id="eyeIcon" class="material-icons">visibility</span>
                     </button>
                 </div>
-                <p class="helper-text">
-                    Demo: Any password works for mockup purposes
-                </p>
             </div>
 
             <div class="remember-row">
@@ -64,13 +58,15 @@ Demo: Use any of these emails — <code>lenganji@zitbio.org</code> (Admin), <cod
                 <label for="remember" class="remember-label">Remember me</label>
             </div>
 
-            <button type="submit" class="login-btn">Login</button>
+            <button type="submit" id="loginBtn" class="login-btn">Login</button>
         </form>
 
         <a href="#" id="forgotPasswordLink" class="forgot-password">Forgot password?</a>
     </div>
 
     <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="lib/supabase-client.js"></script>
     <script src="lib/data.js"></script>
     <script src="pages/login/login.js"></script>
 </body>

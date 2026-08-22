@@ -292,6 +292,12 @@ function handleApprove() {
     var obsId = document.getElementById('viewModal').getAttribute('data-obs-id');
     if (!obsId) return;
     window.BioData.updateObservation(obsId, { verification_status: 'Approved' });
+    // Write-through to Supabase (non-fatal on failure — local cache updated).
+    if (window.BioSync && window.BioSync.updateObservation) {
+        window.BioSync.updateObservation(obsId, { verification_status: 'Approved' }).catch(function(err) {
+            console.warn('BioSync: failed to approve observation in Supabase:', err && err.message);
+        });
+    }
     setBadge('Approved');
     renderObsTable();
 }
@@ -301,6 +307,12 @@ function handleFlag() {
     var obsId = document.getElementById('viewModal').getAttribute('data-obs-id');
     if (!obsId) return;
     window.BioData.updateObservation(obsId, { verification_status: 'Flagged' });
+    // Write-through to Supabase (non-fatal on failure — local cache updated).
+    if (window.BioSync && window.BioSync.updateObservation) {
+        window.BioSync.updateObservation(obsId, { verification_status: 'Flagged' }).catch(function(err) {
+            console.warn('BioSync: failed to flag observation in Supabase:', err && err.message);
+        });
+    }
     setBadge('Flagged');
     renderObsTable();
 }
@@ -517,6 +529,13 @@ function saveChanges() {
 
     window.BioData.updateObservation(obsId, updates);
 
+    // Write-through edit to Supabase (non-fatal on failure — local cache updated).
+    if (window.BioSync && window.BioSync.updateObservation) {
+      window.BioSync.updateObservation(obsId, updates).catch(function(err) {
+        console.warn('BioSync: failed to save observation edit in Supabase:', err && err.message);
+      });
+    }
+
     // Exit edit mode and refresh the view
     cancelEdit();
     viewRecordById(obsId);
@@ -556,6 +575,12 @@ function handleDelete() {
     if (!obsId) return;
     if (confirm('Are you sure you want to delete the observation for ' + speciesName + '?')) {
         window.BioData.deleteObservation(obsId);
+        // Write-through delete to Supabase (non-fatal on failure).
+        if (window.BioSync && window.BioSync.deleteObservation) {
+            window.BioSync.deleteObservation(obsId).catch(function(err) {
+                console.warn('BioSync: failed to delete observation in Supabase:', err && err.message);
+            });
+        }
         closeViewModal();
         renderObsTable();
     }
@@ -737,6 +762,13 @@ if (typeof document !== 'undefined') {
             }
         });
     });
+}
+
+// Re-render the table after the Supabase sync layer seeds cloud data.
+if (typeof window !== 'undefined') {
+  window.addEventListener('biodata:synced', function() {
+    renderObsTable();
+  });
 }
 
 // Export functions for use in other modules

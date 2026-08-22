@@ -199,6 +199,10 @@
                             <input type="email" id="addUserEmail" class="form-input" placeholder="name@zitbio.org">
                         </div>
                         <div class="form-field form-field-full">
+                            <label class="form-label" for="addUserPassword">Temporary Password (min. 8 characters)</label>
+                            <input type="password" id="addUserPassword" class="form-input" placeholder="Set an initial password">
+                        </div>
+                        <div class="form-field form-field-full">
                             <label class="form-label" for="addUserRole">Role</label>
                             <select id="addUserRole" class="form-input">
                                 <option value="field_officer">Field Officer</option>
@@ -278,8 +282,12 @@
         </div>
     </div>
 
+    <script src="../../../config.js"></script>
+    <script src="../../../lib/supabase-client.js"></script>
+    <script src="../../../lib/auth-guard.js"></script>
     <script src="../../../lib/data.js"></script>
     <script src="../../../lib/notification-service.js"></script>
+    <script src="../../../lib/supabase-sync.js"></script>
     <script src="../../../pages/admin/layout/admin-layout.js"></script>
     <script src="../../../components/modals.js"></script>
     <script src="users.js"></script>

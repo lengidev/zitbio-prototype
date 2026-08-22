@@ -1,28 +1,12 @@
 /**
  * BioMonitor — Settings Page Component
- * Logic for password changes, session-driven account info, and settings interactions.
- * Account information is populated from the BioData session so it always
- * reflects the currently logged-in user without requiring a page reload.
+ * Real, live data from Supabase: last login, last password change, system
+ * version/updated, and a live database health check. Password change uses
+ * Supabase Auth and records profiles.password_changed_at.
  */
 
 /**
- * Format a date string (ISO or locale) into a readable format.
- * Used in the Account Information section for the "Created" field.
- */
-function formatSettingsDate(dateStr) {
-  if (!dateStr) return '—';
-  var d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-}
-
-/**
- * Format an ISO timestamp into a readable datetime string.
- * Used for the "Last Login" field, which comes from BioData as ISO 8601.
+ * Format a date/ISO string into a readable datetime string.
  */
 function formatSettingsDateTime(isoStr) {
   if (!isoStr) return '—';
@@ -40,7 +24,8 @@ function formatSettingsDateTime(isoStr) {
 }
 
 /**
- * Populate Account Information from BioData session
+ * Populate Account Information from the live Supabase profile +
+ * system_meta + a real DB health check.
  */
 function populateAccountInfo() {
   if (!window.BioData) return;
@@ -48,40 +33,89 @@ function populateAccountInfo() {
   var session = BioData.getSession();
   if (!session) return;
 
-  // Look up full user record
   var user = BioData.getUserByEmail(session.email);
-  if (!user) return;
-
-  // Determine prefix based on role
   var prefix = session.role === 'admin' ? 'ADMIN' : 'FO';
   var roleDisplay = session.role === 'admin' ? 'Administrator' : 'Field Officer';
 
-  // User ID — padZero is a shared dependency-free helper exposed on BioData;
-  // guard against it being unavailable so this never throws.
+  // User ID — numeric legacy users get padded code; cloud UUIDs get a friendly prefix.
   var userIdEl = document.getElementById('settingsUserId');
   if (userIdEl) {
-    var accountId = (window.BioData && typeof window.BioData.padZero === 'function')
-      ? prefix + '-' + window.BioData.padZero(user.id, 3)
-      : prefix + '-' + user.id;
+    var uid = user ? user.id : session.email;
+    var accountId = prefix + '-' + uid;
+    if (/^\d+$/.test(String(uid)) && window.BioData && typeof window.BioData.padZero === 'function') {
+      accountId = prefix + '-' + window.BioData.padZero(uid, 3);
+    } else if (String(uid).indexOf('-') !== -1) {
+      accountId = prefix + '-' + String(uid).slice(0, 4).toUpperCase();
+    }
     userIdEl.textContent = accountId;
   }
 
-  // Role
   var roleEl = document.getElementById('settingsRole');
-  if (roleEl) {
-    roleEl.textContent = roleDisplay;
-  }
+  if (roleEl) roleEl.textContent = roleDisplay;
 
-  // Account Created
   var createdEl = document.getElementById('settingsCreated');
-  if (createdEl && user.created) {
-    createdEl.textContent = formatSettingsDate(user.created);
+  if (createdEl && user && user.created) createdEl.textContent = user.created;
+
+  var lastLoginEl = document.getElementById('settingsLastLogin');
+  if (lastLoginEl && user && user.lastLogin) {
+    lastLoginEl.textContent = formatSettingsDateTime(user.lastLogin);
+  } else if (lastLoginEl) {
+    lastLoginEl.textContent = 'Never';
   }
 
-  // Last Login
-  var lastLoginEl = document.getElementById('settingsLastLogin');
-  if (lastLoginEl && user.lastLogin) {
-    lastLoginEl.textContent = formatSettingsDateTime(user.lastLogin);
+  // Live Supabase data for the other fields.
+  if (window.BioSupabase && window.BioSupabase.isConfigured()) {
+    window.BioSupabase.ready()
+      .then(function(client) {
+        var userId = user && user.id;
+        var profilePromise = userId
+          ? client.from('profiles').select('last_login, password_changed_at, created_at').eq('id', userId).maybeSingle()
+          : Promise.resolve({ data: null, error: null });
+
+        // System meta
+        var sysPromise = client.from('system_meta').select('key, value');
+
+        // DB health check via a cheap, RLS-safe read.
+        var healthPromise = client.from('species_reference').select('common_name').limit(1);
+
+        return Promise.all([profilePromise, sysPromise, healthPromise]);
+      })
+      .then(function(results) {
+        var profileResult = results[0];
+        var sysResult = results[1];
+        var healthResult = results[2];
+
+        var pwEl = document.getElementById('settingsPasswordChanged');
+        if (profileResult.data && profileResult.data.password_changed_at) {
+          if (pwEl) pwEl.textContent = formatSettingsDateTime(profileResult.data.password_changed_at);
+        } else if (pwEl) {
+          pwEl.textContent = 'Never';
+        }
+
+        var versionEl = document.getElementById('settingsVersion');
+        var updatedEl = document.getElementById('settingsLastUpdated');
+        var sysMap = {};
+        (sysResult.data || []).forEach(function(row) { sysMap[row.key] = row.value; });
+        if (versionEl) versionEl.textContent = sysMap.version || '—';
+        if (updatedEl) updatedEl.textContent = formatSettingsDateTime(sysMap.last_updated_at);
+
+        // Live DB status
+        var dbDot = document.getElementById('settingsDbDot');
+        var dbStatus = document.getElementById('settingsDbStatus');
+        if (healthResult.error) {
+          if (dbStatus) dbStatus.textContent = 'Offline';
+          if (dbDot) dbDot.className = 'db-dot disconnected';
+        } else {
+          if (dbStatus) dbStatus.textContent = 'Connected';
+          if (dbDot) dbDot.className = 'db-dot';
+        }
+      })
+      .catch(function() {
+        var dbStatus = document.getElementById('settingsDbStatus');
+        if (dbStatus) dbStatus.textContent = 'Offline';
+        var dbDot = document.getElementById('settingsDbDot');
+        if (dbDot) dbDot.className = 'db-dot disconnected';
+      });
   }
 }
 
@@ -95,48 +129,81 @@ function initSettingsPage() {
     return; // Not the settings page
   }
 
-  // Populate account info from session
+  // Populate account info from live data
   populateAccountInfo();
 
-  // Password change functionality
+  // Password change — real Supabase Auth, records password_changed_at.
   changePwdBtn.addEventListener('click', function() {
     const current = document.getElementById('currentPwd').value;
     const newPwd = document.getElementById('newPwd').value;
     const confirm = document.getElementById('confirmPwd').value;
 
-    if (!current || !newPwd || !confirm) {
+    function notify(message, type) {
       if (typeof showToast === 'function') {
-        showToast('Please fill in all password fields.', 'error');
+        showToast(message, type || 'success');
       } else {
-        alert('Please fill in all password fields.');
+        alert(message);
       }
+    }
+
+    if (!current || !newPwd || !confirm) {
+      notify('Please fill in all password fields.', 'error');
       return;
     }
     if (newPwd.length < 8) {
-      if (typeof showToast === 'function') {
-        showToast('New password must be at least 8 characters.', 'error');
-      } else {
-        alert('New password must be at least 8 characters.');
-      }
+      notify('New password must be at least 8 characters.', 'error');
       return;
     }
     if (newPwd !== confirm) {
-      if (typeof showToast === 'function') {
-        showToast('New password and confirmation do not match.', 'error');
-      } else {
-        alert('New password and confirmation do not match.');
-      }
+      notify('New password and confirmation do not match.', 'error');
       return;
     }
 
-    if (typeof showToast === 'function') {
-      showToast('Password changed successfully!', 'success');
-    } else {
-      alert('Password changed successfully!');
+    var session = window.BioData ? BioData.getSession() : null;
+    var email = session ? session.email : '';
+    var user = window.BioData ? BioData.getUserByEmail(email) : null;
+    var userId = user && user.id;
+
+    if (!email || !window.BioSupabase || !window.BioSupabase.isConfigured()) {
+      notify('You must be signed in to change your password.', 'error');
+      return;
     }
-    document.getElementById('currentPwd').value = '';
-    document.getElementById('newPwd').value = '';
-    document.getElementById('confirmPwd').value = '';
+
+    // Verify current password, then update + record timestamp.
+    window.BioSupabase.signIn(email, current)
+      .then(function(res) {
+        if (res.error) {
+          notify('Current password is incorrect.', 'error');
+          return;
+        }
+        return window.BioSupabase.ready().then(function(client) {
+          return client.auth.updateUser({ password: newPwd });
+        });
+      })
+      .then(function(updateResult) {
+        if (!updateResult) return; // current-password failure path already handled
+        if (updateResult.error) {
+          notify(updateResult.error.message || 'Unable to change password.', 'error');
+          return;
+        }
+        // Record password_changed_at on the profile (own-row update allowed by RLS).
+        var profilePromise = userId
+          ? window.BioSupabase.ready().then(function(client) {
+              return client.from('profiles').update({ password_changed_at: new Date().toISOString() }).eq('id', userId);
+            })
+          : Promise.resolve({ error: null });
+
+        return profilePromise.then(function() {
+          notify('Password changed successfully!', 'success');
+          document.getElementById('currentPwd').value = '';
+          document.getElementById('newPwd').value = '';
+          document.getElementById('confirmPwd').value = '';
+          populateAccountInfo();
+        });
+      })
+      .catch(function() {
+        notify('Unable to change password. Please try again.', 'error');
+      });
   });
 }
 

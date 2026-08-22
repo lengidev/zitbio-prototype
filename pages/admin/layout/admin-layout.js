@@ -186,11 +186,14 @@ function updateUserDropdownFromSession(dropdown) {
     var user = BioData.getUserByEmail(session.email);
     if (user) {
       var prefix = session.role === 'admin' ? 'ADMIN' : 'FO';
-      // padZero is a shared dependency-free helper exposed on BioData;
-      // guard against it being unavailable so this never throws.
-      var accountId = (window.BioData && typeof window.BioData.padZero === 'function')
-        ? prefix + '-' + window.BioData.padZero(user.id, 3)
-        : prefix + '-' + user.id;
+      // Numeric legacy users get a padded code (ADMIN-001); cloud-backed
+      // profiles carry a UUID, so show a friendly short handle instead.
+      var accountId = prefix + '-' + user.id;
+      if (/^\d+$/.test(String(user.id)) && window.BioData && typeof window.BioData.padZero === 'function') {
+        accountId = prefix + '-' + window.BioData.padZero(user.id, 3);
+      } else if (String(user.id).indexOf('-') !== -1) {
+        accountId = prefix + '-' + String(user.id).slice(0, 4).toUpperCase();
+      }
       footerSpans[1].textContent = 'Account ID: ' + accountId;
     }
   }
@@ -210,12 +213,24 @@ function handleUserDropdownAction(item) {
       alert('Help documentation would open here.');
     }
   } else if (action === 'logout') {
-    if (window.BioData) {
-      BioData.logout();
+    // End the real Supabase session (also clears the mock BioData session
+    // for compatibility), then redirect to the login page.
+    var doneRedirecting = false;
+    function finishLogout() {
+      if (doneRedirecting) return;
+      doneRedirecting = true;
+      if (window.BioData) {
+        BioData.logout();
+      }
+      // Determine correct relative path based on page depth
+      var isAdminPage = window.location.pathname.indexOf('/admin/') !== -1;
+      window.location.href = isAdminPage ? '../../../index.html' : '../../index.html';
     }
-  // Determine correct relative path based on page depth
-    var isAdminPage = window.location.pathname.indexOf('/admin/') !== -1;
-    window.location.href = isAdminPage ? '../../../index.html' : '../../index.html';
+    if (window.BioSupabase && window.BioSupabase.isConfigured()) {
+      BioSupabase.signOut().then(finishLogout).catch(finishLogout);
+    } else {
+      finishLogout();
+    }
   }
 }
 
@@ -335,6 +350,11 @@ function initNotifications() {
 
   // Initial render
   renderNotifications();
+
+  // Re-render live when cloud notifications change (realtime + explicit loads).
+  window.addEventListener('biodata:notifications', function() {
+    renderNotifications();
+  });
 }
 
 /**
@@ -365,16 +385,28 @@ function getObsFromLink(link) {
 }
 
 /**
- * Render notifications into the dropdown
+ * Render notifications into the dropdown.
+ * Prefers live cloud data (BioSync → notifications table); falls back to
+ * the BioData/localStorage cache if cloud notifications aren't loaded.
  */
 function renderNotifications() {
-  if (!window.BioData) return;
-
   var dropdown = document.getElementById('notificationDropdown');
   if (!dropdown) return;
 
+  var notifications;
+  var unreadCount = 0;
+  var hasCloud = window.BioSync && typeof window.BioSync.getNotificationsCache === 'function';
+  if (hasCloud) {
+    notifications = window.BioSync.getNotificationsCache();
+    unreadCount = notifications.filter(function(n) { return !n.read; }).length;
+  } else if (window.BioData) {
+    notifications = window.BioData.getNotifications({ limit: 50 });
+    unreadCount = window.BioData.getUnreadNotificationCount();
+  } else {
+    return;
+  }
+
   var badge = document.getElementById('notificationBadge');
-  var unreadCount = BioData.getUnreadNotificationCount();
 
   // Update badge
   if (badge) {
@@ -386,7 +418,6 @@ function renderNotifications() {
     }
   }
 
-  var notifications = BioData.getNotifications({ limit: 50 });
   var html = '';
 
   if (notifications.length === 0) {
@@ -397,17 +428,21 @@ function renderNotifications() {
         '<p>No notifications yet</p>' +
       '</div>';
   } else {
-    // Header with "Mark all as read"
+    // Header with "Mark all as read" + "Clear all"
     html +=
       '<div class="notification-dropdown-header">' +
         '<h3>Notifications</h3>' +
-        (unreadCount > 0 ? '<button class="notification-mark-read-btn" id="markAllReadBtn">Mark all as read</button>' : '') +
+        '<div class="notification-header-actions">' +
+          (unreadCount > 0 ? '<button class="notification-mark-read-btn" id="markAllReadBtn">Mark all read</button>' : '') +
+          '<button class="notification-mark-read-btn" id="notificationClearBtn">Clear all</button>' +
+        '</div>' +
       '</div>';
 
     // Notification list
     html += '<div class="notification-list">';
 
     notifications.forEach(function(n) {
+      if (!n || !n.id) return;
       var iconClass = '';
       var iconName = '';
 
@@ -453,10 +488,17 @@ function renderNotifications() {
       var id = item.getAttribute('data-notif-id');
       var link = item.getAttribute('data-link');
 
-      // Mark as read
-      if (id && window.BioData) {
-        BioData.markNotificationRead(id);
-        renderNotifications(); // Re-render to update badge & list
+      // Mark as read — cloud first (BioSync), fallback to BioData.
+      if (id) {
+        if (window.BioSync && window.BioSync.markNotificationRead) {
+          window.BioSync.markNotificationRead(id).catch(function(err) {
+            console.warn('BioSync: mark read failed:', err && err.message);
+            if (window.BioData) { BioData.markNotificationRead(id); renderNotifications(); }
+          });
+        } else if (window.BioData) {
+          BioData.markNotificationRead(id);
+          renderNotifications();
+        }
       }
 
       // Same-page deep-link: if we're already on the observations page and
@@ -485,8 +527,29 @@ function renderNotifications() {
   if (markAllBtn) {
     markAllBtn.addEventListener('click', function(e) {
       e.stopPropagation();
-      if (window.BioData) {
+      if (window.BioSync && window.BioSync.markAllNotificationsRead) {
+        window.BioSync.markAllNotificationsRead().catch(function(err) {
+          console.warn('BioSync: mark all read failed:', err && err.message);
+          if (window.BioData) { BioData.markAllNotificationsRead(); renderNotifications(); }
+        });
+      } else if (window.BioData) {
         BioData.markAllNotificationsRead();
+        renderNotifications();
+      }
+    });
+  }
+
+  // Attach "Clear all" handler (removes notifications entirely).
+  var clearAllBtn = document.getElementById('notificationClearBtn');
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (window.BioSync && window.BioSync.clearNotifications) {
+        window.BioSync.clearNotifications().catch(function(err) {
+          console.warn('BioSync: clear notifications failed:', err && err.message);
+        });
+      } else if (window.BioData) {
+        BioData.clearNotifications();
         renderNotifications();
       }
     });
@@ -522,13 +585,68 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// Initialize when DOM is ready
+// Initialize when DOM is ready.
+// Protected pages run through the AuthGuard first so unauthenticated or
+// wrong-role users are redirected before any privileged UI mounts.
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', function() {
-    initUserMenu();
-    initHeaderActions();
-    initDashboardActions();
-    initNotifications();
+    function mountUI() {
+      // Hydrate the in-memory BioData cache from Supabase on load, then let
+      // pages render cloud data. Non-fatal if offline/unconfigured.
+      if (typeof window.BioSync !== 'undefined' && typeof window.BioSync.loadFromCloud === 'function') {
+        window.BioSync.loadFromCloud()
+          .then(function() {
+            // Re-mount UI after cloud data is seeded so tables/charts reflect
+            // the authoritative dataset.
+            initUserMenu();
+            initHeaderActions();
+            initDashboardActions();
+            initNotifications();
+            // Cloud notifications: initial load + live postgres_changes updates.
+            if (window.BioSync.loadNotifications && window.BioSync.registerNotificationRealtime) {
+              window.BioSync.loadNotifications();
+              window.BioSync.registerNotificationRealtime();
+            }
+          })
+          .catch(function() {
+            // Offline or not configured — fall back to local cache.
+            initUserMenu();
+            initHeaderActions();
+            initDashboardActions();
+            initNotifications();
+          });
+      } else {
+        initUserMenu();
+        initHeaderActions();
+        initDashboardActions();
+        initNotifications();
+      }
+    }
+
+    if (typeof window.AuthGuard !== 'undefined') {
+      var body = document.body;
+      var isAdminPage = body &&
+        (body.classList.contains('page-dashboard') ||
+         body.classList.contains('page-observations') ||
+         body.classList.contains('page-analytics') ||
+         body.classList.contains('page-users') ||
+         body.classList.contains('page-settings'));
+
+      var guardPromise = isAdminPage
+        ? AuthGuard.requireRole(['admin'])
+        : AuthGuard.requireAuthenticated();
+
+      guardPromise.then(function(result) {
+        if (result && result.redirecting) return; // being redirected — don't mount UI
+        mountUI();
+      }).catch(function() {
+        // Guard failed (network, config) — fall back to login to be safe.
+        window.location.href = '../../../index.html';
+      });
+    } else {
+      // AuthGuard not loaded (legacy/mock path) — proceed as before.
+      mountUI();
+    }
   });
 }
 

@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
   gradient.addColorStop(0, 'rgba(46, 125, 50, 0.3)');
   gradient.addColorStop(1, 'rgba(46, 125, 50, 0.02)');
 
-  new Chart(ctx, {
+  window.dashChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
@@ -224,3 +224,64 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
+
+// Re-render dashboard stats + chart after Supabase sync seeds cloud data.
+if (typeof window !== 'undefined') {
+  window.addEventListener('biodata:synced', function() {
+    // KPIs + recent activity
+    if (window.BioData) {
+      document.getElementById('statTotalUsers').textContent = BioData.totalUsers();
+      document.getElementById('statTotalObservations').textContent = BioData.totalObservations();
+      document.getElementById('statLast7Days').textContent = BioData.observationsLast7Days();
+
+      var tbody = document.getElementById('recentActivityBody');
+      if (tbody) {
+        var acts = BioData.recentActivity(5);
+        var html = '';
+        acts.forEach(function(act) {
+          html += '<tr>' +
+            '<td class="date-cell">' + act.date + '</td>' +
+            '<td class="species-cell">' + act.species + '</td>' +
+            '<td class="location-cell">' + act.location + '</td>' +
+            '<td class="officer-cell">' + act.officer + '</td>' +
+            '</tr>';
+        });
+        tbody.innerHTML = html;
+      }
+    }
+
+    // Chart — recompute the rolling 7-day window from the refreshed cache
+    // and update the existing Chart.js instance in place (no re-init).
+    if (window.dashChart && window.BioData) {
+      var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      var counts = [0, 0, 0, 0, 0, 0, 0];
+      var lab = [];
+      var now = new Date();
+      var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      var windowDays = [];
+      for (var i = 6; i >= 0; i--) {
+        var d = new Date(today);
+        d.setDate(today.getDate() - i);
+        windowDays.push(d);
+        lab.push(dayNames[d.getDay()]);
+      }
+      var allObs = BioData.getObservations() || [];
+      allObs.forEach(function(obs) {
+        if (!obs.timestamp) return;
+        var ts = new Date(obs.timestamp);
+        if (isNaN(ts.getTime())) return;
+        for (var w = 0; w < windowDays.length; w++) {
+          if (ts.getFullYear() === windowDays[w].getFullYear() &&
+              ts.getMonth() === windowDays[w].getMonth() &&
+              ts.getDate() === windowDays[w].getDate()) {
+            counts[w]++;
+            break;
+          }
+        }
+      });
+      window.dashChart.data.labels = lab;
+      window.dashChart.data.datasets[0].data = counts;
+      window.dashChart.update();
+    }
+  });
+}
