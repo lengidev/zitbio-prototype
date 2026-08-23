@@ -11,7 +11,71 @@
  *   - Sample data fallback prevents an empty chart state during initial
  *     deployment when real data hasn't been collected yet.
  */
+/**
+ * Render the four KPI cards and the recent-activity table from the
+ * unified BioData layer. Shared by the initial load and the post-sync
+ * refresh so both paths stay identical (no duplicated markup logic).
+ */
+function renderDashboardStats() {
+  if (!window.BioData) return;
+  document.getElementById('statTotalUsers').textContent = BioData.totalUsers();
+  document.getElementById('statTotalObservations').textContent = BioData.totalObservations();
+  document.getElementById('statPendingReviews').textContent = BioData.pendingObservations();
+  document.getElementById('statTotalIndividuals').textContent = BioData.totalIndividuals();
 
+  var tbody = document.getElementById('recentActivityBody');
+  if (!tbody) return;
+  var html = '';
+  BioData.recentActivity(5).forEach(function(act) {
+    html += '<tr>' +
+      '<td class="date-cell">' + act.date + '</td>' +
+      '<td class="species-cell">' + act.species + '</td>' +
+      '<td class="location-cell">' + act.location + '</td>' +
+      '<td class="officer-cell">' + act.officer + '</td>' +
+      '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+/**
+ * Build the rolling 7-day observation window (oldest → today) used by the
+ * weekly chart (Issue #26). Returns { labels, counts } where labels are the
+ * weekday names for those actual dates and counts are per-day totals.
+ */
+function computeWeeklyWindow() {
+  var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var counts = [0, 0, 0, 0, 0, 0, 0];
+  var labels = [];
+  var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var windowDays = [];
+
+  for (var i = 6; i >= 0; i--) {
+    var d = new Date(today);
+    d.setDate(today.getDate() - i);
+    windowDays.push(d);
+    labels.push(dayNames[d.getDay()]);
+  }
+
+  var allObs = window.BioData ? BioData.getObservations() : [];
+  if (allObs) {
+    allObs.forEach(function(obs) {
+      if (!obs.timestamp) return;
+      var ts = new Date(obs.timestamp);
+      if (isNaN(ts.getTime())) return;
+      for (var w = 0; w < windowDays.length; w++) {
+        if (ts.getFullYear() === windowDays[w].getFullYear() &&
+            ts.getMonth() === windowDays[w].getMonth() &&
+            ts.getDate() === windowDays[w].getDate()) {
+          counts[w]++;
+          break;
+        }
+      }
+    });
+  }
+
+  return { labels: labels, counts: counts };
+}
 document.addEventListener('DOMContentLoaded', function() {
   // ============================================
   //  Populate dashboard KPIs from the unified data layer
@@ -23,27 +87,9 @@ document.addEventListener('DOMContentLoaded', function() {
       var userNameEl = document.querySelector('.user-menu-name');
       if (userNameEl) userNameEl.textContent = session.name;
     }
-
-    document.getElementById('statTotalUsers').textContent = BioData.totalUsers();
-    document.getElementById('statTotalObservations').textContent = BioData.totalObservations();
-    document.getElementById('statPendingReviews').textContent = BioData.pendingObservations();
-    document.getElementById('statTotalIndividuals').textContent = BioData.totalIndividuals();
-
-    var tbody = document.getElementById('recentActivityBody');
-    if (tbody) {
-      var activities = BioData.recentActivity(5);
-      var html = '';
-      activities.forEach(function(act) {
-        html += '<tr>' +
-          '<td class="date-cell">' + act.date + '</td>' +
-          '<td class="species-cell">' + act.species + '</td>' +
-          '<td class="location-cell">' + act.location + '</td>' +
-          '<td class="officer-cell">' + act.officer + '</td>' +
-          '</tr>';
-      });
-      tbody.innerHTML = html;
-    }
   }
+
+  renderDashboardStats();
 
   // ============================================
   //  Weekly Chart — Chart.js Spline Area Chart
@@ -54,46 +100,13 @@ document.addEventListener('DOMContentLoaded', function() {
   if (!ctx) return;
   if (typeof Chart === 'undefined') return;
 
-  // Aggregate observations by rolling calendar day over the last 7 days,
-  // ending today — a sliding window so "today" is always the rightmost bar
-  // (Issue #26). Labels are the weekday names for those actual dates.
-  var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  var dayCounts = [0, 0, 0, 0, 0, 0, 0];
-  var labels = [];
   var now = new Date();
-  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  // Build the last 7 rolling dates + their weekday labels (oldest → today)
-  var windowDays = [];
-  for (var i = 6; i >= 0; i--) {
-    var d = new Date(today);
-    d.setDate(today.getDate() - i);
-    windowDays.push(d);
-    labels.push(dayNames[d.getDay()]);
-  }
-
-  if (window.BioData) {
-    var allObs = BioData.getObservations();
-    if (allObs && allObs.length > 0) {
-      allObs.forEach(function(obs) {
-        if (!obs.timestamp) return;
-        var ts = new Date(obs.timestamp);
-        if (isNaN(ts.getTime())) return;
-        // Count the observation into its matching rolling day
-        for (var w = 0; w < windowDays.length; w++) {
-          if (ts.getFullYear() === windowDays[w].getFullYear() &&
-              ts.getMonth() === windowDays[w].getMonth() &&
-              ts.getDate() === windowDays[w].getDate()) {
-            dayCounts[w]++;
-            break;
-          }
-        }
-      });
-    }
-  }
-
-  // Chart data mirrors the rolling window (oldest → today)
-  var dataValues = dayCounts;
+  // Sliding 7-day window (oldest → today) — Issue #26. "Today" is always
+  // the rightmost bar; labels are the weekday names for those actual dates.
+  var weekly = computeWeeklyWindow();
+  var labels = weekly.labels;
+  var dataValues = weekly.counts;
 
   // Compute trend: last 7 days vs prior 7 days
   var thisWeekTotal = dataValues.reduce(function(a, b) { return a + b; }, 0);
@@ -218,59 +231,14 @@ document.addEventListener('DOMContentLoaded', function() {
 if (typeof window !== 'undefined') {
   window.addEventListener('biodata:synced', function() {
     // KPIs + recent activity
-    if (window.BioData) {
-      document.getElementById('statTotalUsers').textContent = BioData.totalUsers();
-      document.getElementById('statTotalObservations').textContent = BioData.totalObservations();
-      document.getElementById('statPendingReviews').textContent = BioData.pendingObservations();
-      document.getElementById('statTotalIndividuals').textContent = BioData.totalIndividuals();
-
-      var tbody = document.getElementById('recentActivityBody');
-      if (tbody) {
-        var acts = BioData.recentActivity(5);
-        var html = '';
-        acts.forEach(function(act) {
-          html += '<tr>' +
-            '<td class="date-cell">' + act.date + '</td>' +
-            '<td class="species-cell">' + act.species + '</td>' +
-            '<td class="location-cell">' + act.location + '</td>' +
-            '<td class="officer-cell">' + act.officer + '</td>' +
-            '</tr>';
-        });
-        tbody.innerHTML = html;
-      }
-    }
+    renderDashboardStats();
 
     // Chart — recompute the rolling 7-day window from the refreshed cache
     // and update the existing Chart.js instance in place (no re-init).
     if (window.dashChart && window.BioData) {
-      var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      var counts = [0, 0, 0, 0, 0, 0, 0];
-      var lab = [];
-      var now = new Date();
-      var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      var windowDays = [];
-      for (var i = 6; i >= 0; i--) {
-        var d = new Date(today);
-        d.setDate(today.getDate() - i);
-        windowDays.push(d);
-        lab.push(dayNames[d.getDay()]);
-      }
-      var allObs = BioData.getObservations() || [];
-      allObs.forEach(function(obs) {
-        if (!obs.timestamp) return;
-        var ts = new Date(obs.timestamp);
-        if (isNaN(ts.getTime())) return;
-        for (var w = 0; w < windowDays.length; w++) {
-          if (ts.getFullYear() === windowDays[w].getFullYear() &&
-              ts.getMonth() === windowDays[w].getMonth() &&
-              ts.getDate() === windowDays[w].getDate()) {
-            counts[w]++;
-            break;
-          }
-        }
-      });
-      window.dashChart.data.labels = lab;
-      window.dashChart.data.datasets[0].data = counts;
+      var weekly = computeWeeklyWindow();
+      window.dashChart.data.labels = weekly.labels;
+      window.dashChart.data.datasets[0].data = weekly.counts;
       window.dashChart.update();
     }
   });
