@@ -1,5 +1,5 @@
 /**
- * BioMonitor — Dashboard Page
+ * ZitBio — Dashboard Page
  * Populates stats and recent activity table from the unified BioData layer,
  * then renders the weekly observations chart using Chart.js.
  *
@@ -26,7 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('statTotalUsers').textContent = BioData.totalUsers();
     document.getElementById('statTotalObservations').textContent = BioData.totalObservations();
-    document.getElementById('statLast7Days').textContent = BioData.observationsLast7Days();
+    document.getElementById('statPendingReviews').textContent = BioData.pendingObservations();
+    document.getElementById('statTotalIndividuals').textContent = BioData.totalIndividuals();
 
     var tbody = document.getElementById('recentActivityBody');
     if (tbody) {
@@ -116,18 +117,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Provide a visual baseline for the chart during initial deployment to
-  // prevent an empty state from confusing new users. Once real observations
-  // are recorded, the sample data is replaced naturally.
-  if (thisWeekTotal === 0 && priorWeekTotal === 0) {
-    var sampleData = [1.2, 0.6, 0.9, 0.4, 1.1, 0.8, 0.3];
-    for (var i = 0; i < 7; i++) {
-      dataValues[i] = sampleData[i];
-    }
-    thisWeekTotal = sampleData.reduce(function(a, b) { return a + b; }, 0);
-    priorWeekTotal = 8;
-  }
-
   // Trend badge — week-over-week comparison informs rangers of
   // patrol effectiveness (e.g., more sightings may indicate better
   // coverage rather than population increase).
@@ -154,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
     data: {
       labels: labels,
       datasets: [{
-        label: 'Observations',
+        label: 'Observation records',
         data: dataValues,
         fill: true,
         backgroundColor: gradient,
@@ -191,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             label: function(item) {
               var val = item.parsed.y;
-              return val + ' observation' + (val !== 1 ? 's' : '');
+              return val + ' record' + (val !== 1 ? 's' : '');
             }
           }
         }
@@ -232,7 +221,8 @@ if (typeof window !== 'undefined') {
     if (window.BioData) {
       document.getElementById('statTotalUsers').textContent = BioData.totalUsers();
       document.getElementById('statTotalObservations').textContent = BioData.totalObservations();
-      document.getElementById('statLast7Days').textContent = BioData.observationsLast7Days();
+      document.getElementById('statPendingReviews').textContent = BioData.pendingObservations();
+      document.getElementById('statTotalIndividuals').textContent = BioData.totalIndividuals();
 
       var tbody = document.getElementById('recentActivityBody');
       if (tbody) {

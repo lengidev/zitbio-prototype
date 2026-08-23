@@ -1,5 +1,5 @@
 /**
- * BioMonitor - Login Page Logic (Supabase Auth)
+ * ZitBio - Login Page Logic (Supabase Auth)
  * Handles real authentication via Supabase, password toggle, and forgot password flow.
  *
  * Changes from mock version:

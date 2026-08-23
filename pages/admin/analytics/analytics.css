@@ -467,8 +467,8 @@
     right: calc(100% + 10px);
     top: 50%;
     transform: translateY(-50%);
-    background: var(--color-text-main);
-    color: var(--color-text-inverse);
+    background: var(--tooltip-bg);
+    color: var(--tooltip-text);
     padding: 4px 10px;
     border-radius: 5px;
     font-size: 11px;
@@ -881,5 +881,303 @@
     .col-toggle-dropdown {
         right: 0;
         left: auto;
+    }
+}
+
+/* ============================================================
+   REPORT TAB
+   ============================================================ */
+.page-analytics .report-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.page-analytics .report-include-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    background: var(--color-bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+}
+.page-analytics .report-include-toggle input {
+    accent-color: var(--color-primary);
+}
+.page-analytics .report-confidence {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    flex: 1;
+    min-width: 200px;
+}
+.page-analytics .report-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+.page-analytics .report-card--wide {
+    grid-column: 1 / -1;
+}
+/* The shared .analytics-card rule sets background:transparent; padding:0 —
+   restore a proper card surface for report cards. */
+.page-analytics .report-card {
+    background: var(--color-bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+.page-analytics .report-card .analytics-card-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+.page-analytics .report-card .analytics-card-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+.page-analytics .report-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+}
+.page-analytics .report-kpi {
+    padding: 18px 16px;
+    text-align: center;
+}
+.page-analytics .report-kpi + .report-kpi {
+    border-left: 1px solid var(--border-color-light);
+}
+.page-analytics .report-kpi-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+.page-analytics .report-kpi-value--sm {
+    font-size: 13px;
+    line-height: 1.3;
+    color: var(--color-text-main);
+    padding-top: 6px;
+}
+.page-analytics .report-kpi-label {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.page-analytics .report-section {
+    padding: 14px 18px;
+}
+.page-analytics .report-empty {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    margin: 8px 0;
+}
+.page-analytics .report-meta {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    margin: 8px 0 0;
+}
+.page-analytics .report-site-row {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color-light);
+}
+.page-analytics .report-site-row:last-child {
+    border-bottom: none;
+}
+.page-analytics .report-site-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--color-text-main);
+}
+.page-analytics .report-site-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+.page-analytics .report-site-meta {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+}
+.page-analytics .trend-arrow.up { color: var(--color-success-hover); font-size: 14px; }
+.page-analytics .trend-arrow.down { color: var(--color-danger); font-size: 14px; }
+.page-analytics .trend-arrow.flat { color: var(--color-text-disabled); font-size: 14px; }
+
+.page-analytics .report-warning-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+}
+.page-analytics .report-warning-row.status-flagged {
+    background: var(--color-danger-light);
+    border-color: var(--color-danger);
+}
+.page-analytics .report-warning-row.status-pending {
+    background: var(--color-warning-light);
+    border-color: var(--color-warning);
+}
+.page-analytics .report-warning-icon {
+    font-size: 20px;
+    color: var(--color-text-secondary);
+    margin-top: 1px;
+}
+.page-analytics .report-warning-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--color-text-main);
+}
+.page-analytics .report-warning-meta {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+}
+
+.page-analytics .report-habitat-group {
+    margin-bottom: 12px;
+}
+.page-analytics .report-habitat-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--color-text-main);
+    margin-bottom: 6px;
+}
+.page-analytics .report-habitat-species {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.page-analytics .report-habitat-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    background: var(--color-bg-header);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    padding: 4px 10px;
+    color: var(--color-text-main);
+}
+.page-analytics .report-habitat-chip i {
+    color: var(--color-text-secondary);
+}
+
+.page-analytics .report-trend-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+.page-analytics .report-species-select {
+    padding: 8px 12px;
+    font-size: 13px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-white);
+    color: var(--color-text-main);
+    max-width: 260px;
+}
+
+/* ============================================================
+   GRAPHS TAB (Tier 1)
+   ============================================================ */
+.page-analytics .graphs-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.page-analytics .graphs-toolbar-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+.page-analytics .graphs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+.page-analytics .graph-box {
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    min-height: 260px;
+    position: relative;
+}
+.page-analytics .graph-box--wide {
+    grid-column: 1 / -1;
+}
+.page-analytics .graph-title {
+    display: block;
+    margin: 0 0 16px;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 24px;
+    color: var(--color-text-main);
+}
+.page-analytics .graph-box canvas,
+.page-analytics .report-card canvas {
+    width: 100% !important;
+    height: 220px !important;
+}
+.page-analytics .graph-note {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    min-height: 16px;
+}
+
+/* ============================================================
+   PRINT (analysis report — no PDF library)
+   Hides chrome (sidebar/header/tabs) and formats report cards.
+   ============================================================ */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .page-analytics .tab-report,
+    .page-analytics #tab-report,
+    .page-analytics #tab-report *,
+    .page-analytics .report-toolbar,
+    .page-analytics .report-toolbar * {
+        visibility: visible;
+    }
+    .page-analytics .report-toolbar {
+        margin-bottom: 12px;
+    }
+    .page-analytics #tab-report {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 16px;
+    }
+    .page-analytics .report-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .page-analytics .report-card {
+        break-inside: avoid;
+    }
+    .page-analytics .report-card--wide {
+        grid-column: 1 / -1;
+    }
+    .page-analytics .graph-box,
+    .page-analytics .graphs-grid {
+        display: none;
     }
 }

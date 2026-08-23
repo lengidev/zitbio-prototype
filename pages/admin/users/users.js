@@ -1,5 +1,5 @@
 /**
- * BioMonitor — Users Page Logic
+ * ZitBio — Users Page Logic
  * Reads/writes from unified BioData layer instead of a local array.
  * All user CRUD operations go through the data layer so changes are
  * immediately reflected across the entire application.

@@ -38,9 +38,9 @@
                 <span class="material-symbols-outlined nav-icon">home</span>
                 <span class="nav-text">Dashboard</span>
             </a>
-            <a href="../observations/observations.html" class="nav-item" id="navObservations" data-tooltip="Observations">
+            <a href="../observations/observations.html" class="nav-item" id="navObservations" data-tooltip="Review Observations">
                 <span class="material-symbols-outlined nav-icon">visibility</span>
-                <span class="nav-text">Observations</span>
+                <span class="nav-text">Review Observations</span>
             </a>
             <a href="../users/users.html" class="nav-item" id="navUsers" data-tooltip="Users">
                 <span class="material-symbols-outlined nav-icon">people</span>
@@ -52,10 +52,11 @@
             </a>
         </div>
         <div class="sidebar-nav-bottom">
-            <a href="documentation.html" class="nav-item" id="navDocs" data-tooltip="Documentation">
-                <span class="material-symbols-outlined nav-icon">description</span>
-                <span class="nav-text">Documentation</span>
-            </a>
+            <button type="button" class="nav-item" id="navAppearance" data-tooltip="Switch to dark mode" aria-label="Toggle dark mode">
+                <span class="material-symbols-outlined nav-icon">light_mode</span>
+                <span class="nav-text">Appearance</span>
+                <span class="theme-switch" aria-hidden="true"><span class="theme-switch-knob"></span></span>
+            </button>
             <a href="settings.html" class="nav-item" id="navSettings" data-tooltip="Settings">
                 <span class="material-symbols-outlined nav-icon">settings</span>
                 <span class="nav-text">Settings</span>
@@ -70,8 +71,8 @@
         <span class="footer-left">&copy; 2026 ZitBIO</span>
         <span class="footer-right">
             <span class="status-dot" id="statusDot"></span>
-            <span class="status-text" id="statusText">Connected</span>
-            v0.5.1-alpha
+            <span class="status-text" id="statusText">Syncing</span>
+            v0.6.0-beta
         </span>
     </div>
     </aside>
@@ -178,6 +179,32 @@
 
 
 
+            <!-- Species & Baselines (population warning reference data) -->
+            <div class="section">
+                <div class="section-title">Species & Baselines</div>
+                <p class="section-desc">Set authoritative baseline populations for the low-population warning system. Leave blank to auto-derive from verified observations; "derived" baselines are never fabricated.</p>
+                <div class="baselines-toolbar">
+                    <span class="baselines-note" id="baselinesNote"></span>
+                    <button class="btn-primary" id="baselinesRefreshBtn">Refresh</button>
+                </div>
+                <div class="baselines-table-wrap">
+                    <table class="baselines-table">
+                        <thead>
+                            <tr>
+                                <th>Species</th>
+                                <th>Scientific</th>
+                                <th>Type</th>
+                                <th>Baseline (population)</th>
+                                <th>Source</th>
+                                <th>Last updated</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="baselinesTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- System Information -->
             <div class="section">
                 <div class="section-title">System Information</div>
@@ -191,7 +218,7 @@
                         <span class="info-value" id="settingsLastUpdated">—</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Database Status:</span>
+                        <span class="info-label">Database connection:</span>
                         <span class="info-value">
                             <span class="db-status">
                                 <span class="db-dot" id="settingsDbDot"></span>
@@ -211,9 +238,10 @@
 <script src="../../../lib/auth-guard.js"></script>
 <script src="../../../lib/data.js"></script>
 <script src="../../../lib/notification-service.js"></script>
-<script src="../../../lib/supabase-sync.js"></script>
-<script src="../../../pages/admin/layout/admin-layout.js"></script>
-<script src="settings.js"></script>
+    <script src="../../../lib/supabase-sync.js"></script>
+    <script src="../../../lib/analytics.js"></script>
+    <script src="../../../pages/admin/layout/admin-layout.js"></script>
+    <script src="settings.js"></script>
 
 </body>
 </html>

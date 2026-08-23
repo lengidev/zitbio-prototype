@@ -1,5 +1,5 @@
 /**
- * BioMonitor — Field Officer Page Logic
+ * ZitBio — Field Officer Page Logic
  * Handles the biodiversity observation submission form.
  *
  * Design decisions:
@@ -154,6 +154,23 @@ function initFieldOfficer() {
     commonNameEl.addEventListener('change', function() {
       autoDetectLocked = false;
     });
+  }
+
+  // --- Habitat auto-select from focus area ---
+  // Habitat is derived from the selected focus area (app-wide 2-option
+  // system): the Nature Park → park habitat; campus → urban. Officers
+  // never need to pick a habitat manually.
+  var focusAreaEl = document.getElementById('focusArea');
+  var habitatTypeEl = document.getElementById('habitatType');
+  if (focusAreaEl && habitatTypeEl && CentralDataStore && CentralDataStore.getHabitatForFocusArea) {
+    var syncHabitatFromFocus = function() {
+      if (focusAreaEl.value) {
+        habitatTypeEl.value = CentralDataStore.getHabitatForFocusArea(focusAreaEl.value);
+      }
+    };
+    focusAreaEl.addEventListener('change', syncHabitatFromFocus);
+    // Also run once in case a focus area is already selected on load.
+    syncHabitatFromFocus();
   }
 
   // --- GPS capture with reverse-geocode ---

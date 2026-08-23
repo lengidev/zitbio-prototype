@@ -200,3 +200,91 @@
         max-width: 100%;
     }
 }
+
+/* ============================================================
+   SPECIES & BASELINES
+   ============================================================ */
+.page-settings .section-desc {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin: -8px 0 16px;
+    max-width: 640px;
+    line-height: 1.5;
+}
+
+.page-settings .baselines-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+.page-settings .baselines-note {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.page-settings .baselines-table-wrap {
+    overflow-x: auto;
+}
+.page-settings .baselines-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 720px;
+}
+.page-settings .baselines-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--color-bg-header);
+    white-space: nowrap;
+}
+.page-settings .baselines-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--color-text-main);
+    border-bottom: 1px solid var(--border-color-light);
+    vertical-align: middle;
+}
+.page-settings .baselines-table tr:hover td {
+    background: var(--color-bg-hover);
+}
+.page-settings .baseline-species {
+    font-weight: 600;
+}
+.page-settings .baseline-sci {
+    font-style: italic;
+    color: var(--color-text-secondary);
+}
+.page-settings .baseline-input {
+    max-width: 120px;
+    padding: 6px 10px;
+}
+.page-settings .baseline-source {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--color-bg-header);
+    color: var(--color-text-secondary);
+    cursor: help;
+    white-space: nowrap;
+}
+.page-settings .baseline-source-admin {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+.page-settings .baseline-source-derived {
+    background: var(--color-warning-light);
+    color: var(--color-warning);
+}
+.page-settings .baseline-save-btn {
+    padding: 6px 14px;
+    font-size: 13px;
+}

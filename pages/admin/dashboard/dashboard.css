@@ -10,7 +10,7 @@
    ============================================ */
 .page-dashboard .stats-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 24px;
     padding: 16px 0 16px 0;
 }
@@ -34,6 +34,8 @@
 
 .page-dashboard .stat-label {
     font-size: 14px;
+    line-height: 1.35;
+    min-height: 38px; /* reserve two lines so all stat cards align */
     color: var(--color-text-secondary);
     margin-bottom: 4px;
     margin-top: 0px;
@@ -304,6 +306,13 @@
         grid-template-columns: 1fr;
     }
 
+    .page-dashboard .quick-actions-card,
+    .page-dashboard .chart-card {
+        grid-column: 1 / -1;
+        width: auto;
+        min-width: 0;
+    }
+
     .page-dashboard .action-btn svg,
     .page-dashboard .action-btn .material-symbols-outlined {
         width: 14px;
@@ -315,17 +324,15 @@
 /* Mobile: ≤767px */
 @media (max-width: 767px) {
     .page-dashboard .stats-grid {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        gap: 6px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
     }
 
     .page-dashboard .stat-card {
-        flex: 1;
         flex-direction: column;
         align-items: flex-start;
-        padding: 8px 10px;
+        padding: 12px 14px;
     }
 
     .page-dashboard .stat-info {
@@ -373,6 +380,10 @@
     }
 
     .page-dashboard .quick-actions-card {
+        grid-column: 1 / -1;
+        width: auto;
+        justify-self: stretch;
+        min-width: 0;
         padding: 16px;
     }
 
@@ -384,6 +395,7 @@
     }
 
     .page-dashboard .chart-card {
+        grid-column: 1 / -1;
         padding: 16px;
     }
 

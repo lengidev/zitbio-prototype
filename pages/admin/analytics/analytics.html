@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="../../../styles/theme.css">
     <link rel="stylesheet" href="../../../styles/global.css">
     <link rel="stylesheet" href="../../../styles/layout.css">
@@ -38,9 +40,9 @@
                     <span class="material-symbols-outlined nav-icon">home</span>
                         <span class="nav-text">Dashboard</span>
                     </a>
-                    <a href="../observations/observations.html" class="nav-item" id="navObservations" data-tooltip="Observations">
+                    <a href="../observations/observations.html" class="nav-item" id="navObservations" data-tooltip="Review Observations">
                         <span class="material-symbols-outlined nav-icon">visibility</span>
-                        <span class="nav-text">Observations</span>
+                        <span class="nav-text">Review Observations</span>
                     </a>
                     <a href="../users/users.html" class="nav-item" id="navUsers" data-tooltip="Users">
                         <span class="material-symbols-outlined nav-icon">people</span>
@@ -52,10 +54,11 @@
                     </a>
                 </div>
                 <div class="sidebar-nav-bottom">
-                    <a href="documentation.html" class="nav-item" id="navDocs" data-tooltip="Documentation">
-                        <span class="material-symbols-outlined nav-icon">description</span>
-                        <span class="nav-text">Documentation</span>
-                    </a>
+                    <button type="button" class="nav-item" id="navAppearance" data-tooltip="Switch to dark mode" aria-label="Toggle dark mode">
+                        <span class="material-symbols-outlined nav-icon">light_mode</span>
+                        <span class="nav-text">Appearance</span>
+                        <span class="theme-switch" aria-hidden="true"><span class="theme-switch-knob"></span></span>
+                    </button>
                     <a href="../settings/settings.html" class="nav-item" id="navSettings" data-tooltip="Settings">
                         <span class="material-symbols-outlined nav-icon">settings</span>
                         <span class="nav-text">Settings</span>
@@ -70,8 +73,8 @@
                 <span class="footer-left">&copy; 2026 ZitBIO</span>
                 <span class="footer-right">
                     <span class="status-dot" id="statusDot"></span>
-                    <span class="status-text" id="statusText">Connected</span>
-                v0.5.1-alpha
+                    <span class="status-text" id="statusText">Syncing</span>
+                v0.6.0-beta
                 </span>
             </div>
         </aside>
@@ -128,7 +131,7 @@
                     
                 <div class="analytics-tabs">
                     <div class="tabs-left-group">
-                        <button class="analytics-tab active" data-tab="observations">Observations</button>
+                        <button class="analytics-tab active" data-tab="observations">Dataset</button>
                         <button class="analytics-tab" data-tab="map">Map</button>
                         <button class="analytics-tab" data-tab="graphs">Graphs</button>
                         <button class="analytics-tab" data-tab="report">Report</button>
@@ -137,15 +140,11 @@
                         <div class="observation-search-wrapper" id="tabSearchWrapper">
                             <span class="material-symbols-outlined search-icon">search</span>
                             <input type="text" class="search-input" placeholder="Search observations...">
-                            <button class="observation-filter-btn" id="analyticsFilterToggle">
-                                <span class="material-symbols-outlined">filter_alt</span>
-                                Filters
-                                <span class="filter-count-badge" id="filterCountBadge">0</span>
-                            </button>
                         </div>
-                        <button class="observation-export-btn" id="tabExportBtn" style="display: none;">
-                            <span class="material-symbols-outlined">file_download</span>
-                            Export
+                        <button class="observation-filter-btn" id="analyticsFilterToggle">
+                            <span class="material-symbols-outlined">filter_alt</span>
+                            Filters
+                            <span class="filter-count-badge" id="filterCountBadge">0</span>
                         </button>
                     </div>
                 </div>
@@ -364,21 +363,99 @@
                 </div>
 
                 <div class="analytics-tab-content" id="tab-graphs">
-                    <div class="analytics-card">
-                        <div class="analytics-card-body placeholder-card">
-                            <span class="material-symbols-outlined placeholder-icon">bar_chart</span>
-                            <h3 class="placeholder-title">Graphs & Charts</h3>
-                            <p class="placeholder-desc">Data visualization features coming soon.</p>
+                    <div class="analytics-card graphs-card">
+                        <div class="analytics-card-body">
+                            <div class="graphs-toolbar">
+                                <span class="graphs-toolbar-label">Species</span>
+                                <select id="graphSpeciesSelect" class="report-species-select">
+                                    <option value="">All species</option>
+                                </select>
+                            </div>
+                            <div class="graphs-grid">
+                                <div class="graph-box">
+                                    <h3 class="graph-title">Species Richness over Time</h3>
+                                    <canvas id="graphRichnessChart"></canvas>
+                                </div>
+                                <div class="graph-box">
+                                    <h3 class="graph-title">Shannon Diversity Index over Time</h3>
+                                    <canvas id="graphShannonChart"></canvas>
+                                </div>
+                                <div class="graph-box graph-box--wide">
+                                    <h3 class="graph-title">Population Trend per Species</h3>
+                                    <canvas id="graphTrendChart"></canvas>
+                                    <div id="graphTrendNote" class="graph-note"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="analytics-tab-content" id="tab-report">
-                    <div class="analytics-card">
-                        <div class="analytics-card-body placeholder-card">
-                            <span class="material-symbols-outlined placeholder-icon">description</span>
-                            <h3 class="placeholder-title">Reports</h3>
-                            <p class="placeholder-desc">Generate and download reports coming soon.</p>
+                    <div class="report-toolbar">
+                        <label class="report-include-toggle" title="Off by default: reports use verified (Approved) data only">
+                            <input type="checkbox" id="reportIncludePending">
+                            <span>Include pending/flagged</span>
+                        </label>
+                        <span class="report-confidence" id="reportConfidence"></span>
+                        <button class="observation-export-btn" id="reportCsvBtn">
+                            <span class="material-symbols-outlined">download</span>
+                            Export CSV
+                        </button>
+                        <button class="observation-export-btn" id="reportPdfBtn" title="Generate a written PDF report from the current data">
+                            <span class="material-symbols-outlined">picture_as_pdf</span>
+                            Export PDF
+                        </button>
+                    </div>
+
+                    <div class="report-grid">
+                        <div class="analytics-card report-card">
+                            <div class="analytics-card-header"><h3>Summary</h3></div>
+                            <div class="analytics-card-body">
+                                <div class="report-summary-grid">
+                                    <div class="report-kpi">
+                                        <span class="report-kpi-value" id="reportKpiSpecies">0</span>
+                                        <span class="report-kpi-label">Species</span>
+                                    </div>
+                                    <div class="report-kpi">
+                                        <span class="report-kpi-value" id="reportKpiObservations">0</span>
+                                        <span class="report-kpi-label">Observations</span>
+                                    </div>
+                                    <div class="report-kpi">
+                                        <span class="report-kpi-value report-kpi-value--sm" id="reportKpiDateRange">&mdash;</span>
+                                        <span class="report-kpi-label">Date range</span>
+                                    </div>
+                                    <div class="report-kpi">
+                                        <span class="report-kpi-value" id="reportKpiShannon">&mdash;</span>
+                                        <span class="report-kpi-label">Shannon H&prime;</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="analytics-card report-card">
+                            <div class="analytics-card-header"><h3>Diversity by Site</h3></div>
+                            <div class="analytics-card-body report-section" id="reportDiversityContainer"></div>
+                        </div>
+
+                        <div class="analytics-card report-card">
+                            <div class="analytics-card-header"><h3>Population Warnings</h3></div>
+                            <div class="analytics-card-body report-section" id="reportWarningsContainer"></div>
+                        </div>
+
+                        <div class="analytics-card report-card">
+                            <div class="analytics-card-header"><h3>Species by Habitat</h3></div>
+                            <div class="analytics-card-body report-section" id="reportHabitatContainer"></div>
+                        </div>
+
+                        <div class="analytics-card report-card report-card--wide">
+                            <div class="analytics-card-header"><h3>Population Trend</h3></div>
+                            <div class="analytics-card-body">
+                                <div class="report-trend-controls">
+                                    <select id="reportTrendSpecies" class="report-species-select"></select>
+                                    <span class="report-confidence" id="reportTrendNote"></span>
+                                </div>
+                                <canvas id="reportTrendChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -393,6 +470,7 @@
     <script src="../../../lib/notification-service.js"></script>
     <script src="../../../lib/supabase-sync.js"></script>
     <script src="../../../lib/observations-renderer.js"></script>
+    <script src="../../../lib/analytics.js"></script>
     <script src="../../../pages/admin/layout/admin-layout.js"></script>
     <script src="analytics.js"></script>
 </body>

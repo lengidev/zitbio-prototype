@@ -1,5 +1,5 @@
 /**
- * BioMonitor Design System - Theme Variables
+ * ZitBio Design System - Theme Variables
  * Global color tokens and CSS custom properties
  */
 
@@ -36,6 +36,10 @@
   --color-text-muted: #7F8C8D;
   --color-text-disabled: #b0bec5;
   --color-text-inverse: #ffffff;
+
+  /* Tooltips — always a dark bubble with light text, theme-aware */
+  --tooltip-bg: #2C3E50;
+  --tooltip-text: #ffffff;
 
   /* Semantic – Danger Red & Success Green */
   --color-danger: #E53935;
@@ -97,4 +101,31 @@
   --z-modal: 301;
   --z-toast: 400;
   --z-tooltip: 500;
+}
+
+[data-theme="dark"] {
+  --color-bg: #17211b;
+  --color-bg-white: #1f2b23;
+  --color-bg-sidebar: #1b2720;
+  --color-bg-card: #1f2b23;
+  --color-bg-input: #29382f;
+  --color-bg-header: #243229;
+  --color-bg-hover: #304238;
+  --color-text-main: #edf5ef;
+  --color-text-primary: #edf5ef;
+  --color-text-secondary: #b3c1b7;
+  --color-text-muted: #9aaa9e;
+  --color-text-disabled: #718078;
+  --border-color: #3b4c41;
+  --border-color-light: #304238;
+  --border-color-dark: #52665a;
+  --color-primary-light: #214a2a;
+  --color-primary-lighter: #1d3824;
+  --color-secondary-light: #3a302d;
+  --color-accent-light: #4a3922;
+  --color-danger-light: #4a2929;
+  --color-success-light: #214a2a;
+  --color-warning-light: #4a3922;
+  --tooltip-bg: #3b4c41;
+  --tooltip-text: #edf5ef;
 }

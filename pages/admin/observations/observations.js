@@ -1,5 +1,5 @@
 /**
- * BioMonitor — Observations Page Logic
+ * ZitBio — Observations Page Logic
  * Reads from unified BioData layer via shared observationsRenderer.
  * Handles table rendering, pagination, search, and modal interactions.
  * Uses the same renderer as the Analytics tab to ensure visual consistency
@@ -259,7 +259,8 @@ function viewRecordById(id) {
     // Format observation ID nicely
     var displayId = obs.observation_id ? obs.observation_id.replace('obs_', 'OBS-') : '—';
     document.getElementById('fldRecordId').textContent = displayId;
-    document.getElementById('fldRecordStatus').textContent = 'Active';
+    // GBIF-imported records show "Imported" rather than "Active".
+    document.getElementById('fldRecordStatus').textContent = (obs.source === 'gbif') ? 'Imported' : 'Active';
 
     // Cancel any active edit mode
     cancelEdit();
@@ -402,7 +403,7 @@ function makeFieldsEditable(enable) {
         { id: 'fldCountry', type: 'text', value: loc.country || '' },
         { id: 'fldProvince', type: 'select', value: loc.administrative_area || '', options: getProvinceOptions() },
         { id: 'fldCity', type: 'text', value: loc.city || '' },
-        { id: 'fldHabitat', type: 'select', value: loc.habitat_type || '', options: ['', 'Woodland', 'Grassland', 'Riverine Forest', 'Urban'] },
+        { id: 'fldHabitat', type: 'select', value: loc.habitat_type || '', options: getHabitatOptions() },
         { id: 'fldProtectedArea', type: 'text', value: loc.focus_area || '' },
         { id: 'fldGps', type: 'text', value: formatCoords(loc.latitude, loc.longitude) },
         { id: 'fldLocality', type: 'textarea', value: loc.locality_description || '' },
@@ -457,6 +458,22 @@ function makeFieldsEditable(enable) {
             parentRow.classList.remove('editing');
         }
     });
+
+    // Habitat auto-select: keep habitat in sync with the focus area while
+    // editing (2-option app-wide system). Only runs when enabling edit mode.
+    if (enable) {
+        var focusEditEl = document.getElementById('fldProtectedArea-edit');
+        var habitatEditEl = document.getElementById('fldHabitat-edit');
+        if (focusEditEl && habitatEditEl && window.BioData && window.BioData.getHabitatForFocusArea) {
+            var syncHabitatFromFocus = function() {
+                if (focusEditEl.value) {
+                    habitatEditEl.value = window.BioData.getHabitatForFocusArea(focusEditEl.value);
+                }
+            };
+            focusEditEl.addEventListener('input', syncHabitatFromFocus);
+            syncHabitatFromFocus();
+        }
+    }
 }
 
 function formatTimeInput(timestamp) {
@@ -474,7 +491,15 @@ function getProvinceOptions() {
         var provinces = window.BioData.getZambiaProvinces();
         return [''].concat(provinces);
     }
-    return ['', 'Central Province', 'Copperbelt Province', 'Eastern Province', 'Luapula Province', 'Lusaka Province', 'Muchinga Province', 'Northern Province', 'North-Western Province', 'Southern Province', 'Western Province'];
+    return ['', 'Copperbelt Province'];
+}
+
+// Habitat options — the two canonical app-wide habitats (leading '' is the
+// placeholder for the select). Falls back to literals if BioData is missing.
+function getHabitatOptions() {
+    var types = (window.BioData && window.BioData.HABITAT_TYPES) ||
+        ['CBU Nature Park - Grassland + Woodland (Mixed)', 'The CBU - Urban'];
+    return [''].concat(types);
 }
 
 function saveChanges() {

@@ -1,5 +1,5 @@
 /**
- * BioMonitor — Admin Layout Component
+ * ZitBio — Admin Layout Component
  * Unified sidebar collapse/expand engine with localStorage persistence.
  * Handles both desktop (collapsible) and mobile (overlay) sidebar behavior.
  *
@@ -248,24 +248,24 @@ function initDashboardActions() {
   const btnViewAll = document.getElementById('btnViewAll');
 
   btnNewObservation.addEventListener('click', function() {
-    alert('Create New Observation form would open here.');
+    window.location.href = '../../field-officer/field-officer.html';
   });
 
   if (btnAddUser) {
     btnAddUser.addEventListener('click', function() {
-      alert('Add User form would open here.');
+      window.location.href = '../users/users.html';
     });
   }
 
   if (btnGenerateReport) {
     btnGenerateReport.addEventListener('click', function() {
-      alert('Generating biodiversity report...');
+      window.location.href = '../analytics/analytics.html#tab-report';
     });
   }
 
   if (btnViewAll) {
     btnViewAll.addEventListener('click', function() {
-      alert('Navigate to full observations page.');
+      window.location.href = '../observations/observations.html';
     });
   }
 }
@@ -455,6 +455,18 @@ function renderNotifications() {
       } else if (n.type === 'new_user') {
         iconClass = 'new-user';
         iconName = 'person_add';
+      } else if (n.type === 'population_warning') {
+        iconClass = 'flagged';
+        iconName = 'trending_down';
+      } else if (n.type === 'observation_verdict') {
+        iconClass = 'new-user';
+        iconName = 'verified';
+      } else if (n.type === 'observation_edited') {
+        iconClass = 'new-user';
+        iconName = 'edit_note';
+      } else if (n.type === 'observation_deleted') {
+        iconClass = 'flagged';
+        iconName = 'delete';
       } else {
         iconClass = 'pending';
         iconName = 'notifications';
@@ -585,6 +597,66 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// ============================================================
+//  ANALYTICS WARNING EVALUATION (full-dataset re-evaluation)
+//  ------------------------------------------------------------
+//  Distinct from NotificationService's create-event handlers: this is the
+//  "re-evaluate everything and see what's now true" pass (Gap 3). Runs once
+//  on admin page load (after cloud hydration) to surface low-population
+//  warnings as `population_warning` notifications. Guarded so repeated
+//  appears on page re-navigation across tabs don't duplicate spam.
+// ============================================================
+var analyticsEvaluationRan = false;
+
+function enrichAdminObservations(obsList) {
+  if (!window.BioData || !window.BioData.resolveSpeciesId) return obsList;
+  return obsList.map(function(o) {
+    return Object.assign({}, o, {
+      species_id: window.BioData.resolveSpeciesId(o) || null,
+      site_id: window.BioData.resolveSiteId(o) || null
+    });
+  });
+}
+
+function runAnalyticsEvaluation() {
+  // Only the pure analytics engine + data layer are needed; bail silently if
+  // they aren't loaded yet (they are on every admin page).
+  if (!window.BioAnalytics || !window.BioData) return;
+  if (analyticsEvaluationRan) return;
+  analyticsEvaluationRan = true;
+
+  var registry = window.BioData.getSpeciesRegistry ? window.BioData.getSpeciesRegistry() : [];
+  var verified = enrichAdminObservations(window.BioData.getVerifiedObservations() || []);
+  var warnings = window.BioAnalytics.lowPopulationWarnings(verified, { speciesRegistry: registry });
+  var active = warnings.filter(function(w) { return w.severity === 'warning' || w.severity === 'critical'; });
+  if (active.length === 0) return;
+
+  var existingIds = {};
+  (window.BioData.getNotifications({ unread: true }) || []).forEach(function(n) {
+    if (n.related_id) existingIds[n.related_id] = true;
+  });
+
+  var added = false;
+  active.forEach(function(w) {
+    var relatedId = 'pop:' + (w.speciesId || 'sp') + ':' + (w.siteId || 'site');
+    if (existingIds[relatedId]) return; // already notified (unread) — no spam
+    var severityText = w.severity === 'critical' ? 'critically low' : 'below baseline';
+    window.BioData.addNotification(
+      'population_warning',
+      (w.severity === 'critical' ? 'Critical: ' : 'Warning: ') + w.speciesName,
+      w.speciesName + ' at ' + w.siteName + ' estimated ' + w.currentCount +
+        ' vs baseline ' + w.baseline + ' (' + severityText + ').',
+      '../analytics/analytics.html#tab-report',
+      relatedId
+    );
+    added = true;
+  });
+
+  if (added && typeof window !== 'undefined') {
+    try { window.dispatchEvent(new window.CustomEvent('biodata:notifications')); } catch (e) { /* ignore */ }
+  }
+}
+
 // Initialize when DOM is ready.
 // Protected pages run through the AuthGuard first so unauthenticated or
 // wrong-role users are redirected before any privileged UI mounts.
@@ -593,7 +665,7 @@ if (typeof document !== 'undefined') {
     function mountUI() {
       // Hydrate the in-memory BioData cache from Supabase on load, then let
       // pages render cloud data. Non-fatal if offline/unconfigured.
-      if (typeof window.BioSync !== 'undefined' && typeof window.BioSync.loadFromCloud === 'function') {
+        if (typeof window.BioSync !== 'undefined' && typeof window.BioSync.loadFromCloud === 'function') {
         window.BioSync.loadFromCloud()
           .then(function() {
             // Re-mount UI after cloud data is seeded so tables/charts reflect
@@ -607,6 +679,15 @@ if (typeof document !== 'undefined') {
               window.BioSync.loadNotifications();
               window.BioSync.registerNotificationRealtime();
             }
+            // Analytics registries (species + sites): cloud → BioData cache.
+            if (window.BioSync.loadRegistries) {
+              window.BioSync.loadRegistries().catch(function(err) {
+                console.warn('BioSync: registry load failed:', err && err.message);
+              });
+            }
+            // Full-dataset re-evaluation (low-population warnings) after the
+            // authoritative cloud data is seeded — once per page session.
+            runAnalyticsEvaluation();
           })
           .catch(function() {
             // Offline or not configured — fall back to local cache.
@@ -652,10 +733,12 @@ if (typeof document !== 'undefined') {
 
 /**
  * Update connection status indicator in sidebar footer.
- * States: Connected (green), Slow (amber), Disconnected (red).
+ * Network fallback states: Online, Slow network, Offline.
  * Polls every 30s and listens for browser online/offline events so
  * admins working in remote areas see network changes immediately.
  */
+var syncStatusKnown = false;
+
 function updateConnectionStatus() {
   var dot = document.getElementById('statusDot');
   var text = document.getElementById('statusText');
@@ -664,7 +747,7 @@ function updateConnectionStatus() {
   if (!navigator.onLine) {
     dot.classList.remove('slow');
     dot.classList.add('disconnected');
-    text.textContent = 'Disconnected';
+    text.textContent = 'Offline';
     return;
   }
 
@@ -673,27 +756,85 @@ function updateConnectionStatus() {
   if (connection) {
     // effectiveType: 'slow-2g', '2g', '3g', '4g'
     if (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g') {
+      if (syncStatusKnown) return;
       dot.classList.remove('disconnected');
       dot.classList.add('slow');
-      text.textContent = 'Slow';
+      text.textContent = 'Slow network';
       return;
     }
   }
 
   // Default: connected
+  if (syncStatusKnown) return;
   dot.classList.remove('disconnected', 'slow');
-  text.textContent = 'Connected';
+  text.textContent = 'Online';
+}
+
+function setSyncStatus(label, state) {
+  var dot = document.getElementById('statusDot');
+  var text = document.getElementById('statusText');
+  if (!dot || !text) return;
+  dot.classList.remove('disconnected', 'slow', 'syncing');
+  if (state) dot.classList.add(state);
+  text.textContent = label;
+}
+
+function applySavedTheme() {
+  var savedTheme = 'system';
+  try { savedTheme = localStorage.getItem('biodata_theme') || 'system'; } catch (err) { /* storage unavailable */ }
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var activeTheme = savedTheme === 'dark' || (savedTheme === 'system' && prefersDark) ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', activeTheme);
+  updateThemeToggleIcon(activeTheme);
+}
+
+function updateThemeToggleIcon(activeTheme) {
+  var btn = document.getElementById('navAppearance');
+  if (!btn) return;
+  var icon = btn.querySelector('.nav-icon');
+  if (icon) icon.textContent = activeTheme === 'dark' ? 'dark_mode' : 'light_mode';
+  btn.setAttribute('data-tooltip', activeTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  btn.setAttribute('aria-label', activeTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+}
+
+function initThemeToggle() {
+  var btn = document.getElementById('navAppearance');
+  if (!btn || btn.getAttribute('data-theme-toggle') === 'bound') return;
+  btn.setAttribute('data-theme-toggle', 'bound');
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    var current = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark' ? 'dark' : 'light';
+    var next = current === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('biodata_theme', next); } catch (err) { /* storage unavailable */ }
+    document.documentElement.setAttribute('data-theme', next);
+    updateThemeToggleIcon(next);
+  });
 }
 
 // Check connection status on load and poll every 30 seconds
 document.addEventListener('DOMContentLoaded', function() {
-  updateConnectionStatus();
+  applySavedTheme();
+  initThemeToggle();
+  setSyncStatus(navigator.onLine ? 'Syncing' : 'Offline', navigator.onLine ? 'syncing' : 'disconnected');
   setInterval(updateConnectionStatus, 30000);
 });
 
 // Also update when browser fires online/offline events
 window.addEventListener('online', updateConnectionStatus);
 window.addEventListener('offline', updateConnectionStatus);
+
+window.addEventListener('biodata:syncing', function() {
+  syncStatusKnown = true;
+  setSyncStatus('Syncing', 'syncing');
+});
+window.addEventListener('biodata:synced', function() {
+  syncStatusKnown = true;
+  setSyncStatus('Synced', '');
+});
+window.addEventListener('biodata:sync-error', function() {
+  syncStatusKnown = true;
+  setSyncStatus(navigator.onLine ? 'Local only' : 'Offline', navigator.onLine ? 'slow' : 'disconnected');
+});
 
 // Listen for connection type changes (Chrome-based browsers)
 if (navigator.connection) {

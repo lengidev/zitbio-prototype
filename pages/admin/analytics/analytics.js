@@ -1,5 +1,5 @@
 /**
- * BioMonitor — Analytics Page
+ * ZitBio — Analytics Page
  * Tab switching, dynamic table rendering, pagination, search, and column toggling.
  * Uses the shared observationsRenderer for table rendering (same as the admin
  * Observations page), ensuring visual consistency.
@@ -102,6 +102,18 @@ function applyFilters() {
     analyticsCurrentPage = 1;
     updateFilterCount();
     renderAnalyticsTable();
+    var graphsPanel = document.getElementById('tab-graphs');
+    var reportPanel = document.getElementById('tab-report');
+    var mapPanel = document.getElementById('tab-map');
+    if (graphsPanel && graphsPanel.classList.contains('active') && typeof initGraphsTab === 'function') {
+        initGraphsTab();
+    }
+    if (reportPanel && reportPanel.classList.contains('active') && typeof initReportTab === 'function') {
+        initReportTab();
+    }
+    if (mapPanel && mapPanel.classList.contains('active') && typeof window.refreshMapMarkers === 'function') {
+        window.refreshMapMarkers();
+    }
 }
 
 // Column definitions for the Analytics Observations table (12 columns)
@@ -396,7 +408,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var tabs = document.querySelectorAll('.analytics-tab');
     var panels = document.querySelectorAll('.analytics-tab-content');
     var searchWrapper = document.getElementById('tabSearchWrapper');
-    var exportBtn = document.getElementById('tabExportBtn');
 
     function activateTab(tab) {
         if (!tab) return;
@@ -414,15 +425,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (tabName === 'observations') {
                 if (searchWrapper) searchWrapper.style.display = 'inline-flex';
-                if (exportBtn) exportBtn.style.display = 'none';
             } else {
                 if (searchWrapper) searchWrapper.style.display = 'none';
-                if (exportBtn) exportBtn.style.display = tabName === 'report' ? 'inline-flex' : 'none';
-                // Close filter bar when leaving Observations tab
-                var filterBar = document.getElementById('analyticsFilters');
-                var toggleBtn = document.getElementById('analyticsFilterToggle');
-                if (filterBar) filterBar.classList.remove('open');
-                if (toggleBtn) toggleBtn.classList.remove('active');
             }
         }
     }
@@ -594,21 +598,23 @@ if (typeof window !== 'undefined') {
     // MAP STATE PERSISTENCE
     // Persists the map view to localStorage so navigating away
     // from Analytics and back restores the exact same view:
-    // active area, map/satellite mode, zoom/center, status
-    // filters, and the focused observation (Issue #33).
+    // active area, map/satellite mode, zoom/center, and status
+    // filters (Issue #33). The focused observation is NOT
+    // persisted — auto-flying to an observation the admin never
+    // clicked was confusing (see bug fix: map no longer
+    // force-jumps to a record on load).
     // =====================================================
     var MAP_STATE_KEY = 'biodata_analytics_map';
 
-    // The observation currently focused via doFly (persisted so the
-    // map can re-focus it after navigating back to the page).
+    // Kept in memory ONLY for the explicit table-row→map fly;
+    // never persisted, never auto-restored on load.
     var focusedObsId = null;
 
     function saveMapState() {
         var state = {
             area: mapActiveArea,
             mode: mapMode,
-            statusFilters: statusFilterState,
-            focusedObsId: focusedObsId
+            statusFilters: statusFilterState
         };
         if (mapInstance) {
             state.zoom = mapInstance.getZoom();
@@ -682,7 +688,9 @@ if (typeof window !== 'undefined') {
 
         if (!window.BioData) return;
 
-        var allObs = window.BioData.getObservations();
+                var allObs = typeof getAnalyticsFilteredData === 'function'
+                    ? getAnalyticsFilteredData()
+                    : window.BioData.getObservations();
         if (!allObs) return;
 
         allObs.forEach(function(obs) {
@@ -793,6 +801,14 @@ if (typeof window !== 'undefined') {
         }
     }
 
+    function showMapToast(message) {
+        var toast = document.getElementById('map-toast');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.add('visible');
+        setTimeout(function() { toast.classList.remove('visible'); }, 3000);
+    }
+
     function switchMapMode(mode) {
         var tileUrl;
         var attribution;
@@ -809,13 +825,24 @@ if (typeof window !== 'undefined') {
             mapInstance.removeLayer(tileLayer);
         }
 
+        // Set the intended mode FIRST so the tileerror guard compares against
+        // the mode we are actually trying to reach.
+        mapMode = mode;
+
         tileLayer = L.tileLayer(tileUrl, {
             maxZoom: 18,
             minZoom: 16,
             attribution: attribution
         }).addTo(mapInstance);
 
-        mapMode = mode;
+        // If the requested tile server fails (offline / tile refusal), fall
+        // back to OSM and surface a toast — the switch must never silently
+        // appear broken.
+        tileLayer.on('tileerror', function() {
+            if (mapMode === 'map') return; // OSM itself failed — nothing to fall back to
+            switchMapMode('map');
+            showMapToast('Satellite unavailable — showing map');
+        });
     }
 
     function initMap() {
@@ -837,11 +864,25 @@ if (typeof window !== 'undefined') {
         });
 
         // Apply saved mode (defaults to OSM if none)
-        switchMapMode(savedState ? savedState.mode : 'map');
+        var restoredMode = savedState ? savedState.mode : 'map';
+        switchMapMode(restoredMode);
+        var restoredModeToggle = document.getElementById('map-mode-toggle');
+        if (restoredModeToggle) {
+            restoredModeToggle.querySelectorAll('.map-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-mode') === restoredMode);
+            });
+        }
 
         // Render polygons with the saved (or default) active area
         mapActiveArea = savedState ? savedState.area : 'park';
         renderPolygons(mapActiveArea);
+
+        var restoredAreaToggle = document.getElementById('map-area-toggle');
+        if (restoredAreaToggle) {
+            restoredAreaToggle.querySelectorAll('.map-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-area') === mapActiveArea);
+            });
+        }
 
         // Apply saved status filters
         if (savedState && savedState.statusFilters) {
@@ -874,14 +915,6 @@ if (typeof window !== 'undefined') {
         if (areaLabel) {
             areaLabel.textContent = mapActiveArea === 'park' ? 'CBU Nature Park' : 'CBU Campus';
         }
-
-        // After the map is fully settled, restore the previously focused
-        // observation (if any) so the user lands right back where they were.
-        if (savedState && savedState.focusedObsId) {
-            setTimeout(function() {
-                doFly(savedState.focusedObsId);
-            }, 300);
-        }
     }
 
     // ---- Bind UI Controls ----
@@ -911,7 +944,11 @@ if (typeof window !== 'undefined') {
                 areaLabel.textContent = area === 'park' ? 'CBU Nature Park' : 'CBU Campus';
             }
 
-            // Persist the new active area
+            // Pan/zoom to the selected area — switching focus must visibly move
+            // the camera, not just re-style the polygons.
+            fitActiveArea();
+
+            // Persist the new active area (fitBounds also triggers moveend → save)
             saveMapState();
         });
     }
@@ -1027,6 +1064,12 @@ if (typeof window !== 'undefined') {
                 doFly(obsId);
             }, 200);
         }
+    };
+
+    // Expose marker re-plot so the shared filter bar can refresh the map
+    // when the analytics filters change while the Map tab is active.
+    window.refreshMapMarkers = function() {
+        if (mapInstance) plotObservations();
     };
 
     function doFly(obsId) {
@@ -1161,3 +1204,829 @@ if (typeof window !== 'undefined') {
     }
 
 })();
+
+// ============================================================
+//  ANALYTICS-LEVEL REPORT TAB + GRAPHS TAB
+//  ------------------------------------------------------------
+//  For Phase 4/5. Pure analytics core lives in lib/analytics.js
+//  (BioAnalytics) — reusing getAnalyticsFilteredData() so reports
+//  and graphs respect the same date/province/status/species filters
+//  as the table. Pending/Flagged are EXCLUDED by default (verified-
+//  data rule) with a Report-tab toggle ("Include pending/flagged").
+// ============================================================
+
+// Lazily-built chart instances (destroy & rebuild on re-render).
+var reportTrendChartInstance = null;
+var graphRichnessChartInstance = null;
+var graphShannonChartInstance = null;
+var graphTrendChartInstance = null;
+
+// Escaping/short-date helpers (escapeHtmlObs comes from the renderer).
+function analyticsEscape(v) {
+  return typeof escapeHtmlObs === 'function' ? escapeHtmlObs(String(v == null ? '' : v)) : String(v == null ? '' : v);
+}
+function analyticsShortDate(s) {
+  if (!s) return '—';
+  var d = new Date(s);
+  if (isNaN(d.getTime())) return s;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Enrich observations with entity ids so BioAnalytics resolves them
+// consistently (species_id / site_id are optional on older records).
+function enrichWithRegistryIds(obsList) {
+  if (!window.BioData || !window.BioData.resolveSpeciesId) return obsList;
+  return obsList.map(function(o) {
+    var enriched = Object.assign({}, o);
+    enriched.species_id = window.BioData.resolveSpeciesId(o) || null;
+    enriched.site_id = window.BioData.resolveSiteId(o) || null;
+    return enriched;
+  });
+}
+
+// Current report dataset — respects filters + include-pending toggle.
+function getReportData() {
+  var data = getAnalyticsFilteredData();
+  var includePending = document.getElementById('reportIncludePending');
+  if (!includePending || !includePending.checked) {
+    data = data.filter(function(o) { return o.verification_status === 'Approved'; });
+  }
+  return enrichWithRegistryIds(data);
+}
+
+// ============================================================
+//  REPORT BUILDERS
+// ============================================================
+
+function buildReportConfidence() {
+  var el = document.getElementById('reportConfidence');
+  if (!el) return;
+  var all = getAnalyticsFilteredData();
+  var approved = all.filter(function(o) { return o.verification_status === 'Approved'; }).length;
+  var pending = all.filter(function(o) { return o.verification_status === 'Pending'; }).length;
+  var flagged = all.filter(function(o) { return o.verification_status === 'Flagged'; }).length;
+  var total = all.length;
+  el.textContent = total + ' records within filters · ' + approved + ' approved' +
+    ' · ' + pending + ' pending · ' + flagged + ' flagged' +
+    (pending + flagged > 0 ? ' (pending/flagged excluded)' : '');
+}
+
+function buildReportSummary(data) {
+  var speciesEl = document.getElementById('reportKpiSpecies');
+  var obsEl = document.getElementById('reportKpiObservations');
+  var rangeEl = document.getElementById('reportKpiDateRange');
+  var shannonEl = document.getElementById('reportKpiShannon');
+  if (!speciesEl || !obsEl || !rangeEl || !shannonEl) return;
+
+  speciesEl.textContent = window.BioAnalytics.speciesRichness(data);
+  obsEl.textContent = data.length;
+
+  var sorted = data.map(function(o) { return o.timestamp ? new Date(o.timestamp) : null; })
+    .filter(function(d) { return d && !isNaN(d.getTime()); })
+    .sort(function(a, b) { return a - b; });
+  rangeEl.textContent = sorted.length >= 2
+    ? analyticsShortDate(sorted[0].toISOString()) + ' – ' + analyticsShortDate(sorted[sorted.length - 1].toISOString())
+    : (sorted.length === 1 ? analyticsShortDate(sorted[0].toISOString()) : '—');
+
+  shannonEl.textContent = window.BioAnalytics.shannonDiversityIndex(data).toFixed(3);
+}
+
+function buildReportDiversity(data) {
+  var container = document.getElementById('reportDiversityContainer');
+  if (!container) return;
+  var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
+  var html = '';
+  if (sites.length === 0) {
+    html = '<p class="report-empty">No sites registered.</p>';
+  } else {
+    sites.forEach(function(site) {
+      var series = window.BioAnalytics.siteComparisonOverTime(data, site.id);
+      if (series.length === 0) {
+        html += '<div class="report-site-row">' +
+          '<div class="report-site-name">' + analyticsEscape(site.name) + '</div>' +
+          '<div class="report-site-meta">No verified observations</div>' +
+          '</div>';
+        return;
+      }
+      var last = series[series.length - 1];
+      var arrows = '';
+      if (series.length > 1) {
+        var prev = series[series.length - 2];
+        var delta = last.shannonIndex - prev.shannonIndex;
+        if (delta > 0.001) arrows = ' <span class="trend-arrow up">▲ ' + (+delta.toFixed(3)) + '</span>';
+        else if (delta < -0.001) arrows = ' <span class="trend-arrow down">▼ ' + (+delta.toFixed(3)) + '</span>';
+        else arrows = ' <span class="trend-arrow flat">● 0.000</span>';
+      }
+      html += '<div class="report-site-row">' +
+        '<div class="report-site-name">' + analyticsEscape(site.name) + '</div>' +
+        '<div class="report-site-value">H&prime; ' + last.shannonIndex.toFixed(3) + arrows + '</div>' +
+        '<div class="report-site-meta">richness ' + last.speciesRichness + ' · ' +
+        last.observations + ' observations · ' + last.month + '</div>' +
+        '</div>';
+    });
+  }
+  container.innerHTML = html;
+}
+
+function buildReportWarnings(data) {
+  var container = document.getElementById('reportWarningsContainer');
+  if (!container) return;
+  var registry = (window.BioData && window.BioData.getSpeciesRegistry) ? window.BioData.getSpeciesRegistry() : [];
+  var warnings = window.BioAnalytics.lowPopulationWarnings(data, { speciesRegistry: registry });
+  var active = warnings.filter(function(w) { return w.severity === 'warning' || w.severity === 'critical'; });
+  var html = '';
+  if (active.length === 0) {
+    html = '<p class="report-empty">No low-population warnings — current estimates are within baseline.</p>' +
+      (warnings.length === 0 ? '' : '<p class="report-meta">' + warnings.length + ' species/site combination(s) checked.</p>');
+  } else {
+    active.forEach(function(w) {
+      var cls = w.severity === 'critical' ? 'status-flagged' : 'status-pending';
+      var iconName = w.severity === 'critical' ? 'error' : 'warning';
+      var sourceLabel = w.baselineSource === 'admin-set' ? 'admin baseline' :
+        (w.baselineSource === 'site-override' ? 'site baseline' : 'derived baseline');
+      html += '<div class="report-warning-row ' + cls + '">' +
+        '<span class="material-symbols-outlined report-warning-icon">' + iconName + '</span>' +
+        '<div class="report-warning-content">' +
+        '<div class="report-warning-title">' + analyticsEscape(w.speciesName) + ' · ' + analyticsEscape(w.siteName) + '</div>' +
+        '<div class="report-warning-meta">estimate ' + w.currentCount + ' vs ' + w.baseline +
+        ' (' + sourceLabel + ') · ' + w.severity + '</div>' +
+        '</div></div>';
+    });
+  }
+  if (warnings.some(function(w) { return w.baselineSource === 'derived'; })) {
+    html += '<p class="report-meta">Baselines marked "derived" are auto-computed from verified observations — ' +
+      'set an admin baseline in Settings → Species & Baselines for authoritative numbers.</p>';
+  }
+  container.innerHTML = html;
+}
+
+function buildReportHabitats(data) {
+  var container = document.getElementById('reportHabitatContainer');
+  if (!container) return;
+  var map = {};
+  data.forEach(function(o) {
+    var h = ((o.location && o.location.habitat_type) || 'Unspecified');
+    var sd = o.species_details || {};
+    var name = sd.common_name || sd.scientific_name || 'Unknown';
+    var sci = sd.scientific_name || '';
+    if (!map[h]) map[h] = {};
+    map[h][sci] = map[h][sci] || { common: name, scientific: sci, count: 0 };
+    map[h][sci].count += o.count || 0;
+  });
+  var html = '';
+  var habitats = Object.keys(map).sort();
+  if (habitats.length === 0) html = '<p class="report-empty">No species by habitat for the current filters.</p>';
+  habitats.forEach(function(h) {
+    var spList = Object.keys(map[h]).sort();
+    html += '<div class="report-habitat-group">' +
+      '<div class="report-habitat-name">' + analyticsEscape(h) + '</div>' +
+      '<div class="report-habitat-species">' +
+      spList.map(function(sci) {
+        var item = map[h][sci];
+        return '<span class="report-habitat-chip">' + analyticsEscape(item.common) +
+          (item.scientific ? ' <i>(' + analyticsEscape(item.scientific) + ')</i>' : '') +
+          ' · ' + item.count + '</span>';
+      }).join('') +
+      '</div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function buildReportTrendChart(data) {
+  var canvas = document.getElementById('reportTrendChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  if (reportTrendChartInstance) { reportTrendChartInstance.destroy(); reportTrendChartInstance = null; }
+
+  var select = document.getElementById('reportTrendSpecies');
+  var speciesId = select ? select.value : '';
+  var noteEl = document.getElementById('reportTrendNote');
+
+  var trend = window.BioAnalytics.populationTrend(data, speciesId || null, null);
+  var labels = trend.dataPoints.map(function(b) { return b.label; });
+  var vals = trend.dataPoints.map(function(b) { return b.value; });
+
+  if (trend.direction === 'insufficient_data' || vals.length < 2) {
+    if (noteEl) noteEl.textContent = (trend.note || 'Insufficient data for a trend — need multiple survey periods.');
+  } else {
+    if (noteEl) noteEl.textContent = trend.slope.toFixed(3) + ' / period · ' + trend.direction + ' (trend line, not a forecast)';
+  }
+
+  var ctx = canvas.getContext('2d');
+  var gradient = ctx.createLinearGradient(0, 0, 0, 220);
+  gradient.addColorStop(0, 'rgba(46, 125, 50, 0.3)');
+  gradient.addColorStop(1, 'rgba(46, 125, 50, 0.02)');
+
+  var datasets = [{
+    label: 'Observed count',
+    data: vals,
+    borderColor: '#2E7D32',
+    backgroundColor: gradient,
+    fill: true,
+    tension: 0.4,
+    pointRadius: 4,
+    pointBackgroundColor: '#2E7D32'
+  }];
+  if (trend.fitted && trend.fitted.length > 1) {
+    datasets.push({
+      label: 'Trend line',
+      data: trend.fitted.map(function(f) { return f.value; }),
+      borderColor: trend.direction === 'declining' ? '#E53935' : '#8D6E63',
+      borderDash: [5, 5],
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false,
+      tension: 0
+    });
+  }
+
+  reportTrendChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: datasets.length > 1 } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+// ============================================================
+//  CSV EXPORT (raw numbers; respects include-pending toggle)
+// ============================================================
+
+function buildReportCsv(data) {
+  var header = ['observation_id', 'count', 'verification_status', 'source', 'scientific_name', 'common_name',
+    'latitude', 'longitude', 'country', 'administrative_area', 'city', 'focus_area', 'habitat_type',
+    'locality_description', 'recorded_by', 'timestamp', 'institution_name', 'activity', 'field_notes'];
+  function esc(v) {
+    var s = String(v == null ? '' : v);
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  var rows = [header.join(',')];
+  data.forEach(function(o) {
+    var loc = o.location || {};
+    var sd = o.species_details || {};
+    rows.push([
+      esc(o.observation_id), esc(o.count), esc(o.verification_status), esc(o.source),
+      esc(sd.scientific_name), esc(sd.common_name),
+      esc(loc.latitude), esc(loc.longitude), esc(loc.country), esc(loc.administrative_area),
+      esc(loc.city), esc(loc.focus_area), esc(loc.habitat_type), esc(loc.locality_description),
+      esc(o.recorded_by), esc(o.timestamp), esc(o.institution_name), esc(o.activity), esc(o.field_notes)
+    ].join(','));
+  });
+  return rows.join('\n');
+}
+
+function downloadCsv(csv, filename) {
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+//  PDF EXPORT (custom written report generated from live data)
+//  ------------------------------------------------------------
+//  Uses jsPDF (loaded via CDN). Builds a narrative report from
+//  the currently filtered, verified observations: executive
+//  summary, key indicators, diversity by site, species by
+//  habitat, population trend (with the chart), and warnings.
+// ============================================================
+
+function pdfEnsureSpace(doc, y, needed, bottomMargin) {
+  var pageH = doc.internal.pageSize.getHeight();
+  var margin = bottomMargin || 56;
+  if (y + needed > pageH - margin) {
+    doc.addPage();
+    return 48;
+  }
+  return y;
+}
+
+function pdfWrapped(doc, text, x, y, maxWidth, lineHeight, opts) {
+  opts = opts || {};
+  var size = opts.size || 11;
+  var style = opts.style || 'normal';
+  var color = opts.color || [44, 62, 80];
+  doc.setFont('helvetica', style);
+  doc.setFontSize(size);
+  doc.setTextColor(color[0], color[1], color[2]);
+  var lines = doc.splitTextToSize(text, maxWidth);
+  lines.forEach(function(line) {
+    y = pdfEnsureSpace(doc, y, size + 4);
+    doc.text(line, x, y);
+    y += lineHeight;
+  });
+  return y;
+}
+
+function pdfSectionTitle(doc, title, y) {
+  var pageW = doc.internal.pageSize.getWidth();
+  y = pdfEnsureSpace(doc, y, 34);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(46, 125, 50);
+  doc.text(title, 48, y);
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(1);
+  doc.line(48, y + 6, pageW - 48, y + 6);
+  return y + 22;
+}
+
+function pdfTable(doc, headers, rows, startY, colWidths) {
+  var x = 48;
+  var totalW = colWidths.reduce(function(a, b) { return a + b; }, 0);
+  var rowH = 24;
+  var y = startY;
+  // Header row
+  y = pdfEnsureSpace(doc, y, rowH);
+  doc.setFillColor(249, 250, 251);
+  doc.rect(x, y - 14, totalW, rowH, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(44, 62, 80);
+  var cx = x;
+  headers.forEach(function(h, i) {
+    doc.text(String(h), cx + 6, y);
+    cx += colWidths[i];
+  });
+  y += rowH;
+  // Body rows
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(44, 62, 80);
+  rows.forEach(function(r) {
+    y = pdfEnsureSpace(doc, y, rowH);
+    cx = x;
+    r.forEach(function(cell, i) {
+      doc.text(String(cell == null ? '' : cell), cx + 6, y);
+      cx += colWidths[i];
+    });
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(0.5);
+    doc.line(x, y + 8, x + totalW, y + 8);
+    y += rowH;
+  });
+  return y + 6;
+}
+
+function reportDateRange(data) {
+  var dates = data.map(function(o) { return o.timestamp ? new Date(o.timestamp) : null; })
+    .filter(function(d) { return d && !isNaN(d.getTime()); })
+    .sort(function(a, b) { return a - b; });
+  return dates.length >= 2
+    ? analyticsShortDate(dates[0].toISOString()) + ' \u2013 ' + analyticsShortDate(dates[dates.length - 1].toISOString())
+    : (dates.length === 1 ? analyticsShortDate(dates[0].toISOString()) : '\u2014');
+}
+
+function buildReportExecutiveSummary(data) {
+  var n = data.length;
+  var species = window.BioAnalytics.speciesRichness(data);
+  var shannon = window.BioAnalytics.shannonDiversityIndex(data);
+  var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
+  var siteNames = sites.map(function(s) { return s.name; }).join(' and ');
+  var sents = [];
+  if (n === 0) {
+    sents.push('No verified observations matched the current filters, so no analysis could be generated. Widen the date range or clear the province/species filters and try again.');
+  } else {
+    sents.push('This report summarises ' + n + ' verified observation record' + (n === 1 ? '' : 's') + ' covering ' + species + ' distinct species within ' + (siteNames || 'the monitored sites') + ', recorded between ' + reportDateRange(data) + '.');
+    sents.push('Overall community diversity, measured by the Shannon index, is ' + shannon.toFixed(3) + (shannon === 0
+      ? ', which indicates a single-species or heavily dominated community.'
+      : ', reflecting a mix of common and rarer species across the sites.'));
+    var trend = window.BioAnalytics.populationTrend(data, null, null);
+    if (trend.direction !== 'insufficient_data' && trend.dataPoints.length > 1) {
+      sents.push('Across the observation period the aggregate population count is ' + trend.direction + ', changing by ' + Math.abs(trend.slope).toFixed(1) + ' individuals per survey period.');
+    } else {
+      sents.push('There is not yet enough data to calculate a reliable population trend; additional survey periods are required.');
+    }
+  }
+  return sents.join(' ');
+}
+
+function buildReportPdfSiteRows(data) {
+  var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
+  var rows = [];
+  sites.forEach(function(site) {
+    var series = window.BioAnalytics.siteComparisonOverTime(data, site.id);
+    if (!series.length) return;
+    var last = series[series.length - 1];
+    rows.push([site.name, last.speciesRichness, last.observations, last.shannonIndex.toFixed(3), last.month]);
+  });
+  return rows;
+}
+
+function buildReportPdfHabitatRows(data) {
+  var map = {};
+  data.forEach(function(o) {
+    var h = ((o.location && o.location.habitat_type) || 'Unspecified');
+    var sd = o.species_details || {};
+    var common = sd.common_name || sd.scientific_name || 'Unknown';
+    map[h] = map[h] || [];
+    map[h].push(common + ' (' + (o.count || 0) + ')');
+  });
+  var rows = [];
+  Object.keys(map).sort().forEach(function(h) {
+    var uniq = [];
+    var seen = {};
+    map[h].forEach(function(s) {
+      if (!seen[s]) { seen[s] = true; uniq.push(s); }
+    });
+    rows.push([h, uniq.join(', ')]);
+  });
+  return rows;
+}
+
+function buildReportPdfWarningRows(data) {
+  var registry = (window.BioData && window.BioData.getSpeciesRegistry) ? window.BioData.getSpeciesRegistry() : [];
+  var warnings = window.BioAnalytics.lowPopulationWarnings(data, { speciesRegistry: registry });
+  return warnings
+    .filter(function(w) { return w.severity === 'warning' || w.severity === 'critical'; })
+    .map(function(w) {
+      return [w.speciesName, w.siteName, 'estimate ' + w.currentCount + ' vs ' + w.baseline, w.severity];
+    });
+}
+
+function exportReportPdf() {
+  var PDFLib = window.jspdf;
+  if (!PDFLib || !PDFLib.jsPDF) {
+    alert('The PDF library failed to load. Check your connection and reload the page.');
+    return;
+  }
+
+  var data = getReportData();
+  var doc = new PDFLib.jsPDF({ unit: 'pt', format: 'a4' });
+  var pageW = doc.internal.pageSize.getWidth();
+  var marginX = 48;
+  var maxW = pageW - marginX * 2;
+  var y = 60;
+  var today = new Date();
+  var dateStr = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  var timeStr = today.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+  // Header band
+  doc.setFillColor(46, 125, 50);
+  doc.rect(0, 0, pageW, 10, 'F');
+
+  // Title block
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.setTextColor(44, 62, 80);
+  doc.text('Biodiversity Monitoring System Report', marginX, y);
+  y += 24;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(127, 140, 141);
+  doc.text('Prepared by ZitBio: Biodiversity Monitoring System \u00b7 ' + dateStr + ' at ' + timeStr, marginX, y);
+  y += 16;
+
+  // Filters summary
+  var filtersDesc = [];
+  var f = analyticsFilters || {};
+  if (f.dateFrom || f.dateTo) filtersDesc.push((f.dateFrom || '\u2026') + ' to ' + (f.dateTo || '\u2026'));
+  if (f.province) filtersDesc.push(f.province);
+  if (f.status) filtersDesc.push(f.status);
+  if (f.species) filtersDesc.push(f.species);
+  doc.text('Filters: ' + (filtersDesc.length ? filtersDesc.join(' \u00b7 ') : 'All data'), marginX, y);
+  y += 26;
+
+  // Executive summary
+  y = pdfSectionTitle(doc, 'Executive Summary', y);
+  y = pdfWrapped(doc, buildReportExecutiveSummary(data), marginX, y, maxW, 15, { size: 11, color: [44, 62, 80] }) + 8;
+
+  // Key indicators
+  y = pdfSectionTitle(doc, 'Key Indicators', y);
+  y = pdfTable(doc, ['Species', 'Observations', 'Date Range', 'Shannon H\u2032'],
+    [[window.BioAnalytics.speciesRichness(data), data.length, reportDateRange(data), window.BioAnalytics.shannonDiversityIndex(data).toFixed(3)]],
+    y, [110, 130, 220, 100]) + 10;
+
+  // Shannon index explanation (keeps the metric legible for non-experts)
+  var shannonVal = window.BioAnalytics.shannonDiversityIndex(data);
+  y = pdfWrapped(doc,
+    'Understanding Shannon H\u2032: the Shannon Diversity Index combines species richness (how many species) with evenness (how evenly individuals are spread across species). A value of 0 means a single species dominates completely; higher values (typically up to 3\u20134) indicate a more diverse, balanced community. With ' +
+    window.BioAnalytics.speciesRichness(data) + ' species recorded, the current value of ' + shannonVal.toFixed(3) +
+    (shannonVal === 0 ? ' shows a single-species or heavily dominated community.' : ' reflects the overall balance of this community.'),
+    marginX, y, maxW, 13, { size: 9.5, style: 'italic', color: [127, 140, 141] }) + 10;
+
+  // Diversity by site
+  var siteRows = buildReportPdfSiteRows(data);
+  if (siteRows.length) {
+    y = pdfSectionTitle(doc, 'Diversity by Site', y);
+    y = pdfTable(doc, ['Site', 'Richness', 'Observations', 'Shannon H\u2032', 'Month'],
+      siteRows, y, [160, 80, 110, 110, 100]) + 10;
+  }
+
+  // Species by habitat
+  var habitatRows = buildReportPdfHabitatRows(data);
+  if (habitatRows.length) {
+    y = pdfSectionTitle(doc, 'Species by Habitat', y);
+    y = pdfTable(doc, ['Habitat', 'Species (count)'], habitatRows, y, [130, 330]) + 10;
+  }
+
+  // Population trend (narrative + chart)
+  var trend = window.BioAnalytics.populationTrend(data, null, null);
+  y = pdfSectionTitle(doc, 'Population Trend', y);
+  var trendText = (trend.direction === 'insufficient_data' || !trend.dataPoints || trend.dataPoints.length < 2)
+    ? (trend.note || 'Insufficient data for a reliable trend; multiple survey periods are required.') + ' The chart below shows the observed counts recorded so far.'
+    : 'Across the recorded periods the population is ' + trend.direction + ' at ' + Math.abs(trend.slope).toFixed(1) + ' individuals per survey period (' + (trend.note || 'linear fit on observed buckets') + ').';
+  y = pdfWrapped(doc, trendText, marginX, y, maxW, 15, { size: 11 }) + 6;
+  var trendCanvas = document.getElementById('reportTrendChart');
+  if (trendCanvas && trend.dataPoints && trend.dataPoints.length > 0) {
+    try {
+      var img = trendCanvas.toDataURL('image/png');
+      var imgW = maxW;
+      var imgH = imgW * (trendCanvas.height / trendCanvas.width);
+      y = pdfEnsureSpace(doc, y, imgH);
+      doc.addImage(img, 'PNG', marginX, y, imgW, imgH);
+      y += imgH + 10;
+    } catch (e) { /* chart image unavailable — skip */ }
+  }
+
+  // Low population warnings
+  var warnRows = buildReportPdfWarningRows(data);
+  y = pdfSectionTitle(doc, 'Low Population Warnings', y);
+  if (!warnRows.length) {
+    y = pdfWrapped(doc, 'No species are currently below their population baseline. Current estimates are within expected ranges.', marginX, y, maxW, 15, { size: 11 }) + 6;
+  } else {
+    y = pdfTable(doc, ['Species', 'Site', 'Estimate vs baseline', 'Severity'], warnRows, y, [140, 130, 150, 90]) + 10;
+  }
+
+  // Footer / methodology
+  y = pdfEnsureSpace(doc, y, 40);
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(1);
+  doc.line(marginX, y, pageW - marginX, y);
+  y += 18;
+  var footnote = 'This report was generated from verified (Approved) observations within the selected filters. Shannon diversity H\u2032 combines species richness and evenness. Population trends are linear fits on observed survey buckets and are descriptive, not forecasts.';
+  y = pdfWrapped(doc, footnote, marginX, y, maxW, 12, { size: 9, color: [127, 140, 141] }) + 6;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(9);
+  doc.setTextColor(127, 140, 141);
+  doc.text('ZitBio \u00b7 ' + dateStr, marginX, y);
+
+  doc.save('zitbio-report_' + today.toISOString().split('T')[0] + '.pdf');
+}
+
+// ============================================================
+//  GRAPHS TAB (Tier 1) — Chart.js
+// ============================================================
+
+function populateGraphSpeciesSelect() {
+  var select = document.getElementById('graphSpeciesSelect');
+  if (!select || !window.BioData) return;
+    var previousValue = select.value;
+  var registry = window.BioData.getSpeciesRegistry ? window.BioData.getSpeciesRegistry() : [];
+  var html = '<option value="">All species</option>';
+  registry.forEach(function(sp) {
+    html += '<option value="' + sp.id + '">' + analyticsEscape(sp.common_name || sp.scientific_name) + '</option>';
+  });
+  select.innerHTML = html;
+    if (previousValue && select.querySelector('option[value="' + previousValue + '"]')) {
+        select.value = previousValue;
+    }
+}
+
+function buildGraphsCharts(data) {
+  var richnessCanvas = document.getElementById('graphRichnessChart');
+  var shannonCanvas = document.getElementById('graphShannonChart');
+  var trendCanvas = document.getElementById('graphTrendChart');
+  if (!richnessCanvas || !shannonCanvas || !trendCanvas || typeof Chart === 'undefined') return;
+
+  if (graphRichnessChartInstance) { graphRichnessChartInstance.destroy(); graphRichnessChartInstance = null; }
+  if (graphShannonChartInstance) { graphShannonChartInstance.destroy(); graphShannonChartInstance = null; }
+  if (graphTrendChartInstance) { graphTrendChartInstance.destroy(); graphTrendChartInstance = null; }
+
+  var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
+  var speciesSel = document.getElementById('graphSpeciesSelect');
+  var selectedSpecies = speciesSel ? speciesSel.value : '';
+
+  var monthSet = {};
+  sites.forEach(function(site) {
+    window.BioAnalytics.siteComparisonOverTime(data, site.id).forEach(function(b) { monthSet[b.month] = true; });
+  });
+  var months = Object.keys(monthSet).sort();
+
+  function makeLineChart(canvas, datasets, yTitle, opts) {
+    opts = opts || {};
+    var labels = opts.labels || months;
+    var ctx = canvas.getContext('2d');
+    return new Chart(ctx, {
+      type: 'line',
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: datasets.length > 1 },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                var val = context.parsed.y;
+                if (val == null) return null;
+                return context.dataset.label + ': ' + val + (opts.tooltipUnit ? ' ' + opts.tooltipUnit : '');
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: !!yTitle, text: yTitle },
+            grid: { color: '#f1f5f9' },
+            ticks: opts.integerY ? { precision: 0, stepSize: 1 } : undefined
+          },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  var richnessDatasets = [];
+  var shannonDatasets = [];
+  sites.forEach(function(site) {
+    var series = window.BioAnalytics.siteComparisonOverTime(data, site.id);
+    var byMonth = {};
+    var color = site.id === 'site_001' ? '#2E7D32' : '#8D6E63';
+    series.forEach(function(b) { byMonth[b.month] = b; });
+    richnessDatasets.push({
+      label: site.name,
+      data: months.map(function(m) { return byMonth[m] ? byMonth[m].speciesRichness : null; }),
+      borderColor: color,
+      backgroundColor: color,
+      fill: false,
+      tension: 0.3,
+      spanGaps: true,
+      borderWidth: 2,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      pointBackgroundColor: color,
+      pointBorderColor: '#ffffff',
+      pointBorderWidth: 2
+    });
+    shannonDatasets.push({
+      label: site.name,
+      data: months.map(function(m) { return byMonth[m] ? byMonth[m].shannonIndex : null; }),
+      borderColor: color,
+      backgroundColor: color,
+      fill: false,
+      tension: 0.3,
+      spanGaps: true,
+      borderWidth: 2,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      pointBackgroundColor: color,
+      pointBorderColor: '#ffffff',
+      pointBorderWidth: 2
+    });
+  });
+
+  graphRichnessChartInstance = makeLineChart(richnessCanvas, richnessDatasets, 'Species', { integerY: true, tooltipUnit: 'species' });
+  graphShannonChartInstance = makeLineChart(shannonCanvas, shannonDatasets, 'H\u2032');
+
+  var trend = window.BioAnalytics.populationTrend(data, selectedSpecies || null, null);
+  var tLabels = trend.dataPoints.map(function(b) { return b.label; });
+  var tDatasets = [{
+        label: selectedSpecies ? (function() {
+            var selected = window.BioData.getSpeciesRegistry().find(function(sp) { return sp.id === selectedSpecies; });
+            return (selected ? (selected.common_name || selected.scientific_name) : selectedSpecies) + ' observed';
+        })() : 'Observed count',
+    data: trend.dataPoints.map(function(b) { return b.value; }),
+    borderColor: '#2E7D32',
+    backgroundColor: 'transparent',
+    fill: false,
+    tension: 0.3,
+    borderWidth: 2,
+    pointRadius: 5,
+    pointHoverRadius: 7,
+    pointBackgroundColor: '#2E7D32',
+    pointBorderColor: '#ffffff',
+    pointBorderWidth: 2
+  }];
+  if (trend.fitted && trend.fitted.length > 1) {
+    tDatasets.push({
+      label: 'Trend line',
+      data: trend.fitted.map(function(f) { return f.value; }),
+      borderColor: trend.direction === 'declining' ? '#E53935' : '#8D6E63',
+      borderDash: [5, 5],
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false,
+      tension: 0
+    });
+  }
+  graphTrendChartInstance = makeLineChart(trendCanvas, tDatasets, 'Count', { labels: tLabels, integerY: true, tooltipUnit: 'individuals' });
+
+  // Explain why no trend line is drawn yet (needs >= 2 survey buckets).
+  var trendNoteEl = document.getElementById('graphTrendNote');
+  if (trendNoteEl) {
+    trendNoteEl.textContent = (trend.direction === 'insufficient_data' || !trend.fitted || trend.fitted.length < 2)
+      ? (trend.note || 'Insufficient data for a trend — need multiple survey periods.')
+      : (trend.slope.toFixed(3) + ' / period · ' + trend.direction + ' (trend line, not a forecast)');
+  }
+}
+
+function getGraphData() {
+    var d = typeof getAnalyticsFilteredData === 'function'
+        ? getAnalyticsFilteredData()
+        : (window.BioData ? window.BioData.getObservations() : []);
+  d = enrichWithRegistryIds(d);
+  var includePending = document.getElementById('reportIncludePending');
+  if (!includePending || !includePending.checked) {
+    d = d.filter(function(o) { return o.verification_status === 'Approved'; });
+  }
+  return d;
+}
+
+var reportTabInitialized = false;
+var graphsTabInitialized = false;
+
+function initGraphsTab() {
+  populateGraphSpeciesSelect();
+  buildGraphsCharts(getGraphData());
+  if (graphsTabInitialized) return;
+  graphsTabInitialized = true;
+  var speciesSel = document.getElementById('graphSpeciesSelect');
+  if (speciesSel) {
+    speciesSel.addEventListener('change', function() { buildGraphsCharts(getGraphData()); });
+  }
+}
+
+function initReportTab() {
+  var csvBtn = document.getElementById('reportCsvBtn');
+  var pdfBtn = document.getElementById('reportPdfBtn');
+  var includeToggle = document.getElementById('reportIncludePending');
+  var speciesSelect = document.getElementById('reportTrendSpecies');
+
+  function populateReportSpecies() {
+    if (!speciesSelect || !window.BioData) return;
+    var registry = window.BioData.getSpeciesRegistry ? window.BioData.getSpeciesRegistry() : [];
+    var html = '<option value="">All species</option>';
+    registry.forEach(function(sp) {
+      html += '<option value="' + sp.id + '">' + analyticsEscape(sp.common_name || sp.scientific_name) + '</option>';
+    });
+    speciesSelect.innerHTML = html;
+  }
+
+  function renderReport() {
+    var data = getReportData();
+    buildReportConfidence();
+    buildReportSummary(data);
+    buildReportDiversity(data);
+    buildReportWarnings(data);
+    buildReportHabitats(data);
+    buildReportTrendChart(data);
+  }
+
+  // Populate the species dropdown on first mount only; if empty (a race
+  // where the registry script hasn't hydrated yet), retry on each render.
+  if (!speciesSelect || speciesSelect.options.length <= 1) populateReportSpecies();
+
+  // Idempotency guard: re-render on every activation (filters/charts stay
+  // fresh), but attach event listeners only once (no stacked handlers).
+  if (reportTabInitialized) {
+    renderReport();
+    return;
+  }
+  reportTabInitialized = true;
+
+  renderReport();
+
+  if (includeToggle) includeToggle.addEventListener('change', renderReport);
+  if (csvBtn) csvBtn.addEventListener('click', function() {
+    var date = new Date().toISOString().split('T')[0];
+    downloadCsv(buildReportCsv(getReportData()), 'zitbio-report_' + date + '.csv');
+  });
+  if (pdfBtn) pdfBtn.addEventListener('click', exportReportPdf);
+  if (speciesSelect) speciesSelect.addEventListener('change', renderReport);
+}
+
+// Lazy init when Report/Graphs tabs are activated (persisted tab restore
+// uses .click(), so these fire even when the saved tab is Report/Graphs).
+(function() {
+  var tabs = document.querySelectorAll('.analytics-tab');
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var tabName = this.getAttribute('data-tab');
+      if (tabName === 'report' && typeof initReportTab === 'function') initReportTab();
+      if (tabName === 'graphs' && typeof initGraphsTab === 'function') initGraphsTab();
+    });
+  });
+})();
+
+// Re-render after cloud sync (same pattern as the observations table).
+window.addEventListener('biodata:synced', function() {
+  var reportPanel = document.getElementById('tab-report');
+  var graphsPanel = document.getElementById('tab-graphs');
+  if (reportPanel && reportPanel.classList.contains('active') && typeof initReportTab === 'function') initReportTab();
+  if (graphsPanel && graphsPanel.classList.contains('active') && typeof initGraphsTab === 'function') initGraphsTab();
+});

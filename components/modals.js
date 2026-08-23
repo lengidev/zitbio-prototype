@@ -1,5 +1,5 @@
 /**
- * BioMonitor - Modal Component Logic
+ * ZitBio - Modal Component Logic
  * Handles opening/closing all data modals
  */
 

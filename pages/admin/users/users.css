@@ -170,7 +170,7 @@
     flex-shrink: 0;
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     padding: 16px 18px 12px;
     gap: 16px;
     border-bottom: 1px solid var(--border-color);
@@ -231,8 +231,8 @@
     left: 50%;
     transform: translateX(-50%);
     padding: 4px 8px;
-    background: var(--color-text-main);
-    color: var(--color-text-inverse);
+    background: var(--tooltip-bg);
+    color: var(--tooltip-text);
     font-size: 11px;
     font-weight: 500;
     white-space: nowrap;
@@ -342,12 +342,10 @@
     }
 
     .page-users .user-modal-header {
-        flex-direction: column;
         padding: 14px 14px 10px;
     }
 
     .page-users .user-modal-header .header-actions {
-        width: 100%;
         justify-content: flex-end;
     }
 
