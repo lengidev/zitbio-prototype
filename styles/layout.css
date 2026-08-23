@@ -176,7 +176,7 @@
     display: flex;
     align-items: center;
     /*justify-content: space-between;*/
-    padding: 1rem;
+    padding: 16px;
     border-bottom: 1px solid var(--border-color, #e5e7eb);
     height: 60px;
     box-sizing: border-box;
@@ -191,7 +191,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem;
+    padding: 8px;
     border-radius: 4px;
 }
 
@@ -205,7 +205,7 @@
 }
 
 .sidebar-header-title {
-    font-size: 1.25rem;
+    font-size: 20px;
     font-weight: 700;
     color: var(--color-primary, #2563eb);
     white-space: nowrap;
@@ -215,7 +215,7 @@
 .sidebar-menu {
     display: flex;
     flex-direction: column;
-    padding: 1rem 0;
+    padding: 16px 0;
     flex-grow: 1;
     height: 100%;
 }
@@ -235,12 +235,12 @@
 .nav-item {
     display: flex;
     align-items: center;
-    padding: 0.75rem 1.5rem;
+    padding: 12px 24px;
     color: var(--color-text-secondary, #6b7280);
     text-decoration: none;
     transition: all 0.2s ease;
     border-left: 3px solid transparent;
-    margin-bottom: 0.25rem;
+    margin-bottom: 4px;
     white-space: nowrap;
 }
 
@@ -261,7 +261,7 @@
 .nav-icon {
     width: 24px;
     height: 24px;
-    margin-right: 1rem;
+    margin-right: 16px;
     min-width: 24px;
     display: flex;
     align-items: center;
@@ -337,13 +337,6 @@
     margin-left: 0;
 }
 
-/* Also when collapsed, ensure the header centers the toggle button */
-/*.sidebar.collapsed .sidebar-header {
-    justify-content: center;
-    padding: 1rem 0;
-}*/
-
-
 .sidebar.collapsed {
     width: 72px;
     min-width: 72px;
@@ -371,7 +364,7 @@
 
 .sidebar.collapsed .nav-item {
     justify-content: center;
-    padding: 0.75rem 0;
+    padding: 12px 0;
     position: relative;
 }
 
@@ -664,7 +657,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem;
+  padding: 8px;
   border-radius: 4px;
 }
 
@@ -695,7 +688,7 @@
 
 .sidebar.collapsed .sidebar-header {
     justify-content: center;
-    padding: 1rem 0;
+    padding: 16px 0;
 }
 
 .sidebar-logo {

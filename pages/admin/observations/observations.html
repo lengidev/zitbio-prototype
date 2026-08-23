@@ -381,8 +381,8 @@
                 </button>
             </div>
             <div class="add-modal-body">
-                <p style="color: #6b7280; font-size: 13px; margin-bottom: 16px;">This feature is coming soon. Please contact your administrator to add new records.</p>
-                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                <p class="add-modal-note">This feature is coming soon. Please contact your administrator to add new records.</p>
+                <div class="flex justify-end gap-sm">
                     <button class="btn-export" id="closeAddModalFooterBtn">Close</button>
                 </div>
             </div>
@@ -399,16 +399,5 @@
     <script defer src="../../../pages/admin/layout/admin-layout.js"></script>
     <script defer src="../../../components/modals.js"></script>
     <script defer src="observations.js"></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        if (window.BioData) {
-          var session = BioData.getSession();
-          if (session) {
-            var el = document.querySelector('.user-menu-name');
-            if (el) el.textContent = session.name;
-          }
-        }
-      });
-    </script>
 </body>
 </html>

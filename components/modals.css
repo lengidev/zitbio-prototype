@@ -100,6 +100,13 @@
     padding: 24px;
 }
 
+/* Add Record modal helper note */
+.add-modal-note {
+    color: var(--color-text-muted);
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
 /* Modal Footer */
 .modal-footer,
 .view-modal-footer,

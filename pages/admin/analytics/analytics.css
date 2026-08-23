@@ -408,6 +408,11 @@
     display: none !important;
 }
 
+/* Map status dot colors — mirror the JS marker colors in analytics.js */
+.map-filter-dot--approved { background: #22c55e; }
+.map-filter-dot--pending { background: #eab308; }
+.map-filter-dot--flagged { background: #ef4444; }
+
 /* ============================================
    Consolidated Map Toolbar (middle-right)
    ============================================ */

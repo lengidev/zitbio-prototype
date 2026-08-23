@@ -322,7 +322,7 @@
                         <div id="map"></div>
                         
                         <!-- Hidden legacy controls (kept for JS proxy) -->
-                        <div id="map-controls" style="display:none !important;">
+                        <div id="map-controls">
                             <div class="map-controls-title">CBU Area Map</div>
                             <div class="map-controls-group">
                                 <span class="map-controls-label">Area</span>
@@ -346,15 +346,15 @@
                                 <span class="map-controls-label">Show</span>
                                 <div class="map-filter-checkboxes">
                                     <label class="map-filter-label" data-status="Approved">
-                                        <span class="map-filter-dot" style="background: #22c55e;"></span>
+                                        <span class="map-filter-dot map-filter-dot--approved"></span>
                                         Approved
                                     </label>
                                     <label class="map-filter-label" data-status="Pending">
-                                        <span class="map-filter-dot" style="background: #eab308;"></span>
+                                        <span class="map-filter-dot map-filter-dot--pending"></span>
                                         Pending
                                     </label>
                                     <label class="map-filter-label" data-status="Flagged">
-                                        <span class="map-filter-dot" style="background: #ef4444;"></span>
+                                        <span class="map-filter-dot map-filter-dot--flagged"></span>
                                         Flagged
                                     </label>
                                 </div>
@@ -362,7 +362,7 @@
                         </div>
                         
                         <!-- Hidden legacy zoom controls (kept for JS proxy) -->
-                        <div id="map-zoom-controls" style="display:none !important;">
+                        <div id="map-zoom-controls">
                             <button id="map-zoom-in" class="map-zoom-btn">
                                 <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-add"/></svg>
                             </button>

@@ -117,6 +117,10 @@
   flex-direction: column;
 }
 
+.fo-field--stacked {
+  margin-top: 16px;
+}
+
 .fo-label {
   font-size: 14px;
   font-weight: 500;

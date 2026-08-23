@@ -183,7 +183,7 @@
                                 <th>Institution</th>
                                 <th>Created Date</th>
                                 <th>Last Login</th>
-                                <th style="text-align: right;">Actions</th>
+                                <th class="text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="userTableBody">
@@ -322,16 +322,5 @@
     <script defer src="../../../pages/admin/layout/admin-layout.js"></script>
     <script defer src="../../../components/modals.js"></script>
     <script defer src="users.js"></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        if (window.BioData) {
-          var session = BioData.getSession();
-          if (session) {
-            var el = document.querySelector('.user-menu-name');
-            if (el) el.textContent = session.name;
-          }
-        }
-      });
-    </script>
 </body>
 </html>

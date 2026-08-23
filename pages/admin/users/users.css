@@ -29,7 +29,7 @@
 }
 
 .user-count-display .count-label {
-    font-size: 1.05rem;
+    font-size: 16.8px;
     font-weight: 700;
     color: var(--color-text-main);
 }
