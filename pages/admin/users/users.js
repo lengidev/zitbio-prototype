@@ -97,16 +97,16 @@ function renderTable() {
             '<td class="date-cell">' + user.created + '</td>' +
             '<td class="last-login-cell">' +
                 '<span class="last-login-wrapper">' +
-                    '<span class="material-symbols-outlined last-login-icon">schedule</span>' +
+                    '<svg class="material-symbols-outlined last-login-icon" aria-hidden="true"><use href="#i-schedule"/></svg>' +
                     relativeTime +
                 '</span>' +
             '</td>' +
             '<td class="actions-cell">' +
                 '<button class="action-icon-btn edit-user" data-id="' + user.id + '" title="Edit">' +
-                    '<span class="material-symbols-outlined" style="font-size: 18px;">edit</span>' +
+                    '<svg class="material-symbols-outlined" style="width:18px;height:18px;" aria-hidden="true"><use href="#i-edit"/></svg>' +
                 '</button>' +
                 '<button class="action-icon-btn delete delete-user" data-id="' + user.id + '" title="Delete">' +
-                    '<span class="material-symbols-outlined" style="font-size: 18px;">delete</span>' +
+                    '<svg class="material-symbols-outlined" style="width:18px;height:18px;" aria-hidden="true"><use href="#i-delete"/></svg>' +
                 '</button>' +
             '</td>' +
             '</tr>';

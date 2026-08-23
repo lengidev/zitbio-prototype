@@ -266,6 +266,23 @@ td {
 }
 
 /* ============================================
+   SVG icon base — replaces the Google Fonts icon font.
+   Icons are now inline <svg><use> elements; width/height
+   drive sizing and fill: currentColor powers theming.
+   ============================================ */
+.material-symbols-outlined,
+.material-icons {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+/* ============================================
    Responsive Icon Scaling (consolidated)
    Prevents duplicate media queries across files
    ============================================ */
@@ -276,7 +293,7 @@ td {
   .nav-icon,
   .hamburger .material-symbols-outlined,
   .notification-btn .material-symbols-outlined {
-    font-size: 22px;
+    width: 22px; height: 22px;
   }
 
   /* Medium icons: 20px → 18px */
@@ -298,7 +315,7 @@ td {
   }
 
   .notification-empty .material-symbols-outlined {
-    font-size: 40px;
+    width: 40px; height: 40px;
   }
 }
 
@@ -308,7 +325,7 @@ td {
   .nav-icon,
   .hamburger .material-symbols-outlined,
   .notification-btn .material-symbols-outlined {
-    font-size: 20px;
+    width: 20px; height: 20px;
   }
 
   /* Medium icons: 20px → 16px */
@@ -330,6 +347,6 @@ td {
   }
 
   .notification-empty .material-symbols-outlined {
-    font-size: 32px;
+    width: 32px; height: 32px;
   }
 }

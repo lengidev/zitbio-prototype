@@ -50,8 +50,10 @@
     align-items: center;
     position: relative;
     margin-left: auto;
+    flex: 0 1 auto;
+    min-width: 0;
     max-width: 300px;
-    width: 100%;
+    width: auto;
 }
 
 /* Export button in tab bar */
@@ -77,7 +79,8 @@
 }
 
 .page-analytics .observation-export-btn .material-symbols-outlined {
-    font-size: 16px;
+    width: 16px;
+    height: 16px;
 }
 
 .page-analytics .search-icon {
@@ -139,7 +142,8 @@
 }
 
 .page-analytics .observation-filter-btn .material-symbols-outlined {
-    font-size: 16px;
+    width: 16px;
+    height: 16px;
 }
 
 /* Column Toggle Dropdown */
@@ -457,7 +461,8 @@
 }
 
 .toolbar-btn .material-symbols-outlined {
-    font-size: 20px;
+    width: 20px;
+    height: 20px;
 }
 
 /* Custom tooltip */
@@ -678,6 +683,7 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    min-width: 0;
 }
 
 .page-analytics .filter-count-badge {
@@ -746,6 +752,17 @@
     display: flex;
     align-items: center;
     height: 34px;
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+.page-analytics .filter-chip:hover {
+    border-color: var(--border-color-dark);
+    background: var(--color-bg-header);
+}
+/* Focus = one clean green border on a white chip (no extra glow/shadow that
+   could read as a second highlight). */
+.page-analytics .filter-chip:focus-within {
+    border-color: var(--color-primary);
+    background: var(--color-bg-white);
 }
 .page-analytics .filter-chip input[type="date"],
 .page-analytics .filter-chip select {
@@ -762,28 +779,40 @@
 .page-analytics .filter-chip input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
 
 .page-analytics .filter-clear-btn {
-    background: none;
-    border: none;
-    color: var(--color-text-muted);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: var(--radius-sm);
-    transition: color 150ms ease;
-    height: 34px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    align-self: flex-end;
     margin-left: auto;
+    gap: 5px;
+    padding: 6px 12px;
+    height: 34px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
 }
 .page-analytics .filter-clear-btn:hover {
     color: var(--color-danger);
+    border-color: var(--color-danger);
+    background: var(--color-danger-light);
 }
 
 .page-analytics .filter-divider {
     height: 1px;
     background: var(--border-color-light);
     margin: 14px 0;
+}
+
+/* Column toggles only apply to the Dataset table — hide the Toggle Columns
+   row (and its divider) on the Map / Graphs / Report tabs. */
+.page-analytics .analytics-filters:not(.with-column-toggles) .col-toggles-row,
+.page-analytics .analytics-filters:not(.with-column-toggles) .filter-divider {
+    display: none;
 }
 
 /* Column toggles (text-only checkboxes) */
@@ -819,7 +848,7 @@
 }
 .page-analytics .col-toggle-btn:hover { color: var(--color-primary); }
 .page-analytics .col-toggle-btn.active { color: var(--color-text-main); font-weight: 600; }
-.page-analytics .col-toggle-btn .material-symbols-outlined { font-size: 17px; }
+.page-analytics .col-toggle-btn .material-symbols-outlined { width: 17px; height: 17px; }
 .page-analytics .col-toggle-btn .check-icon { display: none; color: var(--color-primary); }
 .page-analytics .col-toggle-btn.active .check-icon { display: inline-block; }
 .page-analytics .col-toggle-btn.active .uncheck-icon { display: none; }
@@ -850,28 +879,14 @@
 
 /* Mobile: ≤767px */
 @media (max-width: 767px) {
-    .page-analytics .analytics-tabs {
-        flex-direction: column;
-        align-items: stretch;
-    }
     .page-analytics .tabs-left-group {
         justify-content: flex-start;
-        gap: 8px;
+        gap: 4px;
     }
     .page-analytics .analytics-tab {
         padding: 6px 8px;
         font-size: 12px;
-    }
-    .page-analytics .observation-search-wrapper {
-        max-width: 100%;
-        width: 100%;
-    }
-    .page-analytics .search-input {
-        width: 100%;
-        max-width: 100%;
-    }
-    .page-analytics .observation-filter-btn {
-        margin-left: auto;
+        white-space: nowrap;
     }
     .page-analytics .observations-pagination {
         flex-direction: column;
@@ -881,6 +896,70 @@
     .col-toggle-dropdown {
         right: 0;
         left: auto;
+    }
+
+    /* Filter bar — expand fully on small screens (the desktop 400px cap
+       clipped the wrapped rows + column toggles). Chip wrappers fill their
+       row (2 per line); the chip itself stays at its normal 34px height. */
+    .page-analytics .analytics-filters.open {
+        max-height: 1000px;
+    }
+    .page-analytics .filter-row {
+        gap: 12px;
+    }
+    .page-analytics .filter-chip-wrapper {
+        flex: 1 1 130px;
+        min-width: 0;
+        width: auto;
+    }
+    .page-analytics .filter-chip {
+        min-width: 0;
+        width: 100%;
+    }
+}
+
+/* ≤1023px (tablet + mobile): per-tab control alignment
+   - Dataset (search visible): tabs on top; search + filter side by side below.
+   - Map / Graphs / Report (no search): filter stays aligned right of the tabs. */
+@media (max-width: 1023px) {
+    /* Map/Graphs/Report (no search) — keep the filter on the tabs row, right-aligned */
+    .page-analytics .analytics-tabs:not(.with-search) {
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+    .page-analytics .analytics-tabs:not(.with-search) .tabs-left-group {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .page-analytics .analytics-tabs:not(.with-search) .tabs-right-group {
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
+
+    /* Dataset (search visible) — stack the tabs, then search + filter side by side */
+    .page-analytics .analytics-tabs.with-search {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .page-analytics .analytics-tabs.with-search .tabs-right-group {
+        flex-wrap: nowrap;
+        width: 100%;
+    }
+    .page-analytics .analytics-tabs.with-search .observation-search-wrapper {
+        flex: 1 1 auto;
+        min-width: 0;
+        width: auto;
+        max-width: none;
+        margin-left: 0;
+    }
+    .page-analytics .analytics-tabs.with-search .search-input {
+        width: 100%;
+        max-width: 100%;
+    }
+    .page-analytics .analytics-tabs.with-search .observation-filter-btn {
+        margin-left: 0;
+        flex: 0 0 auto;
     }
 }
 
@@ -893,21 +972,6 @@
     flex-wrap: wrap;
     gap: 12px;
     margin-bottom: 16px;
-}
-.page-analytics .report-include-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    background: var(--color-bg-white);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 8px 12px;
-}
-.page-analytics .report-include-toggle input {
-    accent-color: var(--color-primary);
 }
 .page-analytics .report-confidence {
     font-size: 13px;
@@ -953,6 +1017,19 @@
 .page-analytics .report-kpi + .report-kpi {
     border-left: 1px solid var(--border-color-light);
 }
+
+/* Tablet + iPad: 768px - 1024px — Summary KPIs become a clean 2×2 grid */
+@media (max-width: 1024px) and (min-width: 768px) {
+    .page-analytics .report-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .page-analytics .report-kpi:nth-child(odd) {
+        border-left: none;
+    }
+    .page-analytics .report-kpi:nth-child(n + 3) {
+        border-top: 1px solid var(--border-color-light);
+    }
+}
 .page-analytics .report-kpi-value {
     display: block;
     font-size: 24px;
@@ -997,20 +1074,76 @@
     font-weight: 600;
     font-size: 14px;
     color: var(--color-text-main);
-}
-.page-analytics .report-site-value {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--color-primary);
+    margin-bottom: 4px;
 }
 .page-analytics .report-site-meta {
     font-size: 12px;
     color: var(--color-text-secondary);
     margin-top: 2px;
 }
-.page-analytics .trend-arrow.up { color: var(--color-success-hover); font-size: 14px; }
-.page-analytics .trend-arrow.down { color: var(--color-danger); font-size: 14px; }
-.page-analytics .trend-arrow.flat { color: var(--color-text-disabled); font-size: 14px; }
+.page-analytics .report-site-caption {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin: 0 0 8px;
+}
+.page-analytics .report-site-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.page-analytics .report-month-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding: 7px 10px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-hover);
+    border: 1px solid var(--border-color-light);
+}
+.page-analytics .report-month-row.is-latest {
+    background: var(--color-bg-header);
+    border-color: var(--color-primary);
+}
+.page-analytics .report-month {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-main);
+    min-width: 92px;
+}
+.page-analytics .report-latest-pill {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--color-bg-white);
+    background: var(--color-primary);
+    border-radius: var(--radius-full);
+    padding: 2px 7px;
+}
+.page-analytics .report-month-value {
+    margin-left: auto;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+.page-analytics .report-month-meta {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+.page-analytics .report-month-delta {
+    min-width: 66px;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 600;
+}
+.page-analytics .report-month-delta.up { color: var(--color-success-hover); }
+.page-analytics .report-month-delta.down { color: var(--color-danger); }
+.page-analytics .report-month-delta.flat { color: var(--color-text-disabled); }
 
 .page-analytics .report-warning-row {
     display: flex;
@@ -1030,7 +1163,8 @@
     border-color: var(--color-warning);
 }
 .page-analytics .report-warning-icon {
-    font-size: 20px;
+    width: 20px;
+    height: 20px;
     color: var(--color-text-secondary);
     margin-top: 1px;
 }
@@ -1179,5 +1313,45 @@
     .page-analytics .graph-box,
     .page-analytics .graphs-grid {
         display: none;
+    }
+}
+
+/* Mobile ≤767px — graphs & report cards stack full-width (appended after all
+   base styles so these overrides win over the desktop 2-column grids). */
+@media (max-width: 767px) {
+    .page-analytics .graphs-grid,
+    .page-analytics .report-grid {
+        grid-template-columns: 1fr;
+    }
+    .page-analytics .graph-box--wide,
+    .page-analytics .report-card--wide {
+        grid-column: auto;
+    }
+    /* Summary KPIs become a clean 2×2 grid */
+    .page-analytics .report-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .page-analytics .report-kpi:nth-child(odd) {
+        border-left: none;
+    }
+    .page-analytics .report-kpi:nth-child(n + 3) {
+        border-top: 1px solid var(--border-color-light);
+    }
+    /* Report toolbar — mobile: export buttons fill the row side by side
+       (50/50), and the confidence line sits below them. */
+    .page-analytics .report-toolbar .observation-export-btn {
+        flex: 1 1 0;
+        margin-left: 0;
+        justify-content: center;
+    }
+    .page-analytics #reportCsvBtn {
+        order: 1;
+    }
+    .page-analytics #reportPdfBtn {
+        order: 2;
+    }
+    .page-analytics .report-confidence {
+        order: 3;
+        flex-basis: 100%;
     }
 }

@@ -309,7 +309,7 @@ function initNotifications() {
   bellBtn.className = 'notification-btn';
   bellBtn.setAttribute('aria-label', 'Notifications');
   bellBtn.innerHTML =
-    '<span class="material-symbols-outlined">notifications</span>' +
+    '<svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-notifications"/></svg>' +
     '<span class="notification-badge" id="notificationBadge">0</span>';
 
   // Dropdown panel
@@ -424,7 +424,7 @@ function renderNotifications() {
     // Empty state
     html =
       '<div class="notification-empty">' +
-        '<span class="material-symbols-outlined">notifications_off</span>' +
+        '<svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-notifications_off"/></svg>' +
         '<p>No notifications yet</p>' +
       '</div>';
   } else {
@@ -478,7 +478,7 @@ function renderNotifications() {
       html +=
         '<div class="notification-item' + (n.read ? '' : ' unread') + '" data-notif-id="' + n.id + '"' + (n.link ? ' data-link="' + n.link + '"' : '') + '>' +
           '<div class="notification-icon ' + iconClass + '">' +
-            '<span class="material-symbols-outlined">' + iconName + '</span>' +
+            '<svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-' + iconName + '"/></svg>' +
           '</div>' +
           '<div class="notification-content">' +
             '<div class="notification-title">' + escapeHtml(n.title) + '</div>' +
@@ -791,8 +791,8 @@ function applySavedTheme() {
 function updateThemeToggleIcon(activeTheme) {
   var btn = document.getElementById('navAppearance');
   if (!btn) return;
-  var icon = btn.querySelector('.nav-icon');
-  if (icon) icon.textContent = activeTheme === 'dark' ? 'dark_mode' : 'light_mode';
+  var icon = btn.querySelector('.nav-icon use');
+  if (icon) icon.setAttribute('href', activeTheme === 'dark' ? '#i-dark_mode' : '#i-light_mode');
   btn.setAttribute('data-tooltip', activeTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
   btn.setAttribute('aria-label', activeTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
 }

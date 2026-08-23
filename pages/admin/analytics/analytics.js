@@ -23,7 +23,7 @@ var analyticsRecordsPerPage = 10;
 var analyticsFilters = {
     dateFrom: '',
     dateTo: '',
-    province: '',
+    focusArea: '',
     status: '',
     species: ''
 };
@@ -83,7 +83,7 @@ function countActiveFilters() {
     var count = 0;
     if (analyticsFilters.dateFrom) count++;
     if (analyticsFilters.dateTo) count++;
-    if (analyticsFilters.province) count++;
+    if (analyticsFilters.focusArea) count++;
     if (analyticsFilters.status) count++;
     if (analyticsFilters.species) count++;
     return count;
@@ -279,26 +279,30 @@ function initFilterToggle() {
 }
 
 // ============================================================
-//  Populate Filter Dropdowns — fills province and species selects
-//  from BioData reference data so they stay in sync with the rest
-//  of the application.
+//  Populate Filter Dropdowns — fills focus area and species
+//  selects from BioData reference data so they stay in sync
+//  with the rest of the application.
 // ============================================================
 
 function populateFilterDropdowns() {
     if (!window.BioData) return;
 
-    // Provinces
-    var provinceSelect = document.getElementById('filterProvince');
-    if (provinceSelect) {
-        if (window.BioData.getZambiaProvinces) {
-            var provinces = window.BioData.getZambiaProvinces();
-            provinces.forEach(function(p) {
-                var opt = document.createElement('option');
-                opt.value = p;
-                opt.textContent = p;
-                provinceSelect.appendChild(opt);
-            });
-        }
+    // Focus Areas — the two canonical CBU areas (campus / nature park).
+    // These display names lenient-match every stored variant via the
+    // filterObservations focusArea rule (e.g. 'CBU Campus',
+    // 'The CBU Nature Park', GBIF 'Copperbelt University').
+    var focusAreaSelect = document.getElementById('filterFocusArea');
+    if (focusAreaSelect) {
+        var focusAreaOptions = [
+            'The Copperbelt University Campus',
+            'The Copperbelt University Nature Park'
+        ];
+        focusAreaOptions.forEach(function(fa) {
+            var opt = document.createElement('option');
+            opt.value = fa;
+            opt.textContent = fa;
+            focusAreaSelect.appendChild(opt);
+        });
     }
 
     // Species — extract unique common names from observations
@@ -367,7 +371,7 @@ function initColumnToggleButtons() {
 function initFilterListeners() {
     var dateFrom = document.getElementById('filterDateFrom');
     var dateTo = document.getElementById('filterDateTo');
-    var province = document.getElementById('filterProvince');
+    var focusArea = document.getElementById('filterFocusArea');
     var status = document.getElementById('filterStatus');
     var species = document.getElementById('filterSpecies');
     var clearBtn = document.getElementById('filterClear');
@@ -375,7 +379,7 @@ function initFilterListeners() {
     function onFilterChange() {
         analyticsFilters.dateFrom = dateFrom ? dateFrom.value : '';
         analyticsFilters.dateTo = dateTo ? dateTo.value : '';
-        analyticsFilters.province = province ? province.value : '';
+        analyticsFilters.focusArea = focusArea ? focusArea.value : '';
         analyticsFilters.status = status ? status.value : '';
         analyticsFilters.species = species ? species.value : '';
         applyFilters();
@@ -383,7 +387,7 @@ function initFilterListeners() {
 
     if (dateFrom) dateFrom.addEventListener('change', onFilterChange);
     if (dateTo) dateTo.addEventListener('change', onFilterChange);
-    if (province) province.addEventListener('change', onFilterChange);
+    if (focusArea) focusArea.addEventListener('change', onFilterChange);
     if (status) status.addEventListener('change', onFilterChange);
     if (species) species.addEventListener('change', onFilterChange);
 
@@ -392,11 +396,11 @@ function initFilterListeners() {
         clearBtn.addEventListener('click', function() {
             if (dateFrom) dateFrom.value = '';
             if (dateTo) dateTo.value = '';
-            if (province) province.value = '';
+            if (focusArea) focusArea.value = '';
             if (status) status.value = '';
             if (species) species.value = '';
             
-            analyticsFilters = { dateFrom: '', dateTo: '', province: '', status: '', species: '' };
+            analyticsFilters = { dateFrom: '', dateTo: '', focusArea: '', status: '', species: '' };
             applyFilters();
         });
     }
@@ -408,6 +412,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var tabs = document.querySelectorAll('.analytics-tab');
     var panels = document.querySelectorAll('.analytics-tab-content');
     var searchWrapper = document.getElementById('tabSearchWrapper');
+    var tabsContainer = document.querySelector('.analytics-tabs');
+    var filterBar = document.getElementById('analyticsFilters');
 
     function activateTab(tab) {
         if (!tab) return;
@@ -423,10 +429,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 targetPanel.classList.add('active');
             }
 
-            if (tabName === 'observations') {
-                if (searchWrapper) searchWrapper.style.display = 'inline-flex';
-            } else {
-                if (searchWrapper) searchWrapper.style.display = 'none';
+            var isDataset = (tabName === 'observations');
+            if (searchWrapper) {
+                searchWrapper.style.display = isDataset ? 'inline-flex' : 'none';
+            }
+            // Tag the container so CSS can align the search/filter controls per
+            // tab at responsive breakpoints: Dataset shows both (side by side
+            // below the tabs on small screens); the other tabs keep the filter
+            // button right-aligned next to the tabs on every breakpoint.
+            if (tabsContainer) {
+                tabsContainer.classList.toggle('with-search', isDataset);
+            }
+            // Column toggles only apply to the Dataset table — flag the filter
+            // bar so the Toggle Columns row is hidden on Map/Graphs/Report.
+            if (filterBar) {
+                filterBar.classList.toggle('with-column-toggles', isDataset);
             }
         }
     }
@@ -473,6 +490,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 savedTabEl.click();
             }
         }
+    }
+
+    // Sync the container tag with the initially-active tab so the responsive
+    // per-tab alignment applies on first load (not only after a tab click).
+    var initialTab = document.querySelector('.analytics-tab.active');
+    var initialIsDataset = !!(initialTab && initialTab.getAttribute('data-tab') === 'observations');
+    if (tabsContainer) {
+        tabsContainer.classList.toggle('with-search', initialIsDataset);
+    }
+    if (filterBar) {
+        filterBar.classList.toggle('with-column-toggles', initialIsDataset);
     }
 
     // --- Dynamic table rendering ---
@@ -1210,7 +1238,7 @@ if (typeof window !== 'undefined') {
 //  ------------------------------------------------------------
 //  For Phase 4/5. Pure analytics core lives in lib/analytics.js
 //  (BioAnalytics) — reusing getAnalyticsFilteredData() so reports
-//  and graphs respect the same date/province/status/species filters
+//  and graphs respect the same date/focus-area/status/species filters
 //  as the table. Pending/Flagged are EXCLUDED by default (verified-
 //  data rule) with a Report-tab toggle ("Include pending/flagged").
 // ============================================================
@@ -1244,13 +1272,30 @@ function enrichWithRegistryIds(obsList) {
   });
 }
 
-// Current report dataset — respects filters + include-pending toggle.
+// Default rolling window (months) applied to charts/report when no From/To
+// date filter is set — mirrors the dashboard's rolling "This Week" chart so
+// the default view stays focused on recent data instead of dumping every year.
+var DEFAULT_ROLLING_MONTHS = 36;
+
+// When a From/To date filter is set, respect it exactly (filterObservations
+// already applied it); otherwise clamp the dataset to the most recent
+// DEFAULT_ROLLING_MONTHS — a rolling window ending now.
+function applyAnalyticsDateWindow(data) {
+  if (analyticsFilters.dateFrom || analyticsFilters.dateTo) return data;
+  var now = new Date();
+  var cutoff = new Date(now.getFullYear(), now.getMonth() - DEFAULT_ROLLING_MONTHS, now.getDate());
+  cutoff.setHours(0, 0, 0, 0);
+  return data.filter(function(o) {
+    var ts = o && o.timestamp ? new Date(o.timestamp) : null;
+    return !!(ts && !isNaN(ts.getTime()) && ts >= cutoff && ts <= now);
+  });
+}
+
+// Current report dataset — respects filters, uses verified (Approved) data
+// only, and defaults to a recent rolling window when no date filter is set.
 function getReportData() {
-  var data = getAnalyticsFilteredData();
-  var includePending = document.getElementById('reportIncludePending');
-  if (!includePending || !includePending.checked) {
-    data = data.filter(function(o) { return o.verification_status === 'Approved'; });
-  }
+  var data = applyAnalyticsDateWindow(getAnalyticsFilteredData());
+  data = data.filter(function(o) { return o.verification_status === 'Approved'; });
   return enrichWithRegistryIds(data);
 }
 
@@ -1261,14 +1306,17 @@ function getReportData() {
 function buildReportConfidence() {
   var el = document.getElementById('reportConfidence');
   if (!el) return;
-  var all = getAnalyticsFilteredData();
+  var all = applyAnalyticsDateWindow(getAnalyticsFilteredData());
   var approved = all.filter(function(o) { return o.verification_status === 'Approved'; }).length;
   var pending = all.filter(function(o) { return o.verification_status === 'Pending'; }).length;
   var flagged = all.filter(function(o) { return o.verification_status === 'Flagged'; }).length;
   var total = all.length;
-  el.textContent = total + ' records within filters · ' + approved + ' approved' +
-    ' · ' + pending + ' pending · ' + flagged + ' flagged' +
-    (pending + flagged > 0 ? ' (pending/flagged excluded)' : '');
+  el.textContent = 'Reporting on ' + total + ' record' + (total === 1 ? '' : 's') +
+    ' in the current filter window: ' + approved + ' approved (included)' +
+    (pending + flagged > 0
+      ? ' · ' + pending + ' pending and ' + flagged + ' flagged (excluded from this report)'
+      : '') +
+    '. Only verified (Approved) observations are used.';
 }
 
 function buildReportSummary(data) {
@@ -1291,6 +1339,15 @@ function buildReportSummary(data) {
   shannonEl.textContent = window.BioAnalytics.shannonDiversityIndex(data).toFixed(3);
 }
 
+// Format a 'YYYY-MM' bucket into a readable month label, e.g. '2026-06' → 'Jun 2026'.
+function formatReportMonth(ym) {
+  var parts = String(ym || '').split('-');
+  if (parts.length < 2) return ym || '';
+  var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var m = parseInt(parts[1], 10);
+  return (months[m - 1] || parts[1]) + ' ' + parts[0];
+}
+
 function buildReportDiversity(data) {
   var container = document.getElementById('reportDiversityContainer');
   if (!container) return;
@@ -1301,28 +1358,44 @@ function buildReportDiversity(data) {
   } else {
     sites.forEach(function(site) {
       var series = window.BioAnalytics.siteComparisonOverTime(data, site.id);
-      if (series.length === 0) {
-        html += '<div class="report-site-row">' +
-          '<div class="report-site-name">' + analyticsEscape(site.name) + '</div>' +
-          '<div class="report-site-meta">No verified observations</div>' +
-          '</div>';
-        return;
-      }
-      var last = series[series.length - 1];
-      var arrows = '';
-      if (series.length > 1) {
-        var prev = series[series.length - 2];
-        var delta = last.shannonIndex - prev.shannonIndex;
-        if (delta > 0.001) arrows = ' <span class="trend-arrow up">▲ ' + (+delta.toFixed(3)) + '</span>';
-        else if (delta < -0.001) arrows = ' <span class="trend-arrow down">▼ ' + (+delta.toFixed(3)) + '</span>';
-        else arrows = ' <span class="trend-arrow flat">● 0.000</span>';
-      }
       html += '<div class="report-site-row">' +
-        '<div class="report-site-name">' + analyticsEscape(site.name) + '</div>' +
-        '<div class="report-site-value">H&prime; ' + last.shannonIndex.toFixed(3) + arrows + '</div>' +
-        '<div class="report-site-meta">richness ' + last.speciesRichness + ' · ' +
-        last.observations + ' observations · ' + last.month + '</div>' +
-        '</div>';
+        '<div class="report-site-name">' + analyticsEscape(site.name) + '</div>';
+      if (series.length === 0) {
+        html += '<div class="report-site-meta">No verified observations in the current filters</div>';
+      } else {
+        // Show every month in the filtered period (newest first) so the card
+        // reads as a history, not a single locked date. The top row is the
+        // latest month and carries the month-over-month delta.
+        var rows = series.slice().reverse();
+        var latest = rows[0];
+        var prior = rows.length > 1 ? rows[1] : null;
+        var delta = 0;
+        var deltaClass = 'flat';
+        var deltaGlyph = '●';
+        var deltaText = '0.000';
+        if (prior) {
+          delta = latest.shannonIndex - prior.shannonIndex;
+          if (delta > 0.001) { deltaClass = 'up'; deltaGlyph = '▲'; deltaText = '+' + (+delta.toFixed(3)); }
+          else if (delta < -0.001) { deltaClass = 'down'; deltaGlyph = '▼'; deltaText = '' + (+delta.toFixed(3)); }
+        }
+        html += '<div class="report-site-caption">Shannon diversity H&prime; by month &mdash; latest highlighted</div>' +
+          '<div class="report-site-timeline">';
+        rows.forEach(function(b, i) {
+          var isLatest = i === 0;
+          html += '<div class="report-month-row' + (isLatest ? ' is-latest' : '') + '">' +
+            '<span class="report-month">' + formatReportMonth(b.month) +
+              (isLatest ? '<span class="report-latest-pill">Latest</span>' : '') + '</span>' +
+            '<span class="report-month-value">H&prime; ' + b.shannonIndex.toFixed(3) + '</span>' +
+            '<span class="report-month-meta">' + b.speciesRichness + ' spp &middot; ' + b.observations + ' obs</span>' +
+            (isLatest && prior
+              ? '<span class="report-month-delta ' + deltaClass + '" title="vs ' + formatReportMonth(prior.month) + '">' +
+                deltaGlyph + ' ' + deltaText + '</span>'
+              : '') +
+            '</div>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
     });
   }
   container.innerHTML = html;
@@ -1345,7 +1418,7 @@ function buildReportWarnings(data) {
       var sourceLabel = w.baselineSource === 'admin-set' ? 'admin baseline' :
         (w.baselineSource === 'site-override' ? 'site baseline' : 'derived baseline');
       html += '<div class="report-warning-row ' + cls + '">' +
-        '<span class="material-symbols-outlined report-warning-icon">' + iconName + '</span>' +
+        '<svg class="material-symbols-outlined report-warning-icon" aria-hidden="true"><use href="#i-' + iconName + '"/></svg>' +
         '<div class="report-warning-content">' +
         '<div class="report-warning-title">' + analyticsEscape(w.speciesName) + ' · ' + analyticsEscape(w.siteName) + '</div>' +
         '<div class="report-warning-meta">estimate ' + w.currentCount + ' vs ' + w.baseline +
@@ -1597,7 +1670,7 @@ function buildReportExecutiveSummary(data) {
   var siteNames = sites.map(function(s) { return s.name; }).join(' and ');
   var sents = [];
   if (n === 0) {
-    sents.push('No verified observations matched the current filters, so no analysis could be generated. Widen the date range or clear the province/species filters and try again.');
+    sents.push('No verified observations matched the current filters, so no analysis could be generated. Widen the date range or clear the focus area/species filters and try again.');
   } else {
     sents.push('This report summarises ' + n + ' verified observation record' + (n === 1 ? '' : 's') + ' covering ' + species + ' distinct species within ' + (siteNames || 'the monitored sites') + ', recorded between ' + reportDateRange(data) + '.');
     sents.push('Overall community diversity, measured by the Shannon index, is ' + shannon.toFixed(3) + (shannon === 0
@@ -1618,9 +1691,9 @@ function buildReportPdfSiteRows(data) {
   var rows = [];
   sites.forEach(function(site) {
     var series = window.BioAnalytics.siteComparisonOverTime(data, site.id);
-    if (!series.length) return;
-    var last = series[series.length - 1];
-    rows.push([site.name, last.speciesRichness, last.observations, last.shannonIndex.toFixed(3), last.month]);
+    series.forEach(function(b) {
+      rows.push([site.name, b.speciesRichness, b.observations, b.shannonIndex.toFixed(3), formatReportMonth(b.month)]);
+    });
   });
   return rows;
 }
@@ -1693,7 +1766,7 @@ function exportReportPdf() {
   var filtersDesc = [];
   var f = analyticsFilters || {};
   if (f.dateFrom || f.dateTo) filtersDesc.push((f.dateFrom || '\u2026') + ' to ' + (f.dateTo || '\u2026'));
-  if (f.province) filtersDesc.push(f.province);
+  if (f.focusArea) filtersDesc.push(f.focusArea);
   if (f.status) filtersDesc.push(f.status);
   if (f.species) filtersDesc.push(f.species);
   doc.text('Filters: ' + (filtersDesc.length ? filtersDesc.join(' \u00b7 ') : 'All data'), marginX, y);
@@ -1780,21 +1853,6 @@ function exportReportPdf() {
 //  GRAPHS TAB (Tier 1) — Chart.js
 // ============================================================
 
-function populateGraphSpeciesSelect() {
-  var select = document.getElementById('graphSpeciesSelect');
-  if (!select || !window.BioData) return;
-    var previousValue = select.value;
-  var registry = window.BioData.getSpeciesRegistry ? window.BioData.getSpeciesRegistry() : [];
-  var html = '<option value="">All species</option>';
-  registry.forEach(function(sp) {
-    html += '<option value="' + sp.id + '">' + analyticsEscape(sp.common_name || sp.scientific_name) + '</option>';
-  });
-  select.innerHTML = html;
-    if (previousValue && select.querySelector('option[value="' + previousValue + '"]')) {
-        select.value = previousValue;
-    }
-}
-
 function buildGraphsCharts(data) {
   var richnessCanvas = document.getElementById('graphRichnessChart');
   var shannonCanvas = document.getElementById('graphShannonChart');
@@ -1806,8 +1864,6 @@ function buildGraphsCharts(data) {
   if (graphTrendChartInstance) { graphTrendChartInstance.destroy(); graphTrendChartInstance = null; }
 
   var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
-  var speciesSel = document.getElementById('graphSpeciesSelect');
-  var selectedSpecies = speciesSel ? speciesSel.value : '';
 
   var monthSet = {};
   sites.forEach(function(site) {
@@ -1893,13 +1949,12 @@ function buildGraphsCharts(data) {
   graphRichnessChartInstance = makeLineChart(richnessCanvas, richnessDatasets, 'Species', { integerY: true, tooltipUnit: 'species' });
   graphShannonChartInstance = makeLineChart(shannonCanvas, shannonDatasets, 'H\u2032');
 
-  var trend = window.BioAnalytics.populationTrend(data, selectedSpecies || null, null);
+  // Species is controlled by the shared filter bar, so the population trend
+  // always aggregates the already-filtered dataset (no per-species select).
+  var trend = window.BioAnalytics.populationTrend(data, null, null);
   var tLabels = trend.dataPoints.map(function(b) { return b.label; });
   var tDatasets = [{
-        label: selectedSpecies ? (function() {
-            var selected = window.BioData.getSpeciesRegistry().find(function(sp) { return sp.id === selectedSpecies; });
-            return (selected ? (selected.common_name || selected.scientific_name) : selectedSpecies) + ' observed';
-        })() : 'Observed count',
+    label: 'Observed count',
     data: trend.dataPoints.map(function(b) { return b.value; }),
     borderColor: '#2E7D32',
     backgroundColor: 'transparent',
@@ -1939,32 +1994,26 @@ function getGraphData() {
     var d = typeof getAnalyticsFilteredData === 'function'
         ? getAnalyticsFilteredData()
         : (window.BioData ? window.BioData.getObservations() : []);
+  // Respect the From/To filter exactly; otherwise default to the recent
+  // rolling window (same rule as the report).
+  d = applyAnalyticsDateWindow(d);
   d = enrichWithRegistryIds(d);
-  var includePending = document.getElementById('reportIncludePending');
-  if (!includePending || !includePending.checked) {
-    d = d.filter(function(o) { return o.verification_status === 'Approved'; });
-  }
-  return d;
+  // Reports/graphs always use verified (Approved) data only.
+  return d.filter(function(o) { return o.verification_status === 'Approved'; });
 }
 
 var reportTabInitialized = false;
 var graphsTabInitialized = false;
 
 function initGraphsTab() {
-  populateGraphSpeciesSelect();
   buildGraphsCharts(getGraphData());
   if (graphsTabInitialized) return;
   graphsTabInitialized = true;
-  var speciesSel = document.getElementById('graphSpeciesSelect');
-  if (speciesSel) {
-    speciesSel.addEventListener('change', function() { buildGraphsCharts(getGraphData()); });
-  }
 }
 
 function initReportTab() {
   var csvBtn = document.getElementById('reportCsvBtn');
   var pdfBtn = document.getElementById('reportPdfBtn');
-  var includeToggle = document.getElementById('reportIncludePending');
   var speciesSelect = document.getElementById('reportTrendSpecies');
 
   function populateReportSpecies() {
@@ -2001,7 +2050,6 @@ function initReportTab() {
 
   renderReport();
 
-  if (includeToggle) includeToggle.addEventListener('change', renderReport);
   if (csvBtn) csvBtn.addEventListener('click', function() {
     var date = new Date().toISOString().split('T')[0];
     downloadCsv(buildReportCsv(getReportData()), 'zitbio-report_' + date + '.csv');

@@ -328,7 +328,7 @@ function enableEditMode() {
 
     // Replace Edit button with Save + Cancel
     var editBtn = document.getElementById('btnEditRecord');
-    editBtn.innerHTML = '<span class="material-symbols-outlined">check</span>';
+    editBtn.innerHTML = '<svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-check"/></svg>';
     editBtn.className = 'icon-btn icon-btn-save';
     editBtn.setAttribute('data-tip', 'Save Changes');
     editBtn.removeEventListener('click', enableEditMode);
@@ -342,7 +342,7 @@ function enableEditMode() {
         cancelBtn.id = 'btnCancelEdit';
         cancelBtn.setAttribute('data-tip', 'Cancel');
         cancelBtn.setAttribute('aria-label', 'Cancel Edit');
-        cancelBtn.innerHTML = '<span class="material-symbols-outlined">close</span>';
+        cancelBtn.innerHTML = '<svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-close"/></svg>';
         cancelBtn.addEventListener('click', cancelEdit);
         // Insert after the edit/save button (before approve)
         var approveBtn = document.getElementById('btnApproveRecord');
@@ -369,7 +369,7 @@ function cancelEdit() {
 
     // Restore Edit button
     var editBtn = document.getElementById('btnEditRecord');
-    editBtn.innerHTML = '<span class="material-symbols-outlined">edit</span>';
+    editBtn.innerHTML = '<svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-edit"/></svg>';
     editBtn.className = 'icon-btn icon-btn-edit';
     editBtn.setAttribute('data-tip', 'Edit Record');
     editBtn.removeEventListener('click', saveChanges);

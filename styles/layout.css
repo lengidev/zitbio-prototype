@@ -196,7 +196,8 @@
 }
 
 .sidebar-toggle-btn .material-symbols-outlined {
-    font-size: 24px;
+    width: 24px;
+    height: 24px;
 }
 
 .sidebar-toggle-btn:hover {
@@ -258,13 +259,13 @@
 }
 
 .nav-icon {
-    font-size: 24px;
+    width: 24px;
+    height: 24px;
     margin-right: 1rem;
     min-width: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-variation-settings: 'wght' 400;;
 }
 
 .nav-text {
@@ -590,7 +591,8 @@
 }
 
 .stat-icon .material-symbols-outlined {
-    font-size: 28px;
+    width: 28px;
+    height: 28px;
     color: var(--color-primary);
 }
 
@@ -607,7 +609,8 @@
    Hamburger Menu Button - Icon Sizing
    ============================================ */
 .hamburger .material-symbols-outlined {
-    font-size: 24px;
+    width: 24px;
+    height: 24px;
 }
 
 /* ============================================
@@ -670,7 +673,8 @@
 }
 
 .sidebar-close .material-symbols-outlined {
-  font-size: 24px;
+  width: 24px;
+  height: 24px;
 }
 
 #sidebarClose {
@@ -812,7 +816,8 @@
 }
 
 .stat-icon .material-symbols-outlined {
-    font-size: 20px;
+    width: 20px;
+    height: 20px;
     color: var(--color-primary);
 }
 

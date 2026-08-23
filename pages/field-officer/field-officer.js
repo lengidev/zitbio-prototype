@@ -185,7 +185,7 @@ function initFieldOfficer() {
         return;
       }
       if (gpsIcon) {
-        gpsIcon.textContent = 'progress_activity';
+        gpsIcon.querySelector('use').setAttribute('href', '#i-progress_activity');
         gpsIcon.classList.add('fo-spin');
       }
       navigator.geolocation.getCurrentPosition(
@@ -196,7 +196,7 @@ function initFieldOfficer() {
           var lngEl = document.getElementById('longitude');
           if (latEl) latEl.value = lat.toFixed(6);
           if (lngEl) lngEl.value = lng.toFixed(6);
-          if (gpsIcon) { gpsIcon.textContent = 'explore'; gpsIcon.classList.remove('fo-spin'); }
+          if (gpsIcon) { gpsIcon.querySelector('use').setAttribute('href', '#i-explore'); gpsIcon.classList.remove('fo-spin'); }
           showToast('GPS coordinates captured successfully!', 'success');
 
           // Reverse-geocode to auto-fill Province and City —
@@ -232,7 +232,7 @@ function initFieldOfficer() {
             .catch(function() { /* silently fail — coordinates already captured */ });
         },
         function(err) {
-          if (gpsIcon) { gpsIcon.textContent = 'explore'; gpsIcon.classList.remove('fo-spin'); }
+          if (gpsIcon) { gpsIcon.querySelector('use').setAttribute('href', '#i-explore'); gpsIcon.classList.remove('fo-spin'); }
           showToast('GPS error: ' + err.message, 'error');
         }
       );

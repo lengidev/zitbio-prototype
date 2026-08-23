@@ -18,10 +18,10 @@ function togglePassword() {
 
   if (pwd.type === 'password') {
     pwd.type = 'text';
-    icon.textContent = 'visibility_off';
+    icon.querySelector('use').setAttribute('href', '#i-visibility_off');
   } else {
     pwd.type = 'password';
-    icon.textContent = 'visibility';
+    icon.querySelector('use').setAttribute('href', '#i-visibility');
   }
 }
 

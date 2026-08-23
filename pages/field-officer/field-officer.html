@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Field Officer</title>
     <link rel="icon" type="image/png" href="../../assets/favicon/logo-64.png">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link rel="stylesheet" href="../../styles/theme.css">
     <link rel="stylesheet" href="../../styles/global.css">
     <link rel="stylesheet" href="../../styles/layout.css">
@@ -13,6 +12,30 @@
     <link rel="stylesheet" href="../../components/user-dropdown.css">
 </head>
 <body class="page-fieldofficer-v2">
+
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="i-person" viewBox="0 -960 960 960"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm0 400Z"/></symbol>
+    <symbol id="i-expand_more" viewBox="0 -960 960 960"><path d="M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z"/></symbol>
+    <symbol id="i-help" viewBox="0 -960 960 960"><path d="M478-240q21 0 35.5-14.5T528-290q0-21-14.5-35.5T478-340q-21 0-35.5 14.5T428-290q0 21 14.5 35.5T478-240Zm-36-154h74q0-33 7.5-52t42.5-52q26-26 41-49.5t15-56.5q0-56-41-86t-97-30q-57 0-92.5 30T342-618l66 26q5-18 22.5-39t53.5-21q32 0 48 17.5t16 38.5q0 20-12 37.5T506-526q-44 39-54 59t-10 73Zm38 314q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></symbol>
+    <symbol id="i-logout" viewBox="0 -960 960 960"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z"/></symbol>
+    <symbol id="i-domain" viewBox="0 -960 960 960"><path d="M80-120v-720h400v160h400v560H80Zm80-80h80v-80h-80v80Zm0-160h80v-80h-80v80Zm0-160h80v-80h-80v80Zm0-160h80v-80h-80v80Zm160 480h80v-80h-80v80Zm0-160h80v-80h-80v80Zm0-160h80v-80h-80v80Zm0-160h80v-80h-80v80Zm160 480h320v-400H480v80h80v80h-80v80h80v80h-80v80Zm160-240v-80h80v80h-80Zm0 160v-80h80v80h-80Z"/></symbol>
+    <symbol id="i-pets" viewBox="0 -960 960 960"><path d="M180-475q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29Zm180-160q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29Zm240 0q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29Zm180 160q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29ZM266-75q-45 0-75.5-34.5T160-191q0-52 35.5-91t70.5-77q29-31 50-67.5t50-68.5q22-26 51-43t63-17q34 0 63 16t51 42q28 32 49.5 69t50.5 69q35 38 70.5 77t35.5 91q0 47-30.5 81.5T694-75q-54 0-107-9t-107-9q-54 0-107 9t-107 9Z"/></symbol>
+    <symbol id="i-nature" viewBox="0 -960 960 960"><path d="M200-80v-80h240v-160h-80q-83 0-141.5-58.5T160-520q0-60 33-110.5t89-73.5q9-75 65.5-125.5T480-880q76 0 132.5 50.5T678-704q56 23 89 73.5T800-520q0 83-58.5 141.5T600-320h-80v160h240v80H200Zm160-320h240q50 0 85-35t35-85q0-36-20.5-66T646-630l-42-18-6-46q-6-45-39.5-75.5T480-800q-45 0-78.5 30.5T362-694l-6 46-42 18q-33 14-53.5 44T240-520q0 50 35 85t85 35Zm120-200Z"/></symbol>
+    <symbol id="i-counter_1" viewBox="0 -960 960 960"><path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Zm-20 200h80v-400H380v80h80v320Z"/></symbol>
+    <symbol id="i-directions_run" viewBox="0 -960 960 960"><path d="M520-40v-240l-84-80-40 176-276-56 16-80 192 40 64-324-72 28v136h-80v-188l158-68q35-15 51.5-19.5T480-720q21 0 39 11t29 29l40 64q26 42 70.5 69T760-520v80q-66 0-123.5-27.5T540-540l-24 120 84 80v300h-80Zm20-700q-33 0-56.5-23.5T460-820q0-33 23.5-56.5T540-900q33 0 56.5 23.5T620-820q0 33-23.5 56.5T540-740Z"/></symbol>
+    <symbol id="i-location_on" viewBox="0 -960 960 960"><path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 294q122-112 181-203.5T720-552q0-109-69.5-178.5T480-800q-101 0-170.5 69.5T240-552q0 71 59 162.5T480-186Zm0 106Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Zm0-480Z"/></symbol>
+    <symbol id="i-public" viewBox="0 -960 960 960"><path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm-40-82v-78q-33 0-56.5-23.5T360-320v-40L168-552q-3 18-5.5 36t-2.5 36q0 121 79.5 212T440-162Zm276-102q20-22 36-47.5t26.5-53q10.5-27.5 16-56.5t5.5-59q0-98-54.5-179T600-776v16q0 33-23.5 56.5T520-680h-80v80q0 17-11.5 28.5T400-560h-80v80h240q17 0 28.5 11.5T600-440v120h40q26 0 47 15.5t29 40.5Z"/></symbol>
+    <symbol id="i-location_city" viewBox="0 -960 960 960"><path d="M120-120v-560h240v-80l120-120 120 120v240h240v400H120Zm80-80h80v-80h-80v80Zm0-160h80v-80h-80v80Zm0-160h80v-80h-80v80Zm240 320h80v-80h-80v80Zm0-160h80v-80h-80v80Zm0-160h80v-80h-80v80Zm0-160h80v-80h-80v80Zm240 480h80v-80h-80v80Zm0-160h80v-80h-80v80Z"/></symbol>
+    <symbol id="i-nature_people" viewBox="0 -960 960 960"><path d="M180-520q-26 0-43-17t-17-43q0-26 17-43t43-17q26 0 43 17t17 43q0 26-17 43t-43 17ZM120-80v-200H80v-160q0-17 11.5-28.5T120-480h120q17 0 28.5 11.5T280-440v160h-40v120h320v-200h-70q-71 0-120.5-49.5T320-530q0-53 28.5-94.5T422-686q11-65 60.5-109.5T600-840q68 0 117.5 44.5T778-686q45 20 73.5 61.5T880-530q0 71-49.5 120.5T710-360h-70v200h200v80H120Zm370-360h220q38 0 64-26t26-64q0-27-14.5-49T746-612l-42-18-6-44q-6-37-33.5-61.5T600-760q-37 0-64.5 24.5T502-674l-6 44-42 18q-25 11-39.5 33T400-530q0 38 26 64t64 26Zm110-160Z"/></symbol>
+    <symbol id="i-forest" viewBox="0 -960 960 960"><path d="M280-80v-160H0l154-240H80l280-400 120 172 120-172 280 400h-74l154 240H680v160H520v-160h-80v160H280Zm389-240h145L659-560h67L600-740l-71 101 111 159h-74l103 160Zm-523 0h428L419-560h67L360-740 234-560h67L146-320Zm0 0h155-67 252-67 155-428Zm523 0H566h74-111 197-67 155-145Zm-149 80h160-160Zm201 0Z"/></symbol>
+    <symbol id="i-explore" viewBox="0 -960 960 960"><path d="m260-260 300-140 140-300-300 140-140 300Zm220-180q-17 0-28.5-11.5T440-480q0-17 11.5-28.5T480-520q17 0 28.5 11.5T520-480q0 17-11.5 28.5T480-440Zm0 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></symbol>
+    <symbol id="i-my_location" viewBox="0 -960 960 960"><path d="M440-42v-80q-125-14-214.5-103.5T122-440H42v-80h80q14-125 103.5-214.5T440-838v-80h80v80q125 14 214.5 103.5T838-520h80v80h-80q-14 125-103.5 214.5T520-122v80h-80Zm40-158q116 0 198-82t82-198q0-116-82-198t-198-82q-116 0-198 82t-82 198q0 116 82 198t198 82Zm0-120q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm0-80q33 0 56.5-23.5T560-480q0-33-23.5-56.5T480-560q-33 0-56.5 23.5T400-480q0 33 23.5 56.5T480-400Zm0-80Z"/></symbol>
+    <symbol id="i-map" viewBox="0 -960 960 960"><path d="m600-120-240-84-186 72q-20 8-37-4.5T120-170v-560q0-13 7.5-23t20.5-15l212-72 240 84 186-72q20-8 37 4.5t17 33.5v560q0 13-7.5 23T812-192l-212 72Zm-40-98v-468l-160-56v468l160 56Zm80 0 120-40v-474l-120 46v468Zm-440-10 120-46v-468l-120 40v474Zm440-458v468-468Zm-320-56v468-468Z"/></symbol>
+    <symbol id="i-stylus_note" viewBox="0 -960 960 960"><path d="m499-287 335-335-52-52-335 335 52 52Zm-261 87q-100-5-149-42T40-349q0-65 53.5-105.5T242-503q39-3 58.5-12.5T320-542q0-26-29.5-39T193-600l7-80q103 8 151.5 41.5T400-542q0 53-38.5 83T248-423q-64 5-96 23.5T120-349q0 35 28 50.5t94 18.5l-4 80Zm280 7L353-358l382-382q20-20 47.5-20t47.5 20l70 70q20 20 20 47.5T900-575L518-193Zm-159 33q-17 4-30-9t-9-30l33-159 165 165-159 33Z"/></symbol>
+    <symbol id="i-progress_activity" viewBox="0 -960 960 960"><path d="M480-80q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 31.5-155.5t86-127Q252-817 325-848.5T480-880q17 0 28.5 11.5T520-840q0 17-11.5 28.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160q133 0 226.5-93.5T800-480q0-17 11.5-28.5T840-520q17 0 28.5 11.5T880-480q0 82-31.5 155t-86 127.5q-54.5 54.5-127 86T480-80Z"/></symbol>
+  </svg>
+
+  
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
@@ -22,9 +45,9 @@
             <img src="../../assets/favicon/logo-txt3.png" alt="ZitBIO Logo" class="fo-logo-img">
         </div>
         <div class="user-menu" id="userMenu">
-            <span class="material-symbols-outlined">person</span>
+            <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-person"/></svg>
             <span class="user-menu-name">Wangu Ng'ambi</span>
-            <span class="material-symbols-outlined user-menu-arrow">expand_more</span>
+            <svg class="material-symbols-outlined user-menu-arrow" aria-hidden="true"><use href="#i-expand_more"/></svg>
 
             <div class="user-dropdown">
                 <!-- Header -->
@@ -37,11 +60,11 @@
                 <!-- Menu Items -->
                 <div class="user-dropdown-items">
                     <div class="user-dropdown-item" tabindex="0" data-action="help">
-                        <span class="material-symbols-outlined dropdown-icon">help</span>
+                        <svg class="material-symbols-outlined dropdown-icon" aria-hidden="true"><use href="#i-help"/></svg>
                         Help
                     </div>
                     <div class="user-dropdown-item user-dropdown-item--destructive" tabindex="0" data-action="logout">
-                        <span class="material-symbols-outlined dropdown-icon">logout</span>
+                        <svg class="material-symbols-outlined dropdown-icon" aria-hidden="true"><use href="#i-logout"/></svg>
                         Logout
                     </div>
                 </div>
@@ -74,14 +97,14 @@
                         <div class="fo-field">
                             <label class="fo-label">Officer Name <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">person</span>
+                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-person"/></svg>
                                 <input type="text" id="officerName" class="fo-input" placeholder="Auto-filled from session" readonly>
                             </div>
                         </div>
                         <div class="fo-field">
                             <label class="fo-label">Institution <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">domain</span>
+                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-domain"/></svg>
                                 <input type="text" id="institutionName" class="fo-input" placeholder="Auto-filled from session" readonly>
                             </div>
                         </div>
@@ -109,7 +132,7 @@
                         <div class="fo-field">
                             <label class="fo-label">Common Name <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">pets</span>
+                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-pets"/></svg>
                                 <input type="text" id="commonName" class="fo-input" placeholder="Zebra" required>
                             </div>
                             <span class="fo-error" id="commonNameError">Common name is required</span>
@@ -117,7 +140,7 @@
                         <div class="fo-field">
                             <label class="fo-label">Scientific Name <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">Nature</span>
+                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-nature"/></svg>
                                 <input type="text" id="scientificName" class="fo-input fo-input-italic" placeholder="Equus quagga" required>
                             </div>
                             <span class="fo-error" id="scientificNameError">Scientific name is required</span>
@@ -125,7 +148,7 @@
                         <div class="fo-field">
                             <label class="fo-label">Count <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap fo-count-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">counter_1</span>
+                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-counter_1"/></svg>
                                 <button type="button" class="fo-stepper-btn" id="countMinus" aria-label="Decrease">−</button>
                                 <input type="number" id="populationCount" class="fo-input fo-count-input" value="1" min="1" required>
                                 <button type="button" class="fo-stepper-btn" id="countPlus" aria-label="Increase">+</button>
@@ -135,7 +158,7 @@
                         <div class="fo-field">
                             <label class="fo-label">Activity</label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">directions_run</span>
+                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-directions_run"/></svg>
                                 <select id="activity" class="fo-input">
                                     <option value="">Select activity...</option>
                                     <option value="Feeding">Feeding</option>
@@ -160,21 +183,21 @@
                         <div class="fo-field">
                             <label class="fo-label">Province / State <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">location_on</span>
+                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-location_on"/></svg>
                                 <input type="text" id="provinceState" class="fo-input" value="Copperbelt Province" readonly>
                             </div>
                         </div>
                         <div class="fo-field">
                             <label class="fo-label">Country</label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">public</span>
+                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-public"/></svg>
                                 <input type="text" id="country" class="fo-input" value="Zambia" readonly>
                             </div>
                         </div>
                         <div class="fo-field">
                             <label class="fo-label">City</label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">location_city</span>
+                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-location_city"/></svg>
                                 <input type="text" id="city" class="fo-input" placeholder="Kitwe (optional)">
                             </div>
                         </div>
@@ -185,7 +208,7 @@
                         <div class="fo-field">
                             <label class="fo-label">Focus Area <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">nature_people</span>
+                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-nature_people"/></svg>
                                 <select id="focusArea" class="fo-input" required>
                                     <option value="">Select focus area...</option>
                                     <option value="The CBU Nature Park">The CBU Nature Park</option>
@@ -197,7 +220,7 @@
                         <div class="fo-field">
                             <label class="fo-label">Habitat Type <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
-                                <span class="material-symbols-outlined fo-input-icon">forest</span>
+                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-forest"/></svg>
                                 <select id="habitatType" class="fo-input" required>
                                     <option value="">Select habitat...</option>
                                     <option value="CBU Nature Park - Grassland + Woodland (Mixed)">CBU Nature Park - Grassland + Woodland (Mixed)</option>
@@ -210,15 +233,15 @@
                             <label class="fo-label">GPS Coordinates</label>
                             <div class="fo-gps-row">
                                 <div class="fo-input-wrap fo-gps-input">
-                                    <span class="material-symbols-outlined fo-input-icon">explore</span>
+                                    <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-explore"/></svg>
                                     <input type="number" step="any" id="latitude" class="fo-input" placeholder="latitude">
                                 </div>
                                 <div class="fo-input-wrap fo-gps-input">
-                                    <span class="material-symbols-outlined fo-input-icon">explore</span>
+                                    <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-explore"/></svg>
                                     <input type="number" step="any" id="longitude" class="fo-input" placeholder="longitude">
                                 </div>
                                 <button type="button" class="fo-gps-btn" id="gpsCaptureBtn" aria-label="Capture GPS" title="Capture Current GPS Location">
-                                    <span class="material-symbols-outlined" id="gpsIcon">my_location</span>
+                                    <svg class="material-symbols-outlined" id="gpsIcon" aria-hidden="true"><use href="#i-my_location"/></svg>
                                 </button>
                             </div>
                             <span class="fo-helper">Click compass icon to capture current GPS</span>
@@ -237,14 +260,14 @@
                             <div class="fo-field">
                                 <label class="fo-label">Location Description</label>
                                 <div class="fo-input-wrap fo-textarea-wrap">
-                                    <span class="material-symbols-outlined fo-input-icon">map</span>
+                                    <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-map"/></svg>
                                     <textarea id="localityDescription" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Describe the specific location, landmarks, or track markers..."></textarea>
                                 </div>
                             </div>
                             <div class="fo-field" style="margin-top: 16px;">
                                 <label class="fo-label">Field Notes</label>
                                 <div class="fo-input-wrap fo-textarea-wrap">
-                                    <span class="material-symbols-outlined fo-input-icon">stylus_note</span>
+                                    <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-stylus_note"/></svg>
                                     <textarea id="fieldNotes" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Behavior details, health status, weather conditions, or any additional observations..."></textarea>
                                 </div>
                             </div>

@@ -112,7 +112,8 @@
 }
 
 .last-login-icon {
-    font-size: 16px !important;
+    width: 16px !important;
+    height: 16px !important;
     color: var(--color-text-muted);
     flex-shrink: 0;
 }
@@ -215,7 +216,8 @@
 }
 
 .page-users .user-modal-header .icon-btn .material-symbols-outlined {
-    font-size: 18px;
+    width: 18px;
+    height: 18px;
 }
 
 .page-users .user-modal-header .icon-btn:hover {
@@ -279,7 +281,8 @@
 }
 
 .page-users .user-modal-body .section-heading .section-icon {
-    font-size: 18px;
+    width: 18px;
+    height: 18px;
     color: var(--color-text-muted);
 }
 

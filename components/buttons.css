@@ -388,23 +388,18 @@
 }
 
 .nav-icon {
-    font-size: 24px;
-    font-variation-settings: 'wght' 400;
+    width: 24px;
+    height: 24px;
     color: var(--color-text-secondary);
     transition: all var(--transition-fast);
 }
 
 .nav-item:hover .nav-icon {
-    font-variation-settings: 'wght' 500;
+    color: var(--color-text-main);
 }
 
 .nav-item.active .nav-icon {
-    font-variation-settings: 'wght' 600;
     color: var(--color-primary);
-}
-
-.nav-item.logout:hover .nav-icon {
-    font-variation-settings: 'wght' 500;
 }
 
 /* ============================================
