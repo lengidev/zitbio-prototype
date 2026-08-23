@@ -4,6 +4,20 @@
  */
 
 /* ============================================
+   Self-hosted Inter (variable) — replaces the remote
+   Google Fonts fetch that blocked rendering on every page.
+   font-display: swap keeps text visible (system-ui) while
+   the font loads in the background (no render block, no FOUT).
+   ============================================ */
+@font-face {
+  font-family: 'Inter';
+  src: url('../assets/fonts/inter.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================
    CSS Reset & Base Styles
    ============================================ */
 *,
