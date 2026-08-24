@@ -451,7 +451,7 @@ function getProvinceOptions() {
 // placeholder for the select). Falls back to literals if BioData is missing.
 function getHabitatOptions() {
     var types = (window.BioData && window.BioData.HABITAT_TYPES) ||
-        ['CBU Nature Park - Grassland + Woodland (Mixed)', 'The CBU - Urban'];
+        ['Miombo Woodland', 'Urban'];
     return [''].concat(types);
 }
 
