@@ -165,18 +165,6 @@ function handleObsSearch() {
     renderObsTable();
 }
 
-// Format date from YYYY-MM-DD to readable format
-function formatDateStr(dateStr) {
-    if (!dateStr) return '—';
-    var parts = dateStr.split('-');
-    if (parts.length !== 3) return dateStr;
-    var year = parts[0];
-    var monthNum = parseInt(parts[1], 10);
-    var day = parseInt(parts[2], 10);
-    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months[monthNum - 1] + ' ' + day + ', ' + year;
-}
-
 // Format time from timestamp
 function formatTimeStr(timestamp) {
     if (!timestamp) return '—';
@@ -239,7 +227,7 @@ function viewRecordById(id) {
     document.getElementById('fldActivity').textContent = obs.activity || 'Not recorded';
     
     var dateStr = obs.timestamp ? obs.timestamp.split('T')[0] : '';
-    document.getElementById('fldDate').textContent = formatDateStr(dateStr);
+    document.getElementById('fldDate').textContent = formatObsDate(dateStr);
     document.getElementById('fldTime').textContent = formatTimeStr(obs.timestamp);
 
     // Location fields

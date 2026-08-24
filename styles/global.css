@@ -298,34 +298,53 @@ td {
 
 /* ============================================
    Responsive Icon Scaling (consolidated)
-   Prevents duplicate media queries across files
+   Tier sizes (large/medium/small) are set per breakpoint via CSS
+   custom properties; a single rule applies them, avoiding duplicated
+   selector lists across media queries.
    ============================================ */
 
-/* Tablet: shrink icons */
-@media (max-width: 1023px) and (min-width: 768px) {
-  /* Large icons: 24px → 22px */
+/* Tier values at each breakpoint (desktop keeps each component's own base) */
+@media (max-width: 1023px) {
+  :root {
+    --icon-size-lg: 22px;
+    --icon-size-md: 18px;
+    --icon-size-sm: 16px;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --icon-size-lg: 20px;
+    --icon-size-md: 16px;
+    --icon-size-sm: 14px;
+  }
+}
+
+/* Apply the active tier sizes (only shrinks at ≤1023px) */
+@media (max-width: 1023px) {
+  /* Large icons */
   .nav-icon,
   .hamburger .material-symbols-outlined,
   .notification-btn .material-symbols-outlined {
-    width: 22px; height: 22px;
+    width: var(--icon-size-lg); height: var(--icon-size-lg);
   }
 
-  /* Medium icons: 20px → 18px */
+  /* Medium icons */
   .btn-icon svg, .btn-icon .material-symbols-outlined,
   .user-menu svg, .user-menu .material-symbols-outlined,
   .notification-icon .material-symbols-outlined,
   .user-dropdown-item .dropdown-icon {
-    width: 18px; height: 18px; font-size: 18px;
+    width: var(--icon-size-md); height: var(--icon-size-md); font-size: var(--icon-size-md);
   }
 
-  /* Small icons: 18px → 16px */
+  /* Small icons */
   .btn svg, .btn .material-symbols-outlined,
   .page-btn svg, .page-btn .material-symbols-outlined,
   .pagi-btn svg, .pagi-btn .material-symbols-outlined,
   .btn-export svg, .btn-add svg,
   .btn-export .material-symbols-outlined, .btn-add .material-symbols-outlined,
   .user-menu-arrow {
-    width: 16px; height: 16px; font-size: 16px;
+    width: var(--icon-size-sm); height: var(--icon-size-sm); font-size: var(--icon-size-sm);
   }
 
   .notification-empty .material-symbols-outlined {
@@ -333,34 +352,27 @@ td {
   }
 }
 
-/* Mobile: shrink icons */
 @media (max-width: 767px) {
-  /* Large icons: 24px → 20px */
-  .nav-icon,
-  .hamburger .material-symbols-outlined,
-  .notification-btn .material-symbols-outlined {
-    width: 20px; height: 20px;
-  }
-
-  /* Medium icons: 20px → 16px */
-  .btn-icon svg, .btn-icon .material-symbols-outlined,
-  .user-menu svg, .user-menu .material-symbols-outlined,
-  .notification-icon .material-symbols-outlined,
-  .user-dropdown-item .dropdown-icon {
-    width: 16px; height: 16px; font-size: 16px;
-  }
-
-  /* Small icons: 18px → 14px */
-  .btn svg, .btn .material-symbols-outlined,
-  .page-btn svg, .page-btn .material-symbols-outlined,
-  .pagi-btn svg, .pagi-btn .material-symbols-outlined,
-  .btn-export svg, .btn-add svg,
-  .btn-export .material-symbols-outlined, .btn-add .material-symbols-outlined,
-  .user-menu-arrow {
-    width: 14px; height: 14px; font-size: 14px;
-  }
-
   .notification-empty .material-symbols-outlined {
     width: 32px; height: 32px;
   }
+}
+
+/* Shared pagination-button base (analytics pagi-btn/page-num + observations page-item) */
+.page-analytics .pagi-btn,
+.page-analytics .page-num,
+.page-observations .page-item {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    background-color: var(--color-bg-white);
+    border: 1px solid var(--border-color);
+    color: var(--color-text-secondary);
 }

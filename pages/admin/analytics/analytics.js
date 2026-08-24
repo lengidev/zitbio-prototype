@@ -1465,6 +1465,26 @@ function buildReportHabitats(data) {
   container.innerHTML = html;
 }
 
+/**
+ * Push a "Trend line" Chart.js dataset onto an array of datasets.
+ * Shared by the Report and Graphs trend charts (deduplicated).
+ * Returns nothing — mutates the datasets array in place.
+ */
+function pushTrendLineDataset(datasets, trend) {
+  if (trend.fitted && trend.fitted.length > 1) {
+    datasets.push({
+      label: 'Trend line',
+      data: trend.fitted.map(function(f) { return f.value; }),
+      borderColor: trend.direction === 'declining' ? '#E53935' : '#8D6E63',
+      borderDash: [5, 5],
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false,
+      tension: 0
+    });
+  }
+}
+
 function buildReportTrendChart(data) {
   var canvas = document.getElementById('reportTrendChart');
   if (!canvas || typeof Chart === 'undefined') return;
@@ -1500,18 +1520,7 @@ function buildReportTrendChart(data) {
     pointRadius: 4,
     pointBackgroundColor: '#2E7D32'
   }];
-  if (trend.fitted && trend.fitted.length > 1) {
-    datasets.push({
-      label: 'Trend line',
-      data: trend.fitted.map(function(f) { return f.value; }),
-      borderColor: trend.direction === 'declining' ? '#E53935' : '#8D6E63',
-      borderDash: [5, 5],
-      borderWidth: 2,
-      pointRadius: 0,
-      fill: false,
-      tension: 0
-    });
-  }
+  pushTrendLineDataset(datasets, trend);
 
   reportTrendChartInstance = new Chart(ctx, {
     type: 'line',
@@ -1967,18 +1976,7 @@ function buildGraphsCharts(data) {
     pointBorderColor: '#ffffff',
     pointBorderWidth: 2
   }];
-  if (trend.fitted && trend.fitted.length > 1) {
-    tDatasets.push({
-      label: 'Trend line',
-      data: trend.fitted.map(function(f) { return f.value; }),
-      borderColor: trend.direction === 'declining' ? '#E53935' : '#8D6E63',
-      borderDash: [5, 5],
-      borderWidth: 2,
-      pointRadius: 0,
-      fill: false,
-      tension: 0
-    });
-  }
+  pushTrendLineDataset(tDatasets, trend);
   graphTrendChartInstance = makeLineChart(trendCanvas, tDatasets, 'Count', { labels: tLabels, integerY: true, tooltipUnit: 'individuals' });
 
   // Explain why no trend line is drawn yet (needs >= 2 survey buckets).

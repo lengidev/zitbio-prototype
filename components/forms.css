@@ -264,34 +264,6 @@ select.form-input:disabled {
   padding-left: 36px;
 }
 
-/* Password Toggle Button */
-.password-toggle {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.6;
-  transition: opacity var(--transition-fast);
-  color: var(--color-text-muted);
-}
-
-.password-toggle:hover {
-  opacity: 1;
-  color: var(--color-text-main);
-}
-
-.password-toggle svg {
-  width: 18px;
-  height: 18px;
-}
-
 /* ============================================
    Error & Success Messages
    ============================================ */

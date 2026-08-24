@@ -138,27 +138,7 @@
     display: flex;
 }
 
-/* Modal Card Base */
-.page-users .user-modal-card {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) translateY(12px) scale(0.98);
-    z-index: var(--z-modal);
-    width: 100%;
-    max-width: 460px;
-    max-height: 88vh;
-    display: flex;
-    flex-direction: column;
-    background: var(--color-bg-white);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-modal);
-    overflow: hidden;
-    opacity: 0;
-    pointer-events: none;
-    transition: transform 250ms ease-out, opacity 150ms ease;
-}
-
+/* Modal Card Base — shared with observations modal (see modals.css) */
 .page-users .modal-overlay#addUserModal.active .user-modal-card,
 .page-users .modal-overlay#editUserModal.active .user-modal-card {
     opacity: 1;

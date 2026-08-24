@@ -146,21 +146,7 @@
     height: 16px;
 }
 
-/* Column Toggle Dropdown */
-.col-toggle-dropdown {
-    display: none;
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 4px;
-    background: var(--color-bg-white);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    z-index: 500;
-    min-width: 220px;
-    padding: 8px 0;
-}
+/* Column Toggle Dropdown — base shared with .obs-search-dropdown (see buttons.css) */
 
 .col-toggle-dropdown.open {
     display: block;
@@ -330,22 +316,6 @@
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-.page-analytics .pagi-btn {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    background-color: var(--color-bg-white);
-    border: 1px solid var(--border-color);
-    color: var(--color-text-secondary);
 }
 
 .page-analytics .pagi-btn:hover:not(:disabled) {
@@ -643,22 +613,6 @@
 .page-analytics .page-numbers {
     display: flex;
     gap: 4px;
-}
-
-.page-analytics .page-num {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    background-color: var(--color-bg-white);
-    border: 1px solid var(--border-color);
-    color: var(--color-text-secondary);
 }
 
 .page-analytics .page-num.active {
@@ -1023,8 +977,9 @@
     border-left: 1px solid var(--border-color-light);
 }
 
-/* Tablet + iPad: 768px - 1024px — Summary KPIs become a clean 2×2 grid */
-@media (max-width: 1024px) and (min-width: 768px) {
+/* Tablet + Mobile ≤1024px — Summary KPIs stay a clean 2×2 grid
+   (consolidated: was duplicated across the 768-1024 and ≤767 queries) */
+@media (max-width: 1024px) {
     .page-analytics .report-summary-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -1331,16 +1286,6 @@
     .page-analytics .graph-box--wide,
     .page-analytics .report-card--wide {
         grid-column: auto;
-    }
-    /* Summary KPIs become a clean 2×2 grid */
-    .page-analytics .report-summary-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .page-analytics .report-kpi:nth-child(odd) {
-        border-left: none;
-    }
-    .page-analytics .report-kpi:nth-child(n + 3) {
-        border-top: 1px solid var(--border-color-light);
     }
     /* Report toolbar — mobile: export buttons fill the row side by side
        (50/50), and the confidence line sits below them. */

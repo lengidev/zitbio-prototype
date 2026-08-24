@@ -122,13 +122,26 @@ function initFieldOfficer() {
   // --- Default date/time to now ---
   var dateEl = document.getElementById('obsDate');
   var timeEl = document.getElementById('obsTime');
-  if (dateEl) {
-    var now = new Date();
-    dateEl.value = now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate());
+  setDateTimeToNow();
+
+  // --- Shared date/time + validation-error helpers ---
+  // "Reset to now" is reused by initial load, Cancel, and Submit so the
+  // field-officer form always behaves identically.
+  function setDateTimeToNow() {
+    if (dateEl) {
+      var n = new Date();
+      dateEl.value = n.getFullYear() + '-' + pad2(n.getMonth() + 1) + '-' + pad2(n.getDate());
+    }
+    if (timeEl) {
+      var tn = new Date();
+      timeEl.value = pad2(tn.getHours()) + ':' + pad2(tn.getMinutes());
+    }
   }
-  if (timeEl) {
-    var t = new Date();
-    timeEl.value = pad2(t.getHours()) + ':' + pad2(t.getMinutes());
+
+  function resetDateTimeAndErrors() {
+    setDateTimeToNow();
+    document.querySelectorAll('.fo-input.error').forEach(function(el) { el.classList.remove('error'); });
+    document.querySelectorAll('.fo-error.show').forEach(function(el) { el.classList.remove('show'); });
   }
 
   // --- Species auto-detect from common name ---
@@ -260,17 +273,7 @@ function initFieldOfficer() {
   if (btnCancel) {
     btnCancel.addEventListener('click', function() {
       document.getElementById('observationForm').reset();
-      if (dateEl) {
-        var n = new Date();
-        dateEl.value = n.getFullYear() + '-' + pad2(n.getMonth() + 1) + '-' + pad2(n.getDate());
-      }
-      if (timeEl) {
-        var tn = new Date();
-        timeEl.value = pad2(tn.getHours()) + ':' + pad2(tn.getMinutes());
-      }
-      // Clear errors
-      document.querySelectorAll('.fo-input.error').forEach(function(el) { el.classList.remove('error'); });
-      document.querySelectorAll('.fo-error.show').forEach(function(el) { el.classList.remove('show'); });
+      resetDateTimeAndErrors();
       showToast('Form cleared.', 'success');
     });
   }
@@ -357,19 +360,8 @@ function initFieldOfficer() {
       if (instEl) instEl.value = session.institution_name || '';
     }
 
-    // Reset date/time to now
-    if (dateEl) {
-      var n = new Date();
-      dateEl.value = n.getFullYear() + '-' + pad2(n.getMonth() + 1) + '-' + pad2(n.getDate());
-    }
-    if (timeEl) {
-      var tn = new Date();
-      timeEl.value = pad2(tn.getHours()) + ':' + pad2(tn.getMinutes());
-    }
-
-    // Clear all errors
-    document.querySelectorAll('.fo-input.error').forEach(function(el) { el.classList.remove('error'); });
-    document.querySelectorAll('.fo-error.show').forEach(function(el) { el.classList.remove('show'); });
+    // Reset date/time to now and clear validation errors
+    resetDateTimeAndErrors();
   });
 
   // --- Live error clearing as user types ---
