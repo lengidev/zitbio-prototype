@@ -1646,6 +1646,103 @@ function buildReportTrendChart(data) {
 }
 
 // ============================================================
+//  ECOSYSTEM INSIGHTS & MANAGEMENT (report card)
+// ============================================================
+function buildReportEcosystem(data) {
+  var container = document.getElementById('reportEcosystemContainer');
+  if (!container) return;
+  var BioData = window.BioData;
+  var registry = (BioData && BioData.getSpeciesRegistry) ? BioData.getSpeciesRegistry() : [];
+  var sites = (BioData && BioData.getSiteRegistry) ? BioData.getSiteRegistry() : [];
+  var ecology = (BioData && BioData.getSpeciesEcology) ? BioData.getSpeciesEcology() : {};
+  var insights = window.BioAnalytics.ecosystemInsights(data, { speciesRegistry: registry, sites: sites, ecology: ecology });
+
+  var s = insights.summary;
+  var html = '';
+
+  if (s.observations === 0) {
+    html = '<p class="report-empty">No verified observations matched the current filters, so ecological insights could not be generated.</p>';
+    container.innerHTML = html;
+    return;
+  }
+
+  // Counts for the overview: species with live data vs permanent trees.
+  var presentCount = 0;
+  var treeCount = 0;
+  insights.species.forEach(function(r) {
+    if (r.present) presentCount++;
+    if (r.flora && !r.present) treeCount++;
+  });
+
+  // 1. Overview
+  html += '<p class="report-eco-overview">This section explains the ecological role and environmental impact of each ' +
+    'monitored park species, what happens when a population rises or falls, and management recommendations. It covers ' +
+    s.parkSpeciesCount + ' monitored park species \u2014 ' + presentCount + ' with live observation data and ' +
+    treeCount + ' permanent woodland trees assumed present \u2014 across ' + s.observations +
+    ' verified observation(s) (Shannon diversity H\u2032 = ' + s.shannonIndex.toFixed(3) + ').</p>';
+
+  // 2. Species roles & environmental impact (dynamic — the impact text follows
+  //    the species' actual population state: up / down / healthy / assumed)
+  if (insights.species.length) {
+    html += '<h4 class="report-eco-section-title">Species roles &amp; environmental impact</h4>';
+    html += '<div class="report-eco-table-wrap"><table class="report-eco-table"><thead><tr>' +
+      '<th>Species</th><th>Ecological role</th><th>Environmental impact</th><th>Population status</th>' +
+      '</tr></thead><tbody>';
+    insights.species.forEach(function(r) {
+      var chip = '';
+      var impactText = '';
+      if (r.condition === 'up') {
+        chip = '<span class="report-eco-condition up">Population up \u2191</span>';
+        impactText = r.up;
+      } else if (r.condition === 'down') {
+        chip = '<span class="report-eco-condition down">Population down \u2193</span>';
+        impactText = r.down;
+      } else if (r.condition === 'assumed') {
+        chip = '<span class="report-eco-condition assumed">Assumed present</span>';
+        impactText = r.impact;
+      } else if (r.condition === 'nodata') {
+        chip = '<span class="report-eco-condition nodata">Awaiting observations</span>';
+        impactText = r.impact;
+      } else {
+        chip = '<span class="report-eco-condition healthy">Healthy</span>';
+        impactText = r.impact;
+      }
+      var status;
+      if (r.condition === 'assumed') {
+        status = '<span class="report-eco-permanent">Permanent woodland flora</span>';
+      } else if (!r.present) {
+        status = '<span class="report-eco-no-data">No records yet</span>';
+      } else if (r.estimate != null && r.baseline != null) {
+        // Trend-badge style (mirrors the Dashboard badge): the current
+        // estimate vs the expected baseline live inside the pill — no
+        // warning/critical labels.
+        var pct = (r.pctOfBaseline != null) ? r.pctOfBaseline : Math.round((r.estimate / r.baseline) * 100);
+        var tUp = pct >= 100;
+        status = '<span class="report-eco-status-badge ' + (tUp ? 'up' : 'down') + '">' +
+          (tUp ? '\u25b2' : '\u25bc') + ' Est. ' + r.estimate + ' vs expected ' + r.baseline + '</span>';
+      } else {
+        status = '\u2014';
+      }
+      html += '<tr><td><strong>' + analyticsEscape(r.common) + '</strong><div class="report-eco-sci">' + analyticsEscape(r.scientific) + '</div></td>' +
+        '<td>' + analyticsEscape(r.role) + '</td>' +
+        '<td>' + chip + '<span class="report-eco-impact-text">' + analyticsEscape(impactText) + '</span></td>' +
+        '<td>' + status + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  // 3. Management recommendations
+  html += '<h4 class="report-eco-section-title">Management recommendations</h4>';
+  html += '<ul class="report-eco-recs">';
+  insights.recommendations.forEach(function(r) {
+    html += '<li>' + analyticsEscape(r.action) + '</li>';
+  });
+  html += '</ul>';
+
+  container.innerHTML = html;
+}
+
+// ============================================================
 //  CSV EXPORT (raw numbers; respects include-pending toggle)
 // ============================================================
 
@@ -1847,6 +1944,59 @@ function buildReportPdfWarningRows(data) {
     });
 }
 
+function buildReportEcosystemPdf(data) {
+  var BioData = window.BioData;
+  var registry = (BioData && BioData.getSpeciesRegistry) ? BioData.getSpeciesRegistry() : [];
+  var sites = (BioData && BioData.getSiteRegistry) ? BioData.getSiteRegistry() : [];
+  var ecology = (BioData && BioData.getSpeciesEcology) ? BioData.getSpeciesEcology() : {};
+  var insights = window.BioAnalytics.ecosystemInsights(data, { speciesRegistry: registry, sites: sites, ecology: ecology });
+  var s = insights.summary;
+
+  var presentCount = 0;
+  var treeCount = 0;
+  insights.species.forEach(function(r) {
+    if (r.present) presentCount++;
+    if (r.flora && !r.present) treeCount++;
+  });
+  var paragraph = 'This section explains the ecological role and environmental impact of each monitored park species, what happens when a population rises or falls, and management recommendations. It covers ' +
+    s.parkSpeciesCount + ' monitored park species \u2014 ' + presentCount + ' with live observation data and ' +
+    treeCount + ' permanent woodland trees assumed present \u2014 across ' + s.observations +
+    ' verified observations (Shannon H\u2032 = ' + s.shannonIndex.toFixed(3) + ').';
+
+  var conditionLabel = {
+    up: 'Population up',
+    down: 'Population down',
+    healthy: 'Healthy',
+    assumed: 'Assumed present',
+    nodata: 'Awaiting observations'
+  };
+  var rows = insights.species.map(function(r) {
+    var status;
+    if (r.condition === 'assumed') {
+      status = 'Assumed present';
+    } else if (!r.present) {
+      status = 'No records yet';
+    } else if (r.severity === 'warning' || r.severity === 'critical') {
+      status = 'Below baseline';
+    } else {
+      status = 'At baseline';
+    }
+    return [r.common, r.role, status];
+  });
+  var impactLines = insights.species.map(function(r) {
+    var label = conditionLabel[r.condition] || 'Healthy';
+    var text = r.condition === 'up' ? r.up : (r.condition === 'down' ? r.down : r.impact);
+    return r.common + ' (' + label + '): ' + text;
+  });
+
+  return {
+    paragraph: paragraph,
+    rows: rows,
+    impactLines: impactLines,
+    recommendations: insights.recommendations
+  };
+}
+
 function exportReportPdf() {
   var PDFLib = window.jspdf;
   if (!PDFLib || !PDFLib.jsPDF) {
@@ -1949,6 +2099,21 @@ function exportReportPdf() {
     y = pdfWrapped(doc, 'No species are currently below their population baseline. Current estimates are within expected ranges.', marginX, y, maxW, 15, { size: 11 }) + 6;
   } else {
     y = pdfTable(doc, ['Species', 'Site', 'Estimate vs baseline', 'Severity'], warnRows, y, [140, 130, 150, 90]) + 10;
+  }
+
+  // Ecological insights & management
+  var eco = buildReportEcosystemPdf(data);
+  y = pdfSectionTitle(doc, 'Ecological Insights & Management', y);
+  y = pdfWrapped(doc, eco.paragraph, marginX, y, maxW, 15, { size: 11 }) + 6;
+  if (eco.rows.length) {
+    y = pdfTable(doc, ['Species', 'Ecological role', 'Population status'], eco.rows, y, [140, 240, 120]) + 6;
+  }
+  if (eco.impactLines.length) {
+    y = pdfWrapped(doc, 'Environmental impact & population response: ' + eco.impactLines.join(' '), marginX, y, maxW, 15, { size: 11 }) + 6;
+  }
+  if (eco.recommendations.length) {
+    var recText = 'Recommendations: ' + eco.recommendations.map(function(r) { return r.action; }).join(' ');
+    y = pdfWrapped(doc, recText, marginX, y, maxW, 15, { size: 11 }) + 6;
   }
 
   // Footer / methodology
@@ -2141,6 +2306,7 @@ function initReportTab() {
     buildReportWarnings(data);
     buildReportHabitats(data);
     buildReportTrendChart(data);
+    buildReportEcosystem(data);
   }
 
   // Populate the species dropdown on first mount only; if empty (a race
