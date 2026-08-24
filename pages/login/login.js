@@ -11,41 +11,54 @@
 /* ============================================
    PASSWORD TOGGLE
    ============================================ */
-function togglePassword() {
-  var pwd = document.getElementById('password');
-  var icon = document.getElementById('eyeIcon');
-  if (!pwd || !icon) return;
+function bindPasswordToggle(inputId, iconId, btnId) {
+  var pwd = document.getElementById(inputId);
+  var icon = document.getElementById(iconId);
+  var btn = document.getElementById(btnId);
+  if (!pwd || !icon || !btn) return;
 
-  if (pwd.type === 'password') {
-    pwd.type = 'text';
-    icon.querySelector('use').setAttribute('href', '#i-visibility_off');
-  } else {
-    pwd.type = 'password';
-    icon.querySelector('use').setAttribute('href', '#i-visibility');
-  }
+  btn.addEventListener('click', function() {
+    if (pwd.type === 'password') {
+      pwd.type = 'text';
+      icon.querySelector('use').setAttribute('href', '#i-visibility_off');
+    } else {
+      pwd.type = 'password';
+      icon.querySelector('use').setAttribute('href', '#i-visibility');
+    }
+  });
 }
 
 /* ============================================
    UI HELPERS
    ============================================ */
-function showLoginError(message) {
+// Insert a message (error or success) into whichever view is currently active
+// (login form or reset-password form) so it's always visible to the user.
+function showMessage(message, isError) {
+  var resetView = document.getElementById('resetView');
+  var form = (resetView && !resetView.hidden)
+    ? document.getElementById('resetPasswordForm')
+    : document.getElementById('loginForm');
   var loginBtn = document.getElementById('loginBtn') || document.querySelector('.login-btn');
   var existing = document.getElementById('loginError');
+  var existingOk = document.getElementById('loginSuccess');
   if (existing) existing.remove();
+  if (existingOk) existingOk.remove();
 
-  var error = document.createElement('div');
-  error.id = 'loginError';
-  error.className = 'login-error';
-  error.setAttribute('role', 'alert');
-  error.textContent = message;
+  var el = document.createElement('div');
+  el.id = isError ? 'loginError' : 'loginSuccess';
+  el.className = isError ? 'login-error' : 'login-success';
+  if (isError) el.setAttribute('role', 'alert');
+  el.textContent = message;
 
-  var form = document.getElementById('loginForm');
   if (form) {
-    form.insertBefore(error, form.firstChild);
+    form.insertBefore(el, form.firstChild);
   } else if (loginBtn && loginBtn.parentNode) {
-    loginBtn.parentNode.insertBefore(error, loginBtn);
+    loginBtn.parentNode.insertBefore(el, loginBtn);
   }
 }
+
+function showLoginError(message) { showMessage(message, true); }
+function showLoginSuccess(message) { showMessage(message, false); }
 
 function setLoginLoading(isLoading) {
   var loginBtn = document.getElementById('loginBtn') || document.querySelector('.login-btn');
@@ -166,6 +179,21 @@ function handleLogin(e) {
 /* ============================================
    FORGOT PASSWORD
    ============================================ */
+
+// Site base path, GitHub-Pages-subpath aware. Served at /Zitbio/ the pathname
+// is '/Zitbio/index.html' → base '/Zitbio/'; locally '/index.html' → '/'. Used
+// so the reset email link always points back to the REAL login page (the
+// dashboard Site URL alone pointed the link at localhost — the bug).
+function getSiteBase() {
+  var parts = window.location.pathname.split('/');
+  parts.pop(); // drop 'index.html' / trailing ''
+  return parts.join('/') + '/';
+}
+
+function getLoginRedirectUrl() {
+  return window.location.origin + getSiteBase() + 'index.html';
+}
+
 function handleForgot(e) {
   e.preventDefault();
   var email = document.getElementById('email');
@@ -178,14 +206,16 @@ function handleForgot(e) {
   if (window.BioSupabase && window.BioSupabase.isConfigured()) {
     BioSupabase.ready()
       .then(function(client) {
-        return client.auth.resetPasswordForEmail(emailValue);
+        return client.auth.resetPasswordForEmail(emailValue, {
+          redirectTo: getLoginRedirectUrl()
+        });
       })
       .then(function(result) {
         if (result.error) {
           showLoginError(result.error.message || 'Unable to send reset email. Try again.');
           return;
         }
-        showLoginError('Password reset link sent to ' + emailValue + '. Check your inbox.');
+        showLoginSuccess('Password reset link sent to ' + emailValue + '. Check your inbox.');
       })
       .catch(function() {
         showLoginError('Unable to send reset email. Please try again.');
@@ -193,6 +223,93 @@ function handleForgot(e) {
   } else {
     showLoginError('Supabase is not configured. Password reset is unavailable.');
   }
+}
+
+/* ============================================
+   PASSWORD RECOVERY (reset link clicked)
+   ============================================ */
+var recoveryActive = false;
+
+// The reset email link lands on index.html with a recovery token (implicit
+// flow: #access_token=...&type=recovery). Swap the login form for the
+// "set a new password" form.
+function isRecoveryLink() {
+  return window.location.hash.indexOf('type=recovery') !== -1;
+}
+
+// Swap between the login form and the "set a new password" form. Shared by
+// enterRecoveryMode / exitRecoveryMode so the DOM toggling lives in one place.
+function setRecoveryView(active) {
+  var loginForm = document.getElementById('loginForm');
+  var forgotLink = document.getElementById('forgotPasswordLink');
+  var resetView = document.getElementById('resetView');
+  var subtitle = document.getElementById('cardSubtitle');
+  if (loginForm) loginForm.hidden = active;
+  if (forgotLink) forgotLink.hidden = active;
+  if (resetView) resetView.hidden = !active;
+  if (subtitle) subtitle.textContent = active ? 'Set a new password' : 'Sign in to your account';
+}
+
+function enterRecoveryMode() {
+  if (recoveryActive) return;
+  recoveryActive = true;
+  setRecoveryView(true);
+  var pw = document.getElementById('newPassword');
+  if (pw) pw.focus();
+}
+
+function exitRecoveryMode(message) {
+  recoveryActive = false;
+  setRecoveryView(false);
+  if (message) showLoginSuccess(message);
+}
+
+function handleUpdatePassword(e) {
+  e.preventDefault();
+  var pw = document.getElementById('newPassword');
+  var confirm = document.getElementById('confirmPassword');
+  var btn = document.getElementById('updatePasswordBtn');
+  if (!pw || !confirm) return;
+
+  var newPassword = pw.value;
+  if (!newPassword || newPassword.length < 6) {
+    showLoginError('Password must be at least 6 characters long.');
+    return;
+  }
+  if (newPassword !== confirm.value) {
+    showLoginError('Passwords do not match. Please try again.');
+    return;
+  }
+  if (!window.BioSupabase || !window.BioSupabase.isConfigured()) {
+    showLoginError('Supabase is not configured. Password reset is unavailable.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Updating…';
+  BioSupabase.updatePassword(newPassword)
+    .then(function(result) {
+      if (result && result.error) {
+        showLoginError(result.error.message || 'Unable to update password. Try again.');
+        return false;
+      }
+      // Invalidate the recovery session so only this device keeps the change.
+      return BioSupabase.signOut().then(function() { return true; });
+    })
+    .then(function(ok) {
+      btn.disabled = false;
+      btn.textContent = 'Update Password';
+      if (ok) {
+        pw.value = '';
+        confirm.value = '';
+        exitRecoveryMode('Password updated successfully. Sign in with your new password.');
+      }
+    })
+    .catch(function() {
+      btn.disabled = false;
+      btn.textContent = 'Update Password';
+      showLoginError('Unable to update password. Please try again.');
+    });
 }
 
 /* ============================================
@@ -205,18 +322,39 @@ function initLogin() {
   var loginForm = document.getElementById('loginForm');
   var passwordToggleBtn = document.getElementById('passwordToggleBtn');
   var forgotPasswordLink = document.getElementById('forgotPasswordLink');
+  var resetForm = document.getElementById('resetPasswordForm');
+  var backToLoginLink = document.getElementById('backToLoginLink');
 
   if (loginForm) {
     loginForm.addEventListener('submit', handleLogin);
   }
 
-  if (passwordToggleBtn) {
-    passwordToggleBtn.addEventListener('click', togglePassword);
-  }
+  bindPasswordToggle('password', 'eyeIcon', 'passwordToggleBtn');
+  bindPasswordToggle('newPassword', 'newEyeIcon', 'newPasswordToggleBtn');
 
   if (forgotPasswordLink) {
     forgotPasswordLink.addEventListener('click', handleForgot);
   }
+
+  if (resetForm) {
+    resetForm.addEventListener('submit', handleUpdatePassword);
+  }
+  if (backToLoginLink) {
+    backToLoginLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      exitRecoveryMode();
+    });
+  }
+
+  // Password recovery: the reset link lands here with a recovery token. Swap
+  // to the "set a new password" form when the client processes it — or if the
+  // token was already processed before we subscribed (fallback hash check).
+  if (window.BioSupabase && window.BioSupabase.isConfigured() && window.BioSupabase.onAuthStateChange) {
+    window.BioSupabase.onAuthStateChange(function(event) {
+      if (event === 'PASSWORD_RECOVERY') enterRecoveryMode();
+    });
+  }
+  if (isRecoveryLink()) enterRecoveryMode();
 
   // Hide the demo helper text — real auth no longer accepts any password.
   var helperTexts = document.querySelectorAll('.helper-text');

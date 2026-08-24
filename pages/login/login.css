@@ -263,6 +263,43 @@
   color: var(--color-primary);
 }
 
+/* ---------- Password Recovery (reset link clicked) ---------- */
+.page-login .recovery-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-login .recovery-note {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0;
+  text-align: center;
+}
+
+/* `hidden` must win over the display:flex above, or the reset view would
+   stay visible even while hidden. */
+.page-login form[hidden],
+.page-login .recovery-view[hidden],
+.page-login .forgot-password[hidden] {
+  display: none;
+}
+
+/* Green success variant of .login-error. */
+.page-login .login-success {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  line-height: 1.4;
+  margin: 0;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 767px) {
   .page-login .top-nav {
