@@ -1217,6 +1217,7 @@ if (typeof window !== 'undefined') {
 
 // Lazily-built chart instances (destroy & rebuild on re-render).
 var reportTrendChartInstance = null;
+var reportHabitatChartInstance = null;
 var graphRichnessChartInstance = null;
 var graphShannonChartInstance = null;
 var graphTrendChartInstance = null;
@@ -1377,30 +1378,38 @@ function buildReportWarnings(data) {
   var container = document.getElementById('reportWarningsContainer');
   if (!container) return;
   var registry = (window.BioData && window.BioData.getSpeciesRegistry) ? window.BioData.getSpeciesRegistry() : [];
-  var warnings = window.BioAnalytics.lowPopulationWarnings(data, { speciesRegistry: registry });
+  var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
+  var warnings = window.BioAnalytics.lowPopulationWarnings(data, { speciesRegistry: registry, sites: sites });
   var active = warnings.filter(function(w) { return w.severity === 'warning' || w.severity === 'critical'; });
   var html = '';
   if (active.length === 0) {
-    html = '<p class="report-empty">No low-population warnings — current estimates are within baseline.</p>' +
-      (warnings.length === 0 ? '' : '<p class="report-meta">' + warnings.length + ' species/site combination(s) checked.</p>');
+    html = '<p class="report-empty">All species are within their expected population ranges — no warnings.</p>' +
+      (warnings.length === 0 ? '' : '<p class="report-meta">' + warnings.length + ' species/site combination(s) checked against their baselines.</p>');
   } else {
     active.forEach(function(w) {
-      var cls = w.severity === 'critical' ? 'status-flagged' : 'status-pending';
-      var iconName = w.severity === 'critical' ? 'error' : 'warning';
-      var sourceLabel = w.baselineSource === 'admin-set' ? 'admin baseline' :
-        (w.baselineSource === 'site-override' ? 'site baseline' : 'derived baseline');
+      var isCritical = w.severity === 'critical';
+      var cls = isCritical ? 'status-flagged' : 'status-pending';
+      var iconName = isCritical ? 'error' : 'warning';
+      var pct = (w.pctOfBaseline != null)
+        ? 'about ' + w.pctOfBaseline + '% of the expected population'
+        : 'well below the expected population';
+      var badge = '<span class="report-warning-badge ' + (isCritical ? 'badge-critical' : 'badge-warning') + '">' +
+        (isCritical ? 'Critical' : 'Warning') + '</span>';
+      var note = isCritical
+        ? 'Critical: the average number recorded per verified sighting is far below the expected population for this species. Verify recent field observations or review the baseline in Settings &rarr; Species &amp; Baselines.'
+        : 'The average number recorded per verified sighting is below the expected population. Re-check recent field observations, or review the baseline in Settings &rarr; Species &amp; Baselines.';
       html += '<div class="report-warning-row ' + cls + '">' +
         '<svg class="material-symbols-outlined report-warning-icon" aria-hidden="true"><use href="#i-' + iconName + '"/></svg>' +
         '<div class="report-warning-content">' +
-        '<div class="report-warning-title">' + analyticsEscape(w.speciesName) + ' · ' + analyticsEscape(w.siteName) + '</div>' +
-        '<div class="report-warning-meta">estimate ' + w.currentCount + ' vs ' + w.baseline +
-        ' (' + sourceLabel + ') · ' + w.severity + '</div>' +
+        '<div class="report-warning-title">' + analyticsEscape(w.speciesName) + ' &middot; ' + analyticsEscape(w.siteName) + badge + '</div>' +
+        '<div class="report-warning-meta">Estimated <strong>' + w.currentCount + '</strong> vs expected <strong>' + w.baseline + '</strong> &mdash; ' + pct + '</div>' +
+        '<div class="report-warning-note">' + note + '</div>' +
         '</div></div>';
     });
   }
   if (warnings.some(function(w) { return w.baselineSource === 'derived'; })) {
-    html += '<p class="report-meta">Baselines marked "derived" are auto-computed from verified observations — ' +
-      'set an admin baseline in Settings → Species & Baselines for authoritative numbers.</p>';
+    html += '<p class="report-meta">Baselines marked "derived" are auto-computed from verified observations &mdash; ' +
+      'set an admin baseline in Settings &rarr; Species &amp; Baselines for authoritative numbers.</p>';
   }
   container.innerHTML = html;
 }
@@ -1408,6 +1417,11 @@ function buildReportWarnings(data) {
 function buildReportHabitats(data) {
   var container = document.getElementById('reportHabitatContainer');
   if (!container) return;
+
+  // Destroy any previous chart so re-renders (filter changes) don't leak.
+  if (reportHabitatChartInstance) { reportHabitatChartInstance.destroy(); reportHabitatChartInstance = null; }
+
+  // Aggregate counts by habitat → species.
   var map = {};
   data.forEach(function(o) {
     var h = ((o.location && o.location.habitat_type) || 'Unspecified');
@@ -1418,23 +1432,145 @@ function buildReportHabitats(data) {
     map[h][sci] = map[h][sci] || { common: name, scientific: sci, count: 0 };
     map[h][sci].count += o.count || 0;
   });
-  var html = '';
+
   var habitats = Object.keys(map).sort();
-  if (habitats.length === 0) html = '<p class="report-empty">No species by habitat for the current filters.</p>';
+  if (habitats.length === 0) {
+    container.innerHTML = '<p class="report-empty">No species by habitat for the current filters.</p>';
+    return;
+  }
+
+  // Flatten to one row per species and rank by recorded count.
+  var rows = [];
+  var totalIndividuals = 0;
   habitats.forEach(function(h) {
-    var spList = Object.keys(map[h]).sort();
-    html += '<div class="report-habitat-group">' +
-      '<div class="report-habitat-name">' + analyticsEscape(h) + '</div>' +
-      '<div class="report-habitat-species">' +
-      spList.map(function(sci) {
-        var item = map[h][sci];
-        return '<span class="report-habitat-chip">' + analyticsEscape(item.common) +
-          (item.scientific ? ' <i>(' + analyticsEscape(item.scientific) + ')</i>' : '') +
-          ' · ' + item.count + '</span>';
-      }).join('') +
-      '</div></div>';
+    Object.keys(map[h]).forEach(function(sci) {
+      var item = map[h][sci];
+      totalIndividuals += item.count;
+      rows.push({ common: item.common, scientific: item.scientific, count: item.count, habitat: h });
+    });
   });
+  rows.sort(function(a, b) { return b.count - a.count; });
+
+  // Top N + an "Other" bucket for the long tail.
+  var TOP = 12;
+  var top = rows.slice(0, TOP);
+  var otherRows = rows.slice(TOP);
+  var otherCount = otherRows.reduce(function(s, r) { return s + r.count; }, 0);
+
+  var HABITAT_COLORS = { 'Miombo Woodland': '#2E7D32', 'Urban': '#1565C0' };
+  var OTHER_COLOR = '#90A4AE';
+  function colorFor(h) { return HABITAT_COLORS[h] || OTHER_COLOR; }
+
+  var labels = top.map(function(r) { return r.common; });
+  var values = top.map(function(r) { return r.count; });
+  var colors = top.map(function(r) { return colorFor(r.habitat); });
+  if (otherCount > 0) {
+    labels.push('Other species (' + otherRows.length + ')');
+    values.push(otherCount);
+    colors.push(OTHER_COLOR);
+  }
+
+  // Fit the chart height to the number of bars (no big empty space).
+  var wrapHeight = Math.max(120, labels.length * 36 + 30);
+
+  // Header: summary + habitat legend.
+  var html = '';
+  html += '<p class="report-habitat-summary">' + rows.length + ' species across ' + habitats.length +
+    ' habitat' + (habitats.length === 1 ? '' : 's') + ' · ' + totalIndividuals +
+    ' individuals. Showing the top ' + top.length +
+    (otherRows.length ? '; the remaining ' + otherRows.length + ' species are combined as "Other".' : '.') + '</p>';
+
+  var legendHtml = habitats.map(function(h) {
+    return '<span class="report-habitat-legend-item"><i class="report-habitat-dot" style="background:' + colorFor(h) + '"></i>' + analyticsEscape(h) + '</span>';
+  }).join('');
+  if (otherCount > 0) {
+    legendHtml += '<span class="report-habitat-legend-item"><i class="report-habitat-dot" style="background:' + OTHER_COLOR + '"></i>Other species</span>';
+  }
+  html += '<div class="report-habitat-legend">' + legendHtml + '</div>';
+  html += '<div class="report-habitat-chart-wrap" style="height:' + wrapHeight + 'px"><canvas id="reportHabitatChart"></canvas></div>';
+
   container.innerHTML = html;
+
+  if (typeof Chart === 'undefined') return;
+  var canvas = document.getElementById('reportHabitatChart');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+
+  // Draw the count at the end of each bar so the chart is readable without
+  // hovering (Chart.js core doesn't render data labels natively).
+  var valueLabelPlugin = {
+    id: 'habitatValueLabels',
+    afterDatasetsDraw: function(chart) {
+      var c = chart.ctx;
+      c.save();
+      c.font = '600 12px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+      c.fillStyle = '#334155';
+      c.textAlign = 'left';
+      c.textBaseline = 'middle';
+      chart.data.datasets.forEach(function(dataset, di) {
+        var meta = chart.getDatasetMeta(di);
+        meta.data.forEach(function(el, i) {
+          var val = dataset.data[i];
+          if (val == null) return;
+          c.fillText(String(val), el.x + 8, el.y);
+        });
+      });
+      c.restore();
+    }
+  };
+
+  reportHabitatChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Recorded individuals',
+        data: values,
+        backgroundColor: colors,
+        borderColor: colors,
+        borderWidth: 1,
+        borderRadius: 6,
+        barPercentage: 0.6,
+        categoryPercentage: 0.85
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          displayColors: false,
+          padding: 10,
+          titleFont: { size: 12, weight: '600' },
+          bodyFont: { size: 12 },
+          callbacks: {
+            label: function(context) {
+              var n = context.parsed.x;
+              var base = n + ' individual' + (n === 1 ? '' : 's');
+              var r = top[context.dataIndex];
+              if (r) return base + ' — ' + r.habitat + (r.scientific ? ' · ' + r.scientific : '');
+              return base + ' — combined total for the remaining species';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grace: '15%', // headroom for the bar-end value labels
+          grid: { color: '#eef2f6' },
+          ticks: { precision: 0, color: '#64748b', font: { size: 11 } }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#334155', font: { size: 12, weight: '500' } }
+        }
+      }
+    },
+    plugins: [valueLabelPlugin]
+  });
 }
 
 /**
@@ -1702,11 +1838,12 @@ function buildReportPdfHabitatRows(data) {
 
 function buildReportPdfWarningRows(data) {
   var registry = (window.BioData && window.BioData.getSpeciesRegistry) ? window.BioData.getSpeciesRegistry() : [];
-  var warnings = window.BioAnalytics.lowPopulationWarnings(data, { speciesRegistry: registry });
+  var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
+  var warnings = window.BioAnalytics.lowPopulationWarnings(data, { speciesRegistry: registry, sites: sites });
   return warnings
     .filter(function(w) { return w.severity === 'warning' || w.severity === 'critical'; })
     .map(function(w) {
-      return [w.speciesName, w.siteName, 'estimate ' + w.currentCount + ' vs ' + w.baseline, w.severity];
+      return [w.speciesName, w.siteName, 'estimated ' + w.currentCount + ' vs expected ' + w.baseline + ' (' + w.pctOfBaseline + '%)', w.severity];
     });
 }
 

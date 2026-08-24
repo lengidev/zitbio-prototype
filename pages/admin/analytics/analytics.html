@@ -479,14 +479,14 @@
                             <div class="analytics-card-body report-section" id="reportHabitatContainer"></div>
                         </div>
 
-                        <div class="analytics-card report-card report-card--wide">
-                            <div class="analytics-card-header"><h3>Population Trend</h3></div>
+                        <div class="analytics-card report-card report-card--wide report-trend-card">
                             <div class="analytics-card-body">
                                 <div class="report-trend-controls">
+                                    <h3 class="graph-title">Population Trend</h3>
                                     <select id="reportTrendSpecies" class="report-species-select"></select>
-                                    <span class="report-confidence" id="reportTrendNote"></span>
                                 </div>
                                 <canvas id="reportTrendChart"></canvas>
+                                <div id="reportTrendNote" class="graph-note"></div>
                             </div>
                         </div>
                     </div>

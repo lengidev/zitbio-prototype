@@ -886,11 +886,13 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
-    overflow: hidden;
+    overflow: visible; /* was hidden — that clipped Chart.js tooltips */
 }
 .page-analytics .report-card .analytics-card-header {
     padding: 14px 18px;
     border-bottom: 1px solid var(--border-color-light);
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
 }
 .page-analytics .report-card .analytics-card-header h3 {
     margin: 0;
@@ -1070,34 +1072,71 @@
     font-size: 12px;
     color: var(--color-text-secondary);
     margin-top: 2px;
+    line-height: 1.5;
+    word-break: break-word;
 }
+.page-analytics .report-warning-note {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-top: 6px;
+    line-height: 1.5;
+}
+.page-analytics .report-warning-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 8px;
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    vertical-align: 1px;
+    line-height: 1.4;
+}
+.page-analytics .report-warning-badge.badge-warning {
+    background: var(--color-warning);
+    color: #fff;
+}
+.page-analytics .report-warning-badge.badge-critical {
+    background: var(--color-danger);
+    color: #fff;
+}
+.page-analytics .report-warning-row.status-pending .report-warning-icon { color: var(--color-warning); }
+.page-analytics .report-warning-row.status-flagged .report-warning-icon { color: var(--color-danger); }
 
-.page-analytics .report-habitat-group {
-    margin-bottom: 12px;
+.page-analytics .report-habitat-summary {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-bottom: 10px;
+    line-height: 1.5;
 }
-.page-analytics .report-habitat-name {
-    font-weight: 600;
-    font-size: 13px;
-    color: var(--color-text-main);
-    margin-bottom: 6px;
-}
-.page-analytics .report-habitat-species {
+.page-analytics .report-habitat-legend {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 12px;
+    margin-bottom: 10px;
 }
-.page-analytics .report-habitat-chip {
+.page-analytics .report-habitat-legend-item {
     display: inline-flex;
     align-items: center;
+    gap: 6px;
     font-size: 12px;
-    background: var(--color-bg-header);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-full);
-    padding: 4px 10px;
-    color: var(--color-text-main);
-}
-.page-analytics .report-habitat-chip i {
     color: var(--color-text-secondary);
+}
+.page-analytics .report-habitat-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-full);
+    display: inline-block;
+}
+.page-analytics .report-habitat-chart-wrap {
+    position: relative;
+}
+/* The shared '.report-card canvas' rule forces a 220px height on every report
+   chart; the habitat chart must follow its (dynamic) wrapper height instead. */
+.page-analytics .report-card .report-habitat-chart-wrap canvas {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .page-analytics .report-trend-controls {
@@ -1116,6 +1155,18 @@
     background: var(--color-bg-white);
     color: var(--color-text-main);
     max-width: 260px;
+}
+
+/* Report "Population Trend" — designed like the Graphs tab card: title in the
+   body (no header bar), chart, note below the chart. */
+.page-analytics .report-trend-card .analytics-card-body {
+    padding: 20px;
+}
+.page-analytics .report-trend-card .report-trend-controls {
+    margin-bottom: 12px;
+}
+.page-analytics .report-trend-card .graph-title {
+    margin: 0;
 }
 
 /* ============================================================
