@@ -135,15 +135,22 @@ document.addEventListener('DOMContentLoaded', function() {
   // coverage rather than population increase).
   var trendBadge = document.getElementById('trendBadge');
   if (trendBadge) {
-    var pctChange = 0;
-    if (priorWeekTotal > 0) {
-      pctChange = ((thisWeekTotal - priorWeekTotal) / priorWeekTotal) * 100;
+    // Absence of sightings is NOT a population decline: when nothing was
+    // recorded this week show a neutral badge instead of a false '▼ 100%'.
+    if (thisWeekTotal === 0) {
+      trendBadge.className = 'trend-badge flat';
+      trendBadge.innerHTML = 'No sightings this week';
+    } else if (priorWeekTotal === 0) {
+      trendBadge.className = 'trend-badge up';
+      trendBadge.innerHTML = '&#9650; New sightings this week';
+    } else {
+      var pctChange = ((thisWeekTotal - priorWeekTotal) / priorWeekTotal) * 100;
+      var absPct = Math.round(Math.abs(pctChange));
+      var direction = pctChange >= 0 ? 'up' : 'down';
+      var arrow = pctChange >= 0 ? '&#9650;' : '&#9660;';
+      trendBadge.className = 'trend-badge ' + direction;
+      trendBadge.innerHTML = arrow + ' ' + absPct + '% vs last week';
     }
-    var absPct = Math.round(Math.abs(pctChange));
-    var direction = pctChange >= 0 ? 'up' : 'down';
-    var arrow = pctChange >= 0 ? '&#9650;' : '&#9660;';
-    trendBadge.className = 'trend-badge ' + direction;
-    trendBadge.innerHTML = arrow + ' ' + absPct + '% vs last week';
   }
 
   // Chart.js gradient fill — green tones to match ZitBIO branding

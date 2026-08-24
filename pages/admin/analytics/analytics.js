@@ -1593,6 +1593,24 @@ function pushTrendLineDataset(datasets, trend) {
   }
 }
 
+// When the most recent verified record is older than the staleness window,
+// the trend reflects earlier survey periods only — it must not be read as a
+// current decline.
+function trendRecencyNote(data) {
+  var staleDays = (window.BioAnalytics && window.BioAnalytics.thresholds && window.BioAnalytics.thresholds.STALE_DAYS) || 30;
+  var maxTs = 0;
+  (data || []).forEach(function(o) {
+    var ts = o && o.timestamp ? new Date(o.timestamp).getTime() : 0;
+    if (ts > maxTs) maxTs = ts;
+  });
+  if (!maxTs) return '';
+  var days = (Date.now() - maxTs) / 86400000;
+  if (days > staleDays) {
+    return ' Note: the most recent record is ' + Math.round(days) + ' days old — the trend reflects earlier survey periods only and should not be read as a current decline.';
+  }
+  return '';
+}
+
 function buildReportTrendChart(data) {
   var canvas = document.getElementById('reportTrendChart');
   if (!canvas || typeof Chart === 'undefined') return;
@@ -1607,10 +1625,11 @@ function buildReportTrendChart(data) {
   var labels = trend.dataPoints.map(function(b) { return b.label; });
   var vals = trend.dataPoints.map(function(b) { return b.value; });
 
+  var recencyNote = trendRecencyNote(data);
   if (trend.direction === 'insufficient_data' || vals.length < 2) {
-    if (noteEl) noteEl.textContent = (trend.note || 'Insufficient data for a trend — need multiple survey periods.');
+    if (noteEl) noteEl.textContent = (trend.note || 'Insufficient data for a trend — need multiple survey periods.') + recencyNote;
   } else {
-    if (noteEl) noteEl.textContent = trend.slope.toFixed(3) + ' / period · ' + trend.direction + ' (trend line, not a forecast)';
+    if (noteEl) noteEl.textContent = trend.slope.toFixed(3) + ' / period · ' + trend.direction + ' (trend line, not a forecast)' + recencyNote;
   }
 
   var ctx = canvas.getContext('2d');
@@ -1703,6 +1722,9 @@ function buildReportEcosystem(data) {
       } else if (r.condition === 'nodata') {
         chip = '<span class="report-eco-condition nodata">Awaiting observations</span>';
         impactText = r.impact;
+      } else if (r.condition === 'stale') {
+        chip = '<span class="report-eco-condition stale">No recent records</span>';
+        impactText = r.impact;
       } else {
         chip = '<span class="report-eco-condition healthy">Healthy</span>';
         impactText = r.impact;
@@ -1712,6 +1734,8 @@ function buildReportEcosystem(data) {
         status = '<span class="report-eco-permanent">Permanent woodland flora</span>';
       } else if (!r.present) {
         status = '<span class="report-eco-no-data">No records yet</span>';
+      } else if (r.condition === 'stale') {
+        status = '<span class="report-eco-no-data">No recent records</span>';
       } else if (r.estimate != null && r.baseline != null) {
         // Trend-badge style (mirrors the Dashboard badge): the current
         // estimate vs the expected baseline live inside the pill — no
@@ -1723,10 +1747,10 @@ function buildReportEcosystem(data) {
       } else {
         status = '\u2014';
       }
-      html += '<tr><td><strong>' + analyticsEscape(r.common) + '</strong><div class="report-eco-sci">' + analyticsEscape(r.scientific) + '</div></td>' +
-        '<td>' + analyticsEscape(r.role) + '</td>' +
-        '<td>' + chip + '<span class="report-eco-impact-text">' + analyticsEscape(impactText) + '</span></td>' +
-        '<td>' + status + '</td></tr>';
+      html += '<tr><td data-label="Species"><strong>' + analyticsEscape(r.common) + '</strong><div class="report-eco-sci">' + analyticsEscape(r.scientific) + '</div></td>' +
+        '<td data-label="Ecological role">' + analyticsEscape(r.role) + '</td>' +
+        '<td data-label="Environmental impact">' + chip + '<span class="report-eco-impact-text">' + analyticsEscape(impactText) + '</span></td>' +
+        '<td data-label="Population status">' + status + '</td></tr>';
     });
     html += '</tbody></table></div>';
   }
@@ -1968,14 +1992,17 @@ function buildReportEcosystemPdf(data) {
     down: 'Population down',
     healthy: 'Healthy',
     assumed: 'Assumed present',
-    nodata: 'Awaiting observations'
+    nodata: 'Awaiting observations',
+    stale: 'No recent records'
   };
   var rows = insights.species.map(function(r) {
     var status;
     if (r.condition === 'assumed') {
       status = 'Assumed present';
-    } else if (!r.present) {
+    } else if (r.condition === 'nodata') {
       status = 'No records yet';
+    } else if (r.condition === 'stale') {
+      status = 'No recent records';
     } else if (r.severity === 'warning' || r.severity === 'critical') {
       status = 'Below baseline';
     } else {
@@ -2076,9 +2103,10 @@ function exportReportPdf() {
   // Population trend (narrative + chart)
   var trend = window.BioAnalytics.populationTrend(data, null, null);
   y = pdfSectionTitle(doc, 'Population Trend', y);
+  var trendRecency = trendRecencyNote(data);
   var trendText = (trend.direction === 'insufficient_data' || !trend.dataPoints || trend.dataPoints.length < 2)
-    ? (trend.note || 'Insufficient data for a reliable trend; multiple survey periods are required.') + ' The chart below shows the observed counts recorded so far.'
-    : 'Across the recorded periods the population is ' + trend.direction + ' at ' + Math.abs(trend.slope).toFixed(1) + ' individuals per survey period (' + (trend.note || 'linear fit on observed buckets') + ').';
+    ? (trend.note || 'Insufficient data for a reliable trend; multiple survey periods are required.') + ' The chart below shows the observed counts recorded so far.' + trendRecency
+    : 'Across the recorded periods the population is ' + trend.direction + ' at ' + Math.abs(trend.slope).toFixed(1) + ' individuals per survey period (' + (trend.note || 'linear fit on observed buckets') + ').' + trendRecency;
   y = pdfWrapped(doc, trendText, marginX, y, maxW, 15, { size: 11 }) + 6;
   var trendCanvas = document.getElementById('reportTrendChart');
   if (trendCanvas && trend.dataPoints && trend.dataPoints.length > 0) {
@@ -2256,9 +2284,10 @@ function buildGraphsCharts(data) {
   // Explain why no trend line is drawn yet (needs >= 2 survey buckets).
   var trendNoteEl = document.getElementById('graphTrendNote');
   if (trendNoteEl) {
+    var gRecencyNote = trendRecencyNote(data);
     trendNoteEl.textContent = (trend.direction === 'insufficient_data' || !trend.fitted || trend.fitted.length < 2)
-      ? (trend.note || 'Insufficient data for a trend — need multiple survey periods.')
-      : (trend.slope.toFixed(3) + ' / period · ' + trend.direction + ' (trend line, not a forecast)');
+      ? (trend.note || 'Insufficient data for a trend — need multiple survey periods.') + gRecencyNote
+      : (trend.slope.toFixed(3) + ' / period · ' + trend.direction + ' (trend line, not a forecast)') + gRecencyNote;
   }
 }
 

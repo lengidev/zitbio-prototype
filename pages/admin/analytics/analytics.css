@@ -873,7 +873,7 @@
 }
 .page-analytics .report-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
 }
 .page-analytics .report-card--wide {
@@ -902,7 +902,7 @@
 }
 .page-analytics .report-summary-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .page-analytics .report-kpi {
     padding: 18px 16px;
@@ -916,7 +916,7 @@
    (consolidated: was duplicated across the 768-1024 and ≤767 queries) */
 @media (max-width: 1024px) {
     .page-analytics .report-summary-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .page-analytics .report-kpi:nth-child(odd) {
         border-left: none;
@@ -1226,7 +1226,8 @@
 .page-analytics .report-eco-condition.healthy { background: #E8F5E9; color: #2E7D32; }
 .page-analytics .report-eco-condition.down { background: var(--color-danger-light); color: var(--color-danger); }
 .page-analytics .report-eco-condition.assumed { background: var(--color-bg-header); color: var(--color-text-secondary); }
-.page-analytics .report-eco-condition.nodata { background: var(--color-bg-header); color: var(--color-text-muted); }
+.page-analytics .report-eco-condition.nodata,
+.page-analytics .report-eco-condition.stale { background: var(--color-bg-header); color: var(--color-text-muted); }
 .page-analytics .report-eco-status-badge {
     display: inline-flex;
     align-items: center;
@@ -1284,7 +1285,7 @@
 }
 .page-analytics .graphs-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
 }
 .page-analytics .graph-box {
@@ -1364,7 +1365,7 @@
 @media (max-width: 767px) {
     .page-analytics .graphs-grid,
     .page-analytics .report-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
     .page-analytics .graph-box--wide,
     .page-analytics .report-card--wide {
@@ -1386,5 +1387,72 @@
     .page-analytics .report-confidence {
         order: 3;
         flex-basis: 100%;
+    }
+}
+
+/* ============================================================
+   MOBILE RESPONSIVE — Analytics refinements
+   Let grid/flex children shrink below their content width so wide
+   report content (KPI grid, ecosystem table) cannot force the page
+   to scroll horizontally, and stack the ecosystem table as cards on
+   small screens (labels come from each cell's data-label).
+   ============================================================ */
+.page-analytics .report-card,
+.page-analytics .report-section,
+.page-analytics .report-kpi,
+.page-analytics .report-eco-table-wrap,
+.page-analytics .report-eco-table,
+.page-analytics .report-habitat-chart-wrap,
+.page-analytics .report-trend-card .analytics-card-body,
+.page-analytics .report-trend-controls {
+    min-width: 0;
+}
+.page-analytics .report-kpi-value--sm {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+@media (max-width: 767px) {
+    /* Ecosystem table — stacked cards instead of a cramped 4-col table */
+    .page-analytics .report-eco-table-wrap {
+        overflow: visible;
+    }
+    .page-analytics .report-eco-table thead {
+        display: none;
+    }
+    .page-analytics .report-eco-table,
+    .page-analytics .report-eco-table tbody,
+    .page-analytics .report-eco-table tr,
+    .page-analytics .report-eco-table td {
+        display: block;
+        width: 100%;
+    }
+    .page-analytics .report-eco-table tr {
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        margin-bottom: 10px;
+        padding: 2px 0;
+        background: var(--color-bg-hover);
+    }
+    .page-analytics .report-eco-table tr:last-child {
+        margin-bottom: 0;
+    }
+    .page-analytics .report-eco-table td {
+        border: none;
+        border-bottom: 1px solid var(--border-color-light);
+        padding: 8px 10px;
+    }
+    .page-analytics .report-eco-table td:last-child {
+        border-bottom: none;
+    }
+    .page-analytics .report-eco-table td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--color-text-secondary);
+        margin-bottom: 3px;
     }
 }

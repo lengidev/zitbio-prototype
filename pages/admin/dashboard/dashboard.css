@@ -216,6 +216,11 @@
     color: var(--color-danger);
 }
 
+.page-dashboard .trend-badge.flat {
+    background: var(--color-bg-header);
+    color: var(--color-text-muted);
+}
+
 .page-dashboard .chart-placeholder {
     display: flex;
     align-items: center;
