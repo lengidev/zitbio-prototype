@@ -98,7 +98,7 @@ function renderObsTable() {
         perPage: obsRecordsPerPage,
         tableSelector: '.page-observations .data-table',
         paginationSelector: '.page-observations .observations-pagination',
-        paginationStyle: 'centered',
+        paginationStyle: 'bar',
         columns: getObsColumns(),
         rowActions: [
             {
@@ -107,17 +107,12 @@ function renderObsTable() {
                 attrName: 'data-id',
                 attrValue: function(obs) { return obs.observation_id; }
             }
-        ]
+        ],
+        onPageChange: function(page) {
+            obsCurrentPage = page;
+            renderObsTable();
+        }
     });
-
-    // Update prev/next buttons
-    var prevBtn = document.getElementById('prevBtn');
-    var nextBtn = document.getElementById('nextBtn');
-    if (prevBtn) prevBtn.disabled = (obsCurrentPage <= 1);
-    if (nextBtn) nextBtn.disabled = (obsCurrentPage >= result.totalPages);
-
-    // Observations page uses .page-item with centered layout — render separately
-    renderObsPagination(result.totalPages);
 
     // Attach event listeners to View buttons
     var viewButtons = document.querySelectorAll('.page-observations .btnViewRecord');
@@ -125,36 +120,6 @@ function renderObsTable() {
         btn.addEventListener('click', function() {
             var id = this.getAttribute('data-id');
             viewRecordById(id);
-        });
-    });
-}
-
-// Render pagination with .page-item style (Observations page layout)
-function renderObsPagination(totalPages) {
-    var container = document.getElementById('paginationContainer');
-    if (!container) return;
-
-    if (totalPages <= 1) {
-        container.innerHTML = '';
-        return;
-    }
-
-    var html = '';
-    for (var i = 1; i <= totalPages; i++) {
-        var activeClass = i === obsCurrentPage ? ' active' : '';
-        html += '<div class="page-item' + activeClass + '" data-page="' + i + '">' + i + '</div>';
-    }
-    container.innerHTML = html;
-
-    // Attach click handlers
-    var pageItems = container.querySelectorAll('.page-item');
-    pageItems.forEach(function(item) {
-        item.addEventListener('click', function() {
-            var page = parseInt(item.getAttribute('data-page'), 10);
-            if (!isNaN(page) && page !== obsCurrentPage) {
-                obsCurrentPage = page;
-                renderObsTable();
-            }
         });
     });
 }

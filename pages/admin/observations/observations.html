@@ -167,14 +167,6 @@
 
                 <!-- Controls Row -->
                 <div class="controls-row">
-                    <div class="pagination-controls">
-                        <button class="page-btn" id="prevBtn" disabled>
-                            <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-chevron_left"/></svg>
-                        </button>
-                        <button class="page-btn" id="nextBtn">
-                            <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-chevron_right"/></svg>
-                        </button>
-                    </div>
                     <div class="controls-right">
                         <div class="search-container">
                             <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-search"/></svg>
@@ -227,7 +219,17 @@
                 </div>
 
                 <!-- Pagination Footer -->
-                <div class="pagination-container" id="paginationContainer"></div>
+                <div class="observations-pagination">
+                    <div class="pagination-controls">
+                        <button class="pagi-btn" disabled>
+                            <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-chevron_left"/></svg>
+                        </button>
+                        <button class="pagi-btn">
+                            <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-chevron_right"/></svg>
+                        </button>
+                    </div>
+                    <div class="pagination-info"></div>
+                </div>
             </div>
         </main>
     </div>
@@ -237,7 +239,7 @@
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
             <!-- Header -->
             <div class="modal-header">
-                <div>
+                <div class="modal-heading">
                     <div class="header-title-row">
                         <h2 class="modal-title" id="modalSpeciesTitle">African Elephant</h2>
                         <span class="badge" id="modalStatusBadge">Approved</span>
@@ -330,7 +332,7 @@
                     <button class="section-toggle" onclick="toggleSection('sectionDetails')">
                         <svg class="material-symbols-outlined toggle-icon" aria-hidden="true"><use href="#i-description"/></svg>
                         Record Details
-                        <span class="chevron material-symbols-outlined">keyboard_arrow_down</span>
+                        <svg class="chevron material-symbols-outlined" aria-hidden="true"><use href="#i-keyboard_arrow_down"/></svg>
                     </button>
                     <div class="collapsible-content">
                         <div class="text-block">

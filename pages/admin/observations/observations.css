@@ -69,28 +69,6 @@
     padding-left: 12px;
 }
 
-/* Observations Page – Pagination Component */
-.page-observations .pagination-container {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 24px;
-    padding: 12px 0;
-}
-
-.page-observations .page-item:hover {
-    background-color: var(--color-bg-hover);
-    border-color: var(--border-color-dark);
-    color: var(--color-text-main);
-}
-
-.page-observations .page-item.active {
-    background-color: var(--color-primary);
-    color: var(--color-text-inverse);
-    border-color: var(--color-primary);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
 /* ============================================
    Verification Status Badges
    ============================================ */
@@ -146,11 +124,19 @@
 .page-observations .modal-header {
     flex-shrink: 0;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: flex-start;
     padding: 24px 24px 16px;
     gap: 16px;
     border-bottom: 1px solid var(--border-color);
+}
+
+/* Title block flexes to fill remaining space so the action buttons stay
+   pinned to the top-right on every screen width (no column stacking). */
+.page-observations .modal-heading {
+    flex: 1 1 0;
+    min-width: 0;
 }
 
 .page-observations .header-title-row {
@@ -537,13 +523,7 @@
     }
 
     .page-observations .modal-header {
-        flex-direction: column;
         padding: 16px 16px 12px;
-    }
-
-    .page-observations .header-actions {
-        width: 100%;
-        justify-content: flex-end;
     }
 
     .page-observations .modal-title {

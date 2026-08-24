@@ -301,41 +301,7 @@
     display: block;
 }
 
-/* Pagination */
-.page-analytics .observations-pagination {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 24px;
-    padding: 0 8px;
-    color: var(--color-text-secondary);
-    font-size: 13px;
-}
-
-.page-analytics .pagination-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.page-analytics .pagi-btn:hover:not(:disabled) {
-    background-color: var(--color-bg-hover);
-    border-color: var(--border-color-dark);
-    color: var(--color-text-main);
-}
-
-.page-analytics .pagi-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.page-analytics .pagi-btn svg,
-.page-analytics .pagi-btn .material-symbols-outlined {
-    width: 18px;
-    height: 18px;
-    font-size: 18px;
-    display: block;
-}
+/* Pagination — shared with observations page (see styles/global.css) */
 
 /* ============================================
    CBU Area Map
@@ -610,29 +576,6 @@
     }
 }
 
-.page-analytics .page-numbers {
-    display: flex;
-    gap: 4px;
-}
-
-.page-analytics .page-num.active {
-    background-color: var(--color-primary);
-    color: var(--color-text-inverse);
-    border-color: var(--color-primary);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.page-analytics .page-num:hover:not(.active) {
-    background-color: var(--color-bg-hover);
-    border-color: var(--border-color-dark);
-    color: var(--color-text-main);
-}
-
-.page-analytics .pagination-info .bold {
-    font-weight: 600;
-    color: var(--color-text-main);
-}
-
 /* ============================================
    Analytics Filter Bar
    ============================================ */
@@ -829,11 +772,6 @@
     .page-analytics .search-input {
         width: 170px;
     }
-    .page-analytics .observations-pagination {
-        flex-direction: column;
-        gap: 12px;
-        align-items: center;
-    }
 }
 
 /* Mobile: ≤767px */
@@ -846,11 +784,6 @@
         padding: 6px 8px;
         font-size: 12px;
         white-space: nowrap;
-    }
-    .page-analytics .observations-pagination {
-        flex-direction: column;
-        gap: 12px;
-        align-items: center;
     }
     .col-toggle-dropdown {
         right: 0;

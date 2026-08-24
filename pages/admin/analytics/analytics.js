@@ -231,23 +231,15 @@ function renderAnalyticsTable() {
         tableSelector: '.page-analytics .observations-table',
         paginationSelector: '.page-analytics .observations-pagination',
         paginationStyle: 'bar',
-        columns: getAnalyticsColumns()
+        columns: getAnalyticsColumns(),
+        onPageChange: function(page) {
+            analyticsCurrentPage = page;
+            renderAnalyticsTable();
+        }
     });
 
     // Apply current column visibility state
     applyColumnVisibility();
-
-    // Re-attach page number click handlers
-    var pageNums = document.querySelectorAll('.page-analytics .page-num');
-    pageNums.forEach(function(num) {
-        num.addEventListener('click', function() {
-            var page = parseInt(this.getAttribute('data-page'), 10);
-            if (!isNaN(page) && page !== analyticsCurrentPage) {
-                analyticsCurrentPage = page;
-                renderAnalyticsTable();
-            }
-        });
-    });
 }
 
 // Handle search input
@@ -523,26 +515,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var searchInput = document.querySelector('.page-analytics .search-input');
     if (searchInput) {
         searchInput.addEventListener('input', handleAnalyticsSearch);
-    }
-
-    // Prev/Next button handlers
-    var pagiBtns = document.querySelectorAll('.page-analytics .pagi-btn');
-    if (pagiBtns.length >= 2) {
-        var prevBtn = pagiBtns[0];
-        var nextBtn = pagiBtns[1];
-        prevBtn.addEventListener('click', function() {
-            if (analyticsCurrentPage > 1) {
-                analyticsCurrentPage--;
-                renderAnalyticsTable();
-            }
-        });
-        nextBtn.addEventListener('click', function() {
-            var totalPages = Math.ceil(analyticsFilteredData.length / analyticsRecordsPerPage);
-            if (analyticsCurrentPage < totalPages) {
-                analyticsCurrentPage++;
-                renderAnalyticsTable();
-            }
-        });
     }
 });
 

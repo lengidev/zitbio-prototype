@@ -358,10 +358,10 @@ td {
   }
 }
 
-/* Shared pagination-button base (analytics pagi-btn/page-num + observations page-item) */
+/* Shared pagination-button base (analytics + observations) */
 .page-analytics .pagi-btn,
 .page-analytics .page-num,
-.page-observations .page-item {
+.page-observations .page-num {
     width: 36px;
     height: 36px;
     display: flex;
@@ -375,4 +375,93 @@ td {
     background-color: var(--color-bg-white);
     border: 1px solid var(--border-color);
     color: var(--color-text-secondary);
+}
+
+/* Shared pagination component (analytics + observations) */
+.page-analytics .observations-pagination,
+.page-observations .observations-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+    padding: 0 8px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+}
+
+.page-analytics .pagination-controls,
+.page-observations .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.page-analytics .pagi-btn:hover:not(:disabled),
+.page-observations .pagi-btn:hover:not(:disabled) {
+    background-color: var(--color-bg-hover);
+    border-color: var(--border-color-dark);
+    color: var(--color-text-main);
+}
+
+.page-analytics .pagi-btn:disabled,
+.page-observations .pagi-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.page-analytics .pagi-btn svg,
+.page-analytics .pagi-btn .material-symbols-outlined,
+.page-observations .pagi-btn svg,
+.page-observations .pagi-btn .material-symbols-outlined {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    display: block;
+}
+
+.page-analytics .page-numbers,
+.page-observations .page-numbers {
+    display: flex;
+    gap: 4px;
+}
+
+.page-analytics .page-num.active,
+.page-observations .page-num.active {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.page-analytics .page-num:hover:not(.active),
+.page-observations .page-num:hover:not(.active) {
+    background-color: var(--color-bg-hover);
+    border-color: var(--border-color-dark);
+    color: var(--color-text-main);
+}
+
+.page-analytics .pagination-info .bold,
+.page-observations .pagination-info .bold {
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+/* Tablet: pagination stacks vertically */
+@media (max-width: 1023px) and (min-width: 768px) {
+    .page-analytics .observations-pagination,
+    .page-observations .observations-pagination {
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+    }
+}
+
+/* Mobile: pagination stacks vertically */
+@media (max-width: 767px) {
+    .page-analytics .observations-pagination,
+    .page-observations .observations-pagination {
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+    }
 }
