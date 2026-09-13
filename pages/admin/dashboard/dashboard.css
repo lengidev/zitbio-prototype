@@ -152,7 +152,9 @@
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     cursor: pointer;
-    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page-dashboard .action-btn svg,
@@ -283,7 +285,9 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page-dashboard .view-all-btn:hover {

@@ -4,6 +4,12 @@
  */
 
 :root {
+  /* Tells the browser which palette it is painting, so the things CSS does not
+     own follow the theme too: native scrollbars, form controls, and the default
+     canvas/field backgrounds. Without it the browser assumes light and draws a
+     light scrollbar down the side of a dark page (#68). */
+  color-scheme: light;
+
   /* Primary – Forest Green */
   --color-primary: #2E7D32;
   --color-primary-hover: #267c2a; /* 90% opacity equivalent */
@@ -125,6 +131,11 @@
 }
 
 [data-theme="dark"] {
+  /* See the note on :root — this is the half that matters, because the dark
+     page is the one where a light scrollbar and light native form controls are
+     wrong. */
+  color-scheme: dark;
+
   --color-bg: #17211b;
   --color-bg-white: #1f2b23;
   --color-bg-sidebar: #1b2720;

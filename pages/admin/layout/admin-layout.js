@@ -961,7 +961,23 @@ function applySavedTheme() {
   var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   var activeTheme = savedTheme === 'dark' || (savedTheme === 'system' && prefersDark) ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', activeTheme);
+  syncThemeColorMeta(activeTheme);
   updateThemeToggleIcon(activeTheme);
+}
+
+/**
+ * Keep the browser's own chrome in step with the theme (#68).
+ *
+ * `<meta name="theme-color">` is static in each page's HTML so it is already
+ * correct on first paint, before any script has run. But the user can switch
+ * theme at runtime, and without this the mobile address bar / status bar would
+ * stay light green-grey over a dark page — the one part of the UI the theme
+ * cannot reach from CSS. Values mirror --color-bg in styles/theme.css.
+ */
+function syncThemeColorMeta(activeTheme) {
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) return;
+  meta.setAttribute('content', activeTheme === 'dark' ? '#17211b' : '#F5F7FA');
 }
 
 function updateThemeToggleIcon(activeTheme) {
@@ -983,6 +999,7 @@ function initThemeToggle() {
     var next = current === 'dark' ? 'light' : 'dark';
     try { localStorage.setItem('biodata_theme', next); } catch (err) { /* storage unavailable */ }
     document.documentElement.setAttribute('data-theme', next);
+    syncThemeColorMeta(next);
     updateThemeToggleIcon(next);
   });
 }

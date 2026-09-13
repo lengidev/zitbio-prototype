@@ -61,6 +61,40 @@ body.auth-pending {
 }
 
 /* ============================================
+   Reduced motion (#68)
+   ============================================
+   `prefers-reduced-motion: reduce` is a request to be spared MOVEMENT, not a
+   request for a static page. So this block collapses durations instead of
+   removing the transitions — which also keeps every `transitionend` /
+   `animationend` listener firing, so no code path is left waiting for an event
+   that never arrives.
+
+   DELIBERATELY NOT SET HERE: `animation-delay` and `transition-delay`.
+   The `body.auth-pending` rule above reveals the page with a 0s animation at a
+   12s DELAY and a `forwards` fill. Zeroing that delay would reveal protected
+   chrome instantly and silently undo the #76 guard; setting `animation: none`
+   would be worse still, stranding the page permanently invisible. Both were
+   live hazards when this block did not exist — the Inspector called the absence
+   of a reduced-motion block the thing that kept the hold safe. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Stated explicitly so the hold survives any future edit to the block above:
+   it is a safety net, not decoration, and it must keep its delay. */
+@media (prefers-reduced-motion: reduce) {
+  body.auth-pending {
+    animation: auth-pending-reveal 0s linear 12s forwards !important;
+  }
+}
+
+/* ============================================
    Typography Configuration
    ============================================ */
 
@@ -158,7 +192,12 @@ button {
   cursor: pointer;
   border: none;
   background: none;
-  transition: all var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 button:disabled {
@@ -199,6 +238,26 @@ input[type='checkbox'],
 input[type='radio'] {
   width: auto;
   cursor: pointer;
+}
+
+/* Mobile field-text floor (#68)
+   iOS Safari zooms the whole page when a FOCUSED field's font-size is under
+   16px, and does not zoom back out — one tap on an email field leaves the user
+   on a page that no longer fits the screen. Every field here sits at 12-14px
+   and each page sets its own, so the floor belongs in one place above them all.
+
+   `!important` is deliberate: this is a platform constraint (a fixed 16px
+   threshold in WebKit), not a typographic preference, and it has to beat the
+   page-level `font-size` declarations that would otherwise win. A bare `input`
+   selector loses to every class selector, so no non-`important` form of this
+   rule can work without duplicating knowledge into eight stylesheets. Scoped to
+   the mobile breakpoint, desktop typography is untouched. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* ============================================
@@ -421,7 +480,11 @@ td {
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: all 0.2s ease;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
     background-color: var(--color-bg-white);
     border: 1px solid var(--border-color);
     color: var(--color-text-secondary);

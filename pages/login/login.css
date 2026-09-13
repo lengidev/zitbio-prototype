@@ -203,8 +203,15 @@
 .page-login .custom-checkbox {
   appearance: checkbox;
   -webkit-appearance: checkbox;
-  width: 12px;
-  height: 12px;
+  /* Target size (#68). This was 12x12 px, half the WCAG 2.2 minimum. The size is
+     set with width/height rather than padding, because Chrome DISCARDS padding
+     on a checkbox that still has its native appearance. Measured on this very
+     control: `padding: 3px` on an 18px box left the computed padding at 0px and
+     the rendered box at 18x18; only `appearance: none` made the padding apply.
+     Sizing the control itself is what works while keeping the native checkbox —
+     and with it `accent-color`, which follows the OS palette. */
+  width: 24px;
+  height: 24px;
   accent-color: var(--color-primary);
   cursor: pointer;
   flex-shrink: 0;

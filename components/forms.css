@@ -148,7 +148,9 @@ select.form-input:disabled {
   height: 18px;
   border: 2px solid var(--border-color-dark);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
   position: relative;
   flex-shrink: 0;
 }

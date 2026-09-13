@@ -70,7 +70,9 @@
     background: var(--color-bg-white);
     color: var(--color-text-main);
     cursor: pointer;
-    transition: all 0.2s;
+    transition:
+        background-color 0.2s,
+        border-color 0.2s;
 }
 
 .page-analytics .observation-export-btn:hover {
@@ -101,7 +103,9 @@
     max-width: 220px;
     width: 100%;
     outline: none;
-    transition: all 0.2s;
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
 }
 
 .page-analytics .search-input:focus {
@@ -121,7 +125,10 @@
     background: var(--color-bg-white);
     color: var(--color-text-secondary);
     cursor: pointer;
-    transition: all 0.2s;
+    transition:
+        background-color 0.2s,
+        border-color 0.2s,
+        color 0.2s;
     font-size: 13px;
     font-weight: 500;
     font-family: inherit;

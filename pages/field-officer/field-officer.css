@@ -464,7 +464,12 @@ textarea.fo-input.fo-textarea-tall {
   padding: 9px 20px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
   display: inline-flex;
   align-items: center;
   gap: 6px;

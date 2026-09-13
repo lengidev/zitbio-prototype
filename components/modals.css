@@ -78,7 +78,9 @@
     justify-content: center;
     border-radius: var(--radius-sm);
     color: var(--color-text-muted);
-    transition: all var(--transition-fast);
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast);
 }
 
 .modal-close:hover {
@@ -131,7 +133,9 @@
     border-radius: var(--radius-sm);
     cursor: pointer;
     color: var(--color-text-muted);
-    transition: all 150ms ease;
+    transition:
+        background-color 150ms ease,
+        border-color 150ms ease;
 }
 
 .page-observations .icon-btn .material-symbols-outlined,
@@ -357,7 +361,9 @@
     border-radius: var(--radius-md);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition:
+        background-color var(--transition-fast),
+        border-color var(--transition-fast);
 }
 
 .btn-close-modal:hover {
