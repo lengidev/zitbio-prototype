@@ -16,7 +16,7 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-md);
-    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
     z-index: var(--z-dropdown);
     display: none;
     flex-direction: column;

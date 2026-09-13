@@ -315,7 +315,7 @@
 }
 
 .page-observations .field-row .value.mono {
-    font-family: "SF Mono", "Fira Code", "Fira Mono", monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
 }
 

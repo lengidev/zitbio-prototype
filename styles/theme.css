@@ -81,6 +81,14 @@
   --spacing-2xl: 32px;
   --spacing-3xl: 40px;
 
+  /* Typography — ONE system font stack for the whole app.
+     The app loads NO web fonts (see Agent/rules.md). The self-hosted Inter
+     webfont was removed on 2026-09-13: it was used by only 2 of 7 pages
+     while the rest already rendered in the OS stack, so it cost a request
+     and bought inconsistency. */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Fira Code', 'Consolas', monospace;
+
   /* Layout Dimensions */
   --sidebar-width: 260px;
   --sidebar-width-collapsed: 72px;

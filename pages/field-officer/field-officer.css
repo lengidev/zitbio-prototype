@@ -6,7 +6,7 @@
 /* --- Page Background --- */
 .page-fieldofficer-v2 {
   background-color: var(--color-bg);
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   min-height: 100vh;
   margin: 0;
 }
