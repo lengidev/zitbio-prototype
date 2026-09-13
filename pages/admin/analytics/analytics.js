@@ -1228,9 +1228,14 @@ function analyticsEscape(v) {
 }
 function analyticsShortDate(s) {
   if (!s) return '—';
-  var d = new Date(s);
-  if (isNaN(d.getTime())) return s;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  // ONE formatter for the whole app (#46 → #62). Delegate to BioDate instead of
+  // repeating the format string — that repetition is exactly how the Report
+  // drifted from the tables it summarises. Fails soft if lib/date.js is absent.
+  if (!window.BioDate) return String(s);
+  var formatted = window.BioDate.mediumDate(s);
+  // mediumDate returns an em dash for an unparseable value; showing the raw
+  // string is more useful than a dash when diagnosing a bad record.
+  return formatted === '\u2014' ? String(s) : formatted;
 }
 
 // Enrich observations with entity ids so BioAnalytics resolves them

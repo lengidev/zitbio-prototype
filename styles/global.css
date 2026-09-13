@@ -287,6 +287,12 @@ th {
 td {
   font-size: 13px;
   color: var(--color-text-main);
+  /* Tabular figures (#62). Proportional digits give each number a different
+     width, so a column of counts or dates visibly fails to line up and the eye
+     cannot scan it. This is set on the cell rather than per-column because every
+     table here is data: no cell's alignment improves from proportional figures,
+     and none is harmed. */
+  font-variant-numeric: tabular-nums;
 }
 
 /* Field-level validation message. Referenced by the input's aria-describedby so

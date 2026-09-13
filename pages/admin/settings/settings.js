@@ -239,9 +239,11 @@ function escapeSettingHtml(v) {
 
 function settingsShortDate(isoStr) {
   if (!isoStr) return '—';
-  var d = new Date(isoStr);
-  if (isNaN(d.getTime())) return isoStr;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  // Delegates to the one shared formatter (#46 → #62); see the note on
+  // analyticsShortDate. Fails soft if lib/date.js is absent.
+  if (!window.BioDate) return String(isoStr);
+  var formatted = window.BioDate.mediumDate(isoStr);
+  return formatted === '\u2014' ? String(isoStr) : formatted;
 }
 
 function initBaselinesSection() {
