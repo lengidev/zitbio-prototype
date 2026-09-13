@@ -422,26 +422,72 @@ function getObsFromLink(link) {
 }
 
 /**
+ * Stable identity for a notification across BOTH stores.
+ *
+ * The same logical notification exists twice: locally with an id like
+ * `notif_7` (BioData's counter) and in the cloud with a UUID. Their
+ * `created_at` values also differ slightly (client clock vs the DB trigger),
+ * and their ids never match, so neither field can be used to dedupe. What the
+ * two copies DO share is the event they describe: `type` plus `related_id`.
+ */
+function notificationKey(n) {
+  var related = n.related_id || '';
+  if (related) return n.type + '|' + related;
+  return n.type + '|' + (n.title || '') + '|' + (n.message || '');
+}
+
+/**
+ * Cloud ids are UUIDs from the notifications table; local ids are `notif_N`.
+ * Routing on the shape avoids firing an UPDATE that Postgres rejects as
+ * "invalid input syntax for type uuid" on every local notification click.
+ */
+function isCloudNotificationId(id) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id || ''));
+}
+
+/**
  * Render notifications into the dropdown.
- * Prefers live cloud data (BioSync → notifications table); falls back to
- * the BioData/localStorage cache if cloud notifications aren't loaded.
+ *
+ * Merges BOTH sources rather than preferring one (decision 2026-09-13, #45).
+ * The previous either/or chose the cloud cache whenever BioSync was loaded —
+ * which is always — so a notification created locally in this session stayed
+ * invisible until the cloud round-trip returned it, and if the cloud fetch
+ * failed the user saw "No notifications yet" while local ones existed.
+ *
+ * The cloud copy wins when an event exists in both, because it carries the
+ * real id, the real read state, and rows the server wrote for other admins.
  */
 function renderNotifications() {
   var dropdown = document.getElementById('notificationDropdown');
   if (!dropdown) return;
 
-  var notifications;
-  var unreadCount = 0;
-  var hasCloud = window.BioSync && typeof window.BioSync.getNotificationsCache === 'function';
-  if (hasCloud) {
-    notifications = window.BioSync.getNotificationsCache();
-    unreadCount = notifications.filter(function(n) { return !n.read; }).length;
-  } else if (window.BioData) {
-    notifications = window.BioData.getNotifications({ limit: 50 });
-    unreadCount = window.BioData.getUnreadNotificationCount();
-  } else {
-    return;
-  }
+  if (!window.BioData && !window.BioSync) return;
+
+  var cloud = (window.BioSync && typeof window.BioSync.getNotificationsCache === 'function')
+    ? window.BioSync.getNotificationsCache()
+    : [];
+  var local = window.BioData
+    ? window.BioData.getNotifications({ limit: 50 })
+    : [];
+
+  var seen = {};
+  var notifications = [];
+  cloud.concat(local).forEach(function(n) {
+    if (!n || !n.id) return;
+    var key = notificationKey(n);
+    if (seen[key]) return;
+    seen[key] = true;
+    notifications.push(n);
+  });
+
+  notifications.sort(function(a, b) {
+    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+  });
+
+  // Counted from the merged list. The old code read the unread count from a
+  // different store than the one it rendered, so the badge could disagree with
+  // the list directly beneath it.
+  var unreadCount = notifications.filter(function(n) { return !n.read; }).length;
 
   var badge = document.getElementById('notificationBadge');
 
@@ -537,9 +583,11 @@ function renderNotifications() {
       var id = item.getAttribute('data-notif-id');
       var link = item.getAttribute('data-link');
 
-      // Mark as read — cloud first (BioSync), fallback to BioData.
+      // Mark as read. Routed by id shape (#45): cloud rows carry UUIDs, locally
+      // created rows carry `notif_N`, and sending `notif_N` to the cloud fails
+      // as an invalid uuid on every click.
       if (id) {
-        if (window.BioSync && window.BioSync.markNotificationRead) {
+        if (isCloudNotificationId(id) && window.BioSync && window.BioSync.markNotificationRead) {
           window.BioSync.markNotificationRead(id).catch(function(err) {
             console.warn('BioSync: mark read failed:', err && err.message);
             if (window.BioData) { BioData.markNotificationRead(id); renderNotifications(); }
@@ -576,13 +624,18 @@ function renderNotifications() {
   if (markAllBtn) {
     markAllBtn.addEventListener('click', function(e) {
       e.stopPropagation();
+      // Local rows are not covered by the cloud UPDATE, so clear them too —
+      // otherwise the badge keeps counting notifications as unread that the
+      // cloud no longer has (#45 merge).
+      if (window.BioData) { BioData.markAllNotificationsRead(); }
       if (window.BioSync && window.BioSync.markAllNotificationsRead) {
-        window.BioSync.markAllNotificationsRead().catch(function(err) {
+        window.BioSync.markAllNotificationsRead().then(function() {
+          renderNotifications();
+        }).catch(function(err) {
           console.warn('BioSync: mark all read failed:', err && err.message);
-          if (window.BioData) { BioData.markAllNotificationsRead(); renderNotifications(); }
+          renderNotifications();
         });
-      } else if (window.BioData) {
-        BioData.markAllNotificationsRead();
+      } else {
         renderNotifications();
       }
     });
@@ -593,12 +646,17 @@ function renderNotifications() {
   if (clearAllBtn) {
     clearAllBtn.addEventListener('click', function(e) {
       e.stopPropagation();
+      // Clear BOTH stores (#45). Deleting only the cloud rows left local-only
+      // notifications in the merged list, so "Clear all" looked broken.
+      if (window.BioData) { BioData.clearNotifications(); }
       if (window.BioSync && window.BioSync.clearNotifications) {
-        window.BioSync.clearNotifications().catch(function(err) {
+        window.BioSync.clearNotifications().then(function() {
+          renderNotifications();
+        }).catch(function(err) {
           console.warn('BioSync: clear notifications failed:', err && err.message);
+          renderNotifications();
         });
-      } else if (window.BioData) {
-        BioData.clearNotifications();
+      } else {
         renderNotifications();
       }
     });

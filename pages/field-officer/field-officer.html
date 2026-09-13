@@ -211,8 +211,11 @@
                                 <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-nature_people"/></svg>
                                 <select id="focusArea" class="fo-input" required>
                                     <option value="">Select focus area...</option>
+                                    <!-- Fallback only: options are rebuilt from the site registry
+                                         by field-officer.js. Values must match sites.name exactly,
+                                         which is also what observations.focus_area stores. -->
                                     <option value="The CBU Nature Park">The CBU Nature Park</option>
-                                    <option value="The Copperbelt University Campus">The Copperbelt University Campus</option>
+                                    <option value="CBU Campus">CBU Campus</option>
                                 </select>
                             </div>
                             <span class="fo-error" id="focusAreaError">Focus area is required</span>

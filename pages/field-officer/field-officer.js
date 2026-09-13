@@ -175,6 +175,47 @@ function initFieldOfficer() {
   // never need to pick a habitat manually.
   var focusAreaEl = document.getElementById('focusArea');
   var habitatTypeEl = document.getElementById('habitatType');
+
+  // --- Focus area options come from the site registry (Layer 1) ---
+  // The dropdown used to be hardcoded in the HTML and offered
+  // 'The Copperbelt University Campus', which matches no row in `sites` and no
+  // value in `observations.focus_area` — so anything submitted with it would
+  // resolve to no site at all. Options are now built from the registry, which
+  // is the single source of truth for site names. The HTML keeps a corrected
+  // copy purely as a no-JS fallback.
+  function populateFocusAreaOptions() {
+    if (!focusAreaEl || !CentralDataStore || typeof CentralDataStore.getSiteRegistry !== 'function') return;
+    var siteRegistry = CentralDataStore.getSiteRegistry() || [];
+    if (siteRegistry.length === 0) return;
+
+    // Preserve whatever the officer had selected (this also re-runs when the
+    // cloud sync swaps the registry in).
+    var previous = focusAreaEl.value;
+    focusAreaEl.innerHTML = '';
+
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select focus area...';
+    focusAreaEl.appendChild(placeholder);
+
+    siteRegistry.forEach(function(site) {
+      if (!site || !site.name) return;
+      var opt = document.createElement('option');
+      // The option value IS the site name, because that is what
+      // observations.focus_area stores.
+      opt.value = site.name;
+      opt.textContent = site.name;
+      focusAreaEl.appendChild(opt);
+    });
+
+    if (previous) focusAreaEl.value = previous;
+  }
+
+  populateFocusAreaOptions();
+  // The registry is seeded locally, then replaced by the cloud copy during
+  // hydration — re-populate so newly added sites appear without a reload.
+  window.addEventListener('biodata:synced', populateFocusAreaOptions);
+
   if (focusAreaEl && habitatTypeEl && CentralDataStore && CentralDataStore.getHabitatForFocusArea) {
     var syncHabitatFromFocus = function() {
       if (focusAreaEl.value) {
