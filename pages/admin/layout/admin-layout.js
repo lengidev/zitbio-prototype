@@ -606,6 +606,16 @@ function renderNotifications() {
     });
 
     html += '</div>';
+
+    // Retention is enforced server-side by the notifications_enforce_retention
+    // trigger (#77): read rows older than 30 days are deleted on the next
+    // insert for that user. Say so here, otherwise a notification vanishing
+    // looks like a bug. The 30 matches p_read_days in migration
+    // 202609130014 — if that constant changes, change this string.
+    html +=
+      '<div class="notification-retention-note">' +
+        'Read notifications are cleared after 30 days' +
+      '</div>';
   }
 
   dropdown.innerHTML = html;
