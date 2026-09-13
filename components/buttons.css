@@ -375,7 +375,8 @@
 
 .nav-item.active {
   background: var(--color-primary-lighter);
-  color: var(--color-primary);
+  /* Theme-aware: see --color-nav-active-fg in theme.css (issue #60). */
+  color: var(--color-nav-active-fg, var(--color-primary));
   font-weight: 500;
 }
 
@@ -399,7 +400,7 @@
 }
 
 .nav-item.active .nav-icon {
-    color: var(--color-primary);
+    color: var(--color-nav-active-fg, var(--color-primary));
 }
 
 /* ============================================
@@ -524,6 +525,12 @@
 /* ============================================
    Controls Row — Search + Filter + Buttons
    ============================================ */
+.controls-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .controls-right {
     display: flex;
     gap: 12px;
@@ -671,6 +678,7 @@
     }
 
     /* Observations page: search row, buttons side-by-side below it */
+    .page-observations .controls-left,
     .page-observations .controls-right {
         display: flex;
         flex-direction: row;

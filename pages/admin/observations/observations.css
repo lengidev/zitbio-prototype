@@ -70,6 +70,125 @@
 }
 
 /* ============================================
+   Review queue status filter (#70)
+   ============================================ */
+
+/* The filter lives on the "Verification Status" header, so the control sits on
+   the column it filters instead of in a bar of its own. */
+.th-filter {
+    position: relative;
+    display: inline-flex;
+}
+
+/* Matches the plain .data-table thead th styling — same size, weight, colour
+   and (no) letter-spacing — so the header reads as a header, not as a button.
+   The negative margins cancel the padding so the label still lines up with the
+   other column headings. */
+.th-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: -2px -6px;
+    padding: 2px 6px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+/* Text only — no background or border change on hover. */
+.th-filter-btn:hover {
+    color: var(--color-text-main);
+}
+
+.th-filter-btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* A filtered queue must not look like an empty one, so an active filter is
+   stated in the header. Signalled by colour and weight only, consistent with
+   the hover treatment above. */
+.th-filter-btn.is-filtered {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.th-filter-caret {
+    width: 15px;
+    height: 15px;
+    font-size: 15px;
+    color: inherit;
+}
+
+/* Fixed, not absolute: the table sits in a horizontally scrollable container
+   (.table-container has overflow-x:auto), which clips vertically too — an
+   absolutely positioned menu would be cut off. Positioned from the trigger's
+   rect when opened, and dismissed on scroll. */
+.th-filter-menu {
+    position: fixed;
+    z-index: 40;
+    min-width: 168px;
+    padding: 6px;
+    text-align: left;
+    background: var(--color-bg-white);
+    border: 1px solid var(--border-color-dark);
+    border-radius: var(--radius-md);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+}
+
+.th-filter-menu[hidden] {
+    display: none;
+}
+
+.th-filter-option {
+    display: block;
+    width: 100%;
+    padding: 8px 10px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--color-text-main);
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.th-filter-option:hover {
+    background: var(--color-bg-hover);
+}
+
+.th-filter-option:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+}
+
+.th-filter-option.is-active {
+    color: var(--color-primary);
+    font-weight: 600;
+    background: var(--color-bg-active);
+}
+
+/* Result of the last export (#69) — a silent download is indistinguishable
+   from a dead button, which is how the original bug survived. */
+.export-feedback {
+    display: block;
+    padding: 0 0 6px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+/* ============================================
    Verification Status Badges
    ============================================ */
 .status-badge {
@@ -100,6 +219,131 @@
 }
 
 /* ============================================
+   Review decision panel (#80)
+   ============================================ */
+
+/* Only present while a decision needing a reason is in progress, so the modal
+   reads as a record view until the admin actually decides something. Tinted so
+   it is unmistakable that this is an action, not a field to fill in. */
+.review-decision {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0 16px 12px;
+    padding: 12px;
+    background: var(--color-warning-light);
+    border: 1px solid var(--color-warning);
+    border-radius: var(--radius-md);
+}
+
+.review-decision[hidden] {
+    display: none;
+}
+
+.review-decision-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+.review-decision-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.review-note-input {
+    /* This field was originally a child of a horizontal row. As a column child
+       flex:1 would stretch it vertically, so the growth is cancelled. */
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    padding: 6px 8px;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    color: var(--color-text-main);
+    background: var(--color-bg-white);
+    border: 1px solid var(--color-bg-hover);
+    border-radius: 6px;
+}
+
+.review-note-input-error {
+    border-color: var(--color-danger);
+    outline: 2px solid var(--color-danger-light);
+}
+
+/* ============================================
+   Review history (append-only decision log, #73)
+   ============================================ */
+.review-history-section { margin-top: 8px; }
+
+.review-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 4px 4px 0;
+    /* Bounded so a record with many decisions scrolls here instead of
+       stretching the modal. Kept well under the parent's 500px reveal height,
+       because that parent is overflow:hidden and would clip the overflow
+       rather than scroll it. */
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.review-history-empty {
+    font-size: 13px;
+    color: var(--color-text-muted);
+}
+
+.review-history-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: var(--color-bg-input);
+}
+
+.review-history-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.review-history-actor { font-weight: 600; color: var(--color-text-main); }
+.review-history-when  { color: var(--color-text-muted); white-space: nowrap; }
+.review-history-transition { font-size: 12px; color: var(--color-text-secondary); }
+.review-history-reason { font-size: 13px; color: var(--color-text-main); }
+
+/* ============================================
+   Archived records (#74)
+   ============================================ */
+.archived-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.archived-empty { font-size: 13px; color: var(--color-text-muted); }
+
+.archived-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    background: var(--color-bg-input);
+}
+
+.archived-item-meta { display: flex; flex-direction: column; gap: 2px; }
+.archived-item-title { font-size: 13px; font-weight: 600; color: var(--color-text-main); }
+.archived-item-sub { font-size: 12px; color: var(--color-text-muted); }
+
+/* ============================================
    Admin Observation View Modal (Redesigned)
    ============================================ */
 
@@ -108,9 +352,13 @@
     z-index: var(--z-modal-backdrop);
 }
 
-/* Modal Card Base — shared with users modals (see modals.css) */
+/* Modal Card Base — shared with users modals (see modals.css).
+   The base sets opacity:0, so this is what actually reveals a card. It used to
+   name #viewModal only, which left EVERY other modal on this page permanently
+   invisible: the overlay dimmed the screen while the card stayed at opacity 0,
+   so "Archived" looked like a dead button. Scoped to any .active overlay now. */
 .page-observations .modal-card.open,
-.page-observations .modal-overlay#viewModal.active .modal-card {
+.page-observations .modal-overlay.active .modal-card {
     opacity: 1;
     pointer-events: auto;
     transform: translate(-50%, -50%) translateY(0) scale(1);
@@ -356,6 +604,21 @@
     color: var(--color-text-muted);
     width: 20px;
     height: 20px;
+}
+
+/* Decision count beside a collapsible section heading, so the admin can see
+   there is history without having to open it. */
+.page-observations .section-toggle .section-count {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+/* The chevron's own auto margin would otherwise share the free space with the
+   count's, leaving the count floating in the middle of the row. */
+.page-observations .section-toggle .section-count + .chevron {
+    margin-left: 8px;
 }
 
 .page-observations .section-collapsible.open .section-toggle .chevron {

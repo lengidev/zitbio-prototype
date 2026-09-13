@@ -48,6 +48,13 @@
   --color-success: #81C784;
   --color-success-hover: #66bb6a;
   --color-success-light: #e8f5e9;
+  /* Active navigation surface. Previously undefined, so styles/layout.css fell
+     back to its light-only literal in BOTH themes (issue #60). */
+  --color-bg-active: #e8f5e9;
+  /* Foreground for the ACTIVE nav item. --color-primary is defined for the light
+     theme only, so using it as active-nav text put dark-green on a dark surface
+     in dark mode — 2.49:1 (issue #60). This token is theme-aware. */
+  --color-nav-active-fg: #1B5E20;
   --color-warning: #ffb74d;
   --color-warning-light: #fff3e0;
 
@@ -133,6 +140,10 @@
   --color-accent-light: #4a3922;
   --color-danger-light: #4a2929;
   --color-success-light: #214a2a;
+  /* Dark counterpart of the active-nav surface (#60). */
+  --color-bg-active: #24382c;
+  /* Light green: readable on the dark active-nav surface (issue #60). */
+  --color-nav-active-fg: #A5D6A7;
   --color-warning-light: #4a3922;
   --tooltip-bg: #3b4c41;
   --tooltip-text: #edf5ef;

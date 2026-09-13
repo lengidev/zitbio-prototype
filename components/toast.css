@@ -1,0 +1,115 @@
+/**
+ * ZitBio — Toast surface
+ *
+ * Transient confirmation for an action whose result would otherwise only be
+ * visible inside the surface that just closed.
+ */
+
+.toast-container {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    /* Above the modal backdrop, because the message describes what just happened
+       inside a modal — confirming it from underneath would be pointless. */
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 380px;
+    /* The stack must not swallow clicks aimed at the page behind it; the
+       individual toasts opt back in. */
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px 12px 16px;
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--color-text-inverse);
+    background: var(--color-text-main);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    pointer-events: auto;
+    animation: toast-in 200ms ease-out;
+}
+
+.toast-message {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Dismiss control. Optional to use — every toast also clears itself (4s, or 7s
+   for errors) — but the reader decides, not the timer. */
+.toast-close {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin: -1px -2px 0 0;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 150ms ease;
+}
+
+/* Opacity only — a tinted hover would need a different alpha per toast colour,
+   and warning is a light surface while success and error are dark. */
+.toast-close:hover {
+    opacity: 1;
+}
+
+.toast-close:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+.toast-close-icon {
+    display: block;
+    width: 14px;
+    height: 14px;
+}
+
+.toast-success {
+    background: var(--color-primary);
+}
+
+.toast-error {
+    background: var(--color-danger);
+}
+
+/* Warning is a light surface, so it needs dark text to stay readable. */
+.toast-warning {
+    background: var(--color-warning);
+    color: var(--color-text-main);
+}
+
+.toast-out {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 200ms ease, transform 200ms ease;
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 767px) {
+    .toast-container {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        max-width: none;
+    }
+}

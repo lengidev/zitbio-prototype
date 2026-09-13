@@ -253,7 +253,10 @@
 
 .nav-item.active {
     background-color: var(--color-bg-active, #eff6ff);
-    color: var(--color-primary, #2563eb);
+    /* Must agree with components/buttons.css, which also styles the active item
+       (that rule wins where buttons.css is loaded). Token is theme-aware so dark
+       mode does not get dark-green text on a dark surface (issue #60). */
+    color: var(--color-nav-active-fg, var(--color-text-primary, #1f2937));
     border-left-color: var(--color-primary, #2563eb);
     font-weight: 600;
 }

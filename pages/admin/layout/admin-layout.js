@@ -330,7 +330,25 @@ function initNotifications() {
   // Guard: only init on admin pages (BioData must be loaded)
   if (!window.BioData) return;
 
+  // The bell mounts beside the user menu. Admin pages wrap that menu in
+  // .header-right; the field-officer top bar does not, so fall back to the
+  // menu's own parent. Without this the FO page had NO bell at all, which made
+  // routing verdicts to an officer pointless (#71).
   var headerRight = document.querySelector('.header-right');
+  if (!headerRight) {
+    // Pages with no header-right group (the field-officer top bar) previously got
+    // the bell inserted as a sibling of the logo. With the top bar laid out
+    // space-between, that stranded the bell in the MIDDLE of the header and left
+    // its dropdown floating away from the user menu. Group the bell WITH the
+    // user menu instead, so both sit at the right-hand edge.
+    var menuEl = document.querySelector('.user-menu');
+    if (menuEl && menuEl.parentNode) {
+      headerRight = document.createElement('div');
+      headerRight.className = 'header-right';
+      menuEl.parentNode.insertBefore(headerRight, menuEl);
+      headerRight.appendChild(menuEl);
+    }
+  }
   if (!headerRight) return;
 
   // Check if notification container already exists to avoid duplicates
@@ -542,6 +560,11 @@ function renderNotifications() {
         iconClass = 'flagged';
         iconName = 'trending_down';
       } else if (n.type === 'observation_verdict') {
+        iconClass = 'new-user';
+        iconName = 'verified';
+      } else if (n.type === 'submission_verdict') {
+        // The officer's own record was reviewed (#71) — a distinct icon so it
+        // reads differently from an admin-side verdict in the same bell.
         iconClass = 'new-user';
         iconName = 'verified';
       } else if (n.type === 'observation_edited') {

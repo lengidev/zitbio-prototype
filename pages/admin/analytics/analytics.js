@@ -1794,6 +1794,12 @@ function buildReportCsv(data) {
 }
 
 function downloadCsv(csv, filename) {
+  // Delegates to the shared implementation (lib/csv.js) so the app has one
+  // downloader. The local copy is kept only as a no-JS-module fallback.
+  if (window.BioCsv && window.BioCsv.downloadCsv) {
+    window.BioCsv.downloadCsv(csv, filename);
+    return;
+  }
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');

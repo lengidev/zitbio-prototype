@@ -260,6 +260,49 @@
     font-style: italic;
     color: var(--color-text-secondary);
 }
+/* Per-site baseline overrides (#72). The capability already existed in the
+   analytics engine and in the data layer but had no UI at all — the flagship
+   "built-but-unreachable" case. */
+.page-settings .baseline-site-cell {
+    min-width: 190px;
+}
+
+.page-settings .baseline-site-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.page-settings .baseline-site-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.page-settings .baseline-site-name {
+    white-space: nowrap;
+}
+
+.page-settings .baseline-site-input {
+    width: 90px;
+    padding: 4px 6px;
+    font-size: 12px;
+}
+
+.page-settings .baseline-site-save-btn {
+    margin-top: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+.page-settings .baseline-site-empty {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
 .page-settings .baseline-input {
     max-width: 120px;
     padding: 6px 10px;

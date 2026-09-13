@@ -261,6 +261,10 @@ function initBaselinesSection() {
       });
     });
 
+    // Site list for the per-site override column (#72). Uses sites.short_name
+    // for the compact label, falling back to the full name.
+    var sites = window.BioData.getSiteRegistry ? (window.BioData.getSiteRegistry() || []) : [];
+
     var html = '';
     registry.forEach(function(sp) {
       // Current derived estimate: mean of verified counts for this species.
@@ -292,6 +296,20 @@ function initBaselinesSection() {
         '<td class="baseline-sci">' + escapeSettingHtml(sp.scientific_name || '') + '</td>' +
         '<td>' + escapeSettingHtml(sp.taxon_type || '—') + '</td>' +
         '<td><input type="number" min="0" class="form-input baseline-input" data-species-id="' + escapeSettingHtml(sp.id) + '" value="' + (sp.baseline_count != null ? sp.baseline_count : '') + '" placeholder="' + (derived != null ? 'derived: ' + Math.round(derived * 10) / 10 : 'auto') + '" /></td>' +
+        '<td class="baseline-site-cell">' +
+          (sites.length === 0
+            ? '<span class="baseline-site-empty">No sites</span>'
+            : sites.map(function(site) {
+                var siteValue = (sp.baseline_by_site && sp.baseline_by_site[site.id] != null)
+                  ? sp.baseline_by_site[site.id]
+                  : '';
+                return '<label class="baseline-site-row" title="Baseline for ' + escapeSettingHtml(site.name) + ' only. Leave blank to fall back to the species-wide baseline.">' +
+                    '<span class="baseline-site-name">' + escapeSettingHtml(site.short_name || site.name) + '</span>' +
+                    '<input type="number" min="0" class="form-input baseline-site-input" data-species-id="' + escapeSettingHtml(sp.id) + '" data-site-id="' + escapeSettingHtml(site.id) + '" value="' + siteValue + '" placeholder="global" />' +
+                  '</label>';
+              }).join('')) +
+          (sites.length ? '<button class="btn-primary baseline-site-save-btn" data-species-id="' + escapeSettingHtml(sp.id) + '">Save per-site</button>' : '') +
+        '</td>' +
         '<td><span class="baseline-source ' + sourceClass + '" title="' + escapeSettingHtml(sourceTitle) + '">' + escapeSettingHtml(sourceLabel) + '</span></td>' +
         '<td>' + (sp.baseline_updated_at ? settingsShortDate(sp.baseline_updated_at) : '—') + '</td>' +
         '<td><button class="btn-primary baseline-save-btn" data-species-id="' + escapeSettingHtml(sp.id) + '">Save</button></td>' +
@@ -330,6 +348,51 @@ function initBaselinesSection() {
         }
 
         if (typeof showToast === 'function') showToast('Baseline saved.', 'success');
+        renderBaselines();
+      });
+    });
+
+    // Wire per-site override saves (issue #72). One button per species writes the
+    // row's COMPLETE map in a single request: a per-key read-modify-write raced,
+    // and the second site's stale copy silently blanked the first site's value.
+    tbody.querySelectorAll('.baseline-site-save-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var speciesId = btn.getAttribute('data-species-id');
+        var inputs = tbody.querySelectorAll('.baseline-site-input[data-species-id="' + speciesId + '"]');
+        var map = {};
+        var invalid = false;
+
+        inputs.forEach(function(input) {
+          var siteId = input.getAttribute('data-site-id');
+          var raw = input.value;
+          var value = (raw === '' || raw == null) ? null : parseInt(raw, 10);
+          if (value != null && (isNaN(value) || value < 0)) { invalid = true; return; }
+
+          if (value != null) map[siteId] = value;
+          // Local first so the UI and offline use stay correct.
+          window.BioData.updateSiteBaselineOverride(speciesId, siteId, value);
+        });
+
+        if (invalid) {
+          if (typeof showToast === 'function') showToast('Per-site baselines must be positive numbers or blank.', 'error');
+          return;
+        }
+
+        // Cloud write-through. The three outcomes are reported distinctly: a
+        // silent local-only save is how a "working" editor hides a broken one.
+        if (window.BioSync && window.BioSync.updateSiteBaselineMapCloud) {
+          window.BioSync.updateSiteBaselineMapCloud(speciesId, map).then(function(res) {
+            if (res && res.error) throw res.error;
+            if (typeof showToast === 'function') showToast('Per-site baselines saved.', 'success');
+          }).catch(function(err) {
+            console.error('BioSync: per-site baseline sync failed:', err && err.message);
+            if (typeof showToast === 'function') showToast('Saved on this device, but the server rejected it.', 'error');
+          });
+        } else {
+          console.warn('BioSync unavailable: per-site baselines saved locally only.');
+          if (typeof showToast === 'function') showToast('Saved on this device only — the server was not reached.', 'error');
+        }
+
         renderBaselines();
       });
     });

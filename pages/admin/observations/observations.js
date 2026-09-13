@@ -12,15 +12,236 @@ var obsCurrentPage = 1;
 var obsFilteredData = [];
 var obsRecordsPerPage = 8;
 var currentObsId = null; // Tracks the currently viewed observation ID
+var obsStatusFilter = ''; // '' = all; otherwise a verification_status value (#70)
 
 // Get filtered data from unified data layer using shared search
 function getObsFilteredData() {
     if (!window.BioData) return [];
     var searchInput = document.getElementById('searchInput');
-    if (!searchInput) return window.BioData.getObservations().slice();
-    var selectedField = document.querySelector('input[name="obsSearchField"]:checked');
-    var field = selectedField ? selectedField.value : '';
-    return window.BioData.searchObservations(searchInput.value, field || undefined);
+    var rows;
+
+    if (!searchInput) {
+        rows = window.BioData.getObservations().slice();
+    } else {
+        var selectedField = document.querySelector('input[name="obsSearchField"]:checked');
+        var field = selectedField ? selectedField.value : '';
+        rows = window.BioData.searchObservations(searchInput.value, field || undefined);
+    }
+
+    // Status filter (#70). Applied after search so the two compose: the queue's
+    // primary question is "what is awaiting review?". A record with no status is
+    // treated as Pending, matching how its badge renders.
+    if (obsStatusFilter) {
+        rows = rows.filter(function(o) {
+            return (o.verification_status || 'Pending') === obsStatusFilter;
+        });
+    }
+
+    return rows;
+}
+
+/* ───── REVIEW-QUEUE STATUS FILTER (#70) ───── */
+
+/**
+ * Set the queue's status filter, then sync the URL and the table. The URL
+ * matters: "the records awaiting review" becomes a shareable link, and the
+ * Dashboard's Pending KPI can point straight at it.
+ *
+ * The filter control lives in the column header and its active state is part of
+ * the header markup, so re-rendering is what refreshes the control — there is no
+ * separate chip list to keep in step.
+ */
+function applyStatusFilter(status) {
+    obsStatusFilter = status || '';
+    obsCurrentPage = 1;
+    syncStatusFilterToUrl();
+    renderObsTable();
+}
+
+/** Keep ?status= (and any existing ?obs=) in the address bar without a reload. */
+function syncStatusFilterToUrl() {
+    if (!window.history || !window.history.replaceState) return;
+    var params = [];
+    if (obsStatusFilter) params.push('status=' + encodeURIComponent(obsStatusFilter));
+    var obsParam = getObsParam();
+    if (obsParam) params.push('obs=' + encodeURIComponent(obsParam));
+    window.history.replaceState(null, '', window.location.pathname +
+        (params.length ? '?' + params.join('&') : ''));
+}
+
+/** Read ?status= with a manual fallback (URLSearchParams is ES2017). */
+function readStatusFilterFromUrl() {
+    var found = '';
+    if (typeof URLSearchParams === 'function') {
+        found = new URLSearchParams(window.location.search).get('status') || '';
+    } else {
+        var qs = window.location.search.replace(/^\?/, '').split('&');
+        for (var i = 0; i < qs.length; i++) {
+            var kv = qs[i].split('=');
+            if (kv[0] === 'status' && kv.length > 1) found = decodeURIComponent(kv[1]);
+        }
+    }
+    return found;
+}
+
+/**
+ * Wire the status filter mounted on the "Verification Status" column header.
+ *
+ * Clicks are delegated from the table because the <thead> is rebuilt on every
+ * render (search, filter, paging) — binding the buttons directly would lose the
+ * handlers on the first interaction.
+ */
+function initStatusFilter() {
+    var table = document.querySelector('.page-observations .data-table');
+    if (table) {
+        table.addEventListener('click', function(e) {
+            var target = e.target;
+            while (target && target !== table) {
+                if (target.getAttribute) {
+                    if (target.getAttribute('data-filter-value') !== null) {
+                        applyStatusFilter(target.getAttribute('data-filter-value'));
+                        return;
+                    }
+                    if (target.classList && target.classList.contains('th-filter-btn')) {
+                        toggleStatusFilterMenu(target);
+                        return;
+                    }
+                }
+                target = target.parentNode;
+            }
+        });
+    }
+
+    // Dismiss the menu on Escape or on a click anywhere outside it.
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeStatusFilterMenus();
+    });
+    document.addEventListener('click', function(e) {
+        if (!isInsideStatusFilter(e.target)) closeStatusFilterMenus();
+    });
+    // The menu is fixed-positioned, so it must not be left floating once its
+    // trigger moves. Capture phase catches scrolls in inner containers too.
+    window.addEventListener('scroll', closeStatusFilterMenus, true);
+    window.addEventListener('resize', closeStatusFilterMenus);
+
+    // Honour a deep link (?status=Pending) on load.
+    var initial = readStatusFilterFromUrl();
+    if (initial) {
+        applyStatusFilter(initial);
+    } else {
+        syncStatusFilterToUrl();
+    }
+}
+
+/** Open the filter menu on `btn`, or close it if it is already open. */
+function toggleStatusFilterMenu(btn) {
+    var menu = btn.parentNode ? btn.parentNode.querySelector('.th-filter-menu') : null;
+    if (!menu) return;
+    var willOpen = menu.hasAttribute('hidden');
+    closeStatusFilterMenus();
+    if (willOpen) {
+        menu.removeAttribute('hidden');
+        btn.setAttribute('aria-expanded', 'true');
+        positionStatusFilterMenu(btn, menu);
+    }
+}
+
+/**
+ * Anchor the open menu under its trigger.
+ *
+ * The menu is position:fixed because the table's container scrolls
+ * horizontally, which clips vertically as well — an absolutely positioned menu
+ * would be cut off by it. Fixed positioning is measured against the viewport, so
+ * it also has to be recomputed on scroll; closeStatusFilterMenus() is bound to
+ * scroll/resize for exactly that reason.
+ */
+function positionStatusFilterMenu(btn, menu) {
+    var r = btn.getBoundingClientRect();
+    menu.style.left = Math.round(r.left) + 'px';
+    menu.style.top = Math.round(r.bottom + 6) + 'px';
+}
+
+function closeStatusFilterMenus() {
+    var menus = document.querySelectorAll('.th-filter-menu');
+    Array.prototype.forEach.call(menus, function(m) { m.setAttribute('hidden', ''); });
+    var btns = document.querySelectorAll('.th-filter-btn');
+    Array.prototype.forEach.call(btns, function(b) { b.setAttribute('aria-expanded', 'false'); });
+}
+
+/** Walk up from a node looking for the filter wrapper (avoids closest(), ES5 style). */
+function isInsideStatusFilter(node) {
+    while (node && node.classList) {
+        if (node.classList.contains('th-filter')) return true;
+        node = node.parentNode;
+    }
+    return false;
+}
+
+/* ───── EXPORT THE FILTERED DATASET (#69) ───── */
+
+/**
+ * Export exactly what the admin is looking at — the filtered and searched queue,
+ * not the whole table. Uses the shared CSV module (lib/csv.js) so escaping and
+ * download behaviour match the analytics report export.
+ */
+function handleExportObservations() {
+    if (!(window.BioCsv && window.BioCsv.buildCsv)) {
+        console.warn('Export unavailable: lib/csv.js did not load.');
+        return;
+    }
+
+    var rows = getObsFilteredData();
+    if (rows.length === 0) {
+        setExportFeedback('Nothing to export for the current filters.');
+        return;
+    }
+
+    var columns = [
+        { label: 'observation_id', key: 'observation_id' },
+        { label: 'common_name', get: function(o) { return (o.species_details || {}).common_name; } },
+        { label: 'scientific_name', get: function(o) { return (o.species_details || {}).scientific_name; } },
+        { label: 'count', key: 'count' },
+        { label: 'verification_status', key: 'verification_status' },
+        { label: 'source', key: 'source' },
+        { label: 'focus_area', get: function(o) { return (o.location || {}).focus_area; } },
+        { label: 'habitat_type', get: function(o) { return (o.location || {}).habitat_type; } },
+        { label: 'latitude', get: function(o) { return (o.location || {}).latitude; } },
+        { label: 'longitude', get: function(o) { return (o.location || {}).longitude; } },
+        { label: 'locality_description', get: function(o) { return (o.location || {}).locality_description; } },
+        { label: 'recorded_by', key: 'recorded_by' },
+        { label: 'institution_name', key: 'institution_name' },
+        { label: 'timestamp', key: 'timestamp' },
+        { label: 'field_notes', key: 'field_notes' }
+    ];
+
+    var csv = window.BioCsv.buildCsv(rows, columns);
+    var parts = ['observations'];
+    if (obsStatusFilter) parts.push(obsStatusFilter.toLowerCase());
+    parts.push(new Date().toISOString().slice(0, 10));
+    window.BioCsv.downloadCsv(csv, parts.join('-') + '.csv');
+
+    setExportFeedback('Exported ' + rows.length + ' record' + (rows.length === 1 ? '' : 's') + '.');
+}
+
+/**
+ * Brief confirmation beside the queue. A download gives no other feedback, so a
+ * silent success is indistinguishable from a dead button — which is exactly how
+ * #69 went unnoticed.
+ */
+function setExportFeedback(message) {
+    var el = document.getElementById('exportFeedback');
+    if (!el) {
+        var anchor = document.querySelector('.page-observations .controls-row');
+        if (!anchor || !anchor.parentNode) return;
+        el = document.createElement('span');
+        el.id = 'exportFeedback';
+        el.className = 'export-feedback';
+        el.setAttribute('role', 'status');
+        el.setAttribute('aria-live', 'polite');
+        anchor.parentNode.insertBefore(el, anchor.nextSibling);
+    }
+    el.textContent = message;
+    window.setTimeout(function() { el.textContent = ''; }, 4000);
 }
 
 // Render the table using shared renderer
@@ -75,6 +296,19 @@ function getObsColumns() {
         },
         {
             label: 'Verification Status',
+            // The queue's primary question is "what is awaiting review?", so the
+            // filter sits on the column it filters rather than in a separate bar
+            // (#70). "Rejected" was retired — see the note on submitReview.
+            filter: {
+                ariaLabel: 'Filter the review queue by verification status',
+                active: obsStatusFilter,
+                options: [
+                    { value: '', label: 'All statuses' },
+                    { value: 'Pending', label: 'Pending' },
+                    { value: 'Approved', label: 'Approved' },
+                    { value: 'Flagged', label: 'Flagged' }
+                ]
+            },
             render: function(obs) {
                 var status = obs.verification_status || 'Pending';
                 var statusClass = 'status-' + status.toLowerCase();
@@ -176,6 +410,10 @@ function viewRecordById(id) {
     if (!obs) return;
 
     currentObsId = id;
+    // Load the append-only decision log for this record (issue #73). Done here
+    // rather than at the call sites, so every path that opens the modal — row
+    // click, ?obs= deep link, notification — shows the history.
+    renderReviewHistory(id);
     var speciesDet = obs.species_details || {};
     var loc = obs.location || {};
 
@@ -215,8 +453,10 @@ function viewRecordById(id) {
     // GBIF-imported records show "Imported" rather than "Active".
     document.getElementById('fldRecordStatus').textContent = (obs.source === 'gbif') ? 'Imported' : 'Active';
 
-    // Cancel any active edit mode
+    // Cancel any active edit mode, and any half-made decision, so reopening a
+    // record never inherits the previous one's in-progress state.
     cancelEdit();
+    cancelReviewDecision();
 
     // Store current observation ID for actions
     document.getElementById('viewModal').setAttribute('data-obs-id', obs.observation_id);
@@ -226,6 +466,7 @@ function viewRecordById(id) {
 // Close view modal
 function closeViewModal() {
     cancelEdit();
+    cancelReviewDecision();
     document.getElementById('viewModal').classList.remove('active');
     currentObsId = null;
 }
@@ -242,33 +483,248 @@ function toggleSection(id) {
 // Approve = verified as accurate; Flag = suspected issue (e.g., wrong species ID).
 
 function handleApprove() {
-    if (!window.BioData || !currentObsId) return;
-    var obsId = document.getElementById('viewModal').getAttribute('data-obs-id');
-    if (!obsId) return;
-    window.BioData.updateObservation(obsId, { verification_status: 'Approved' });
-    // Write-through to Supabase (non-fatal on failure — local cache updated).
-    if (window.BioSync && window.BioSync.updateObservation) {
-        window.BioSync.updateObservation(obsId, { verification_status: 'Approved' }).catch(function(err) {
-            console.warn('BioSync: failed to approve observation in Supabase:', err && err.message);
-        });
-    }
-    setBadge('Approved');
-    renderObsTable();
+    // Approving needs no reason, so any half-started flag is abandoned rather
+    // than silently attached to the approval.
+    cancelReviewDecision();
+    submitReview('Approved', null);
 }
 
-function handleFlag() {
+/**
+ * Send a review decision through the audited path (issue #73).
+ *
+ * This goes through the `review_observation` RPC rather than patching
+ * `verification_status` directly: an AFTER trigger writes the decision to
+ * `observation_reviews`, and it can only record the reason if the reason is in
+ * the same transaction as the status change. A direct column update would change
+ * the status and leave the audit trail empty.
+ *
+ * The local store is updated first so the UI responds immediately, and the cloud
+ * write stays non-fatal — matching the previous behaviour.
+ *
+ * "Rejected" was retired on review: it duplicated "Flagged" as a second negative
+ * state, had zero rows in production, and "Flagged" is the incumbent — it predates
+ * this work, carries the existing data, and is already the status the Analytics
+ * map filters by. One negative state, not two.
+ */
+function submitReview(toStatus, reason) {
     if (!window.BioData || !currentObsId) return;
     var obsId = document.getElementById('viewModal').getAttribute('data-obs-id');
     if (!obsId) return;
-    window.BioData.updateObservation(obsId, { verification_status: 'Flagged' });
-    // Write-through to Supabase (non-fatal on failure — local cache updated).
-    if (window.BioSync && window.BioSync.updateObservation) {
-        window.BioSync.updateObservation(obsId, { verification_status: 'Flagged' }).catch(function(err) {
-            console.warn('BioSync: failed to flag observation in Supabase:', err && err.message);
-        });
-    }
-    setBadge('Flagged');
+
+    // Capture the pre-decision status so a failed write can be undone. Without
+    // this, the optimistic update below would leave the table asserting a
+    // decision the server never accepted — the frontend and the database
+    // disagreeing while the admin is told nothing.
+    var badgeEl = document.getElementById('modalStatusBadge');
+    var previousStatus = badgeEl && badgeEl.textContent ? badgeEl.textContent.trim() : 'Pending';
+
+    var species = reviewSpeciesLabel();
+
+    window.BioData.updateObservation(obsId, { verification_status: toStatus });
+    setBadge(toStatus);
     renderObsTable();
+    clearReviewNote();
+
+    if (!(window.BioSync && window.BioSync.reviewObservation)) {
+        // Local-only mode: say so plainly rather than implying it was recorded.
+        reviewToast(reviewOfflineMessage(toStatus, species, reason), 'warning');
+        closeViewModal();
+        return;
+    }
+
+    window.BioSync.reviewObservation(obsId, toStatus, reason).then(function(res) {
+        if (res && res.error) throw res.error;
+        // Refresh before closing so the count is correct if the record is
+        // reopened (renderReviewHistory guards on currentObsId, so it is also
+        // safe to call just before the modal goes away).
+        renderReviewHistory(obsId);
+        closeViewModal();
+        reviewToast(reviewSavedMessage(toStatus, species, reason), 'success');
+    }).catch(function(err) {
+        // The decision never reached the server, so undo it rather than leaving
+        // the UI asserting a decision that is absent from the audit log. The
+        // modal deliberately stays open, so the admin can retry in place.
+        window.BioData.updateObservation(obsId, { verification_status: previousStatus });
+        setBadge(previousStatus);
+        renderObsTable();
+        reviewToast('Could not ' + reviewVerbInfinitive(toStatus) + ' ' + species + ' — ' +
+            ((err && err.message) || 'unknown error') + '. Nothing was recorded.', 'error');
+    });
+}
+
+/* ───── REVIEW OUTCOME REPORTING ───── */
+
+/**
+ * Report the outcome of a decision as a colour-coded toast rather than as a line
+ * of text inside the modal.
+ *
+ * The confirmation has to outlive the modal it describes, and small grey text
+ * inside a dialog is easy to miss — which is how "Saved and logged.", "Saved
+ * locally only" and "NOT saved" ended up as three differently-worded messages
+ * buried in the same slot.
+ *
+ * Falls back to the console if the toast module did not load, so an outcome is
+ * never silently swallowed.
+ */
+function reviewToast(message, type) {
+    if (window.BioToast && typeof window.BioToast.show === 'function') {
+        window.BioToast.show(message, type);
+        return;
+    }
+    console.warn('Review: ' + message);
+}
+
+/**
+ * Confirmation wording for a decision that reached the server.
+ *   Approved -> "Impala has been Approved and saved."
+ *   Flagged  -> "Impala Flagged, wrong species identification."
+ * The reason is part of the flagged message on purpose: the decision is only
+ * meaningful with it, and it is the one thing the admin typed.
+ */
+function reviewSavedMessage(toStatus, species, reason) {
+    if (toStatus === 'Flagged') {
+        return reason ? (species + ' Flagged, ' + reason + '.') : (species + ' Flagged.');
+    }
+    return species + ' has been ' + toStatus + ' and saved.';
+}
+
+/**
+ * Same information for the local-only path, but honest about persistence — the
+ * word "saved" on its own would imply it reached the server.
+ */
+function reviewOfflineMessage(toStatus, species, reason) {
+    if (toStatus === 'Flagged') {
+        return species + ' Flagged, ' + reason +
+            ' — on this device only, the server was not reached.';
+    }
+    return species + ' has been ' + toStatus +
+        ' on this device only — the server was not reached.';
+}
+/**
+ * Infinitive verb, for the failure message. "Could not approve Zebra" reads
+ * correctly where the past tense used for confirmations would not.
+ */
+function reviewVerbInfinitive(toStatus) {
+    if (toStatus === 'Approved') return 'approve';
+    if (toStatus === 'Flagged') return 'flag';
+    return 'save';
+}
+
+/** The species name shown in the modal title, for use in messages. */
+function reviewSpeciesLabel() {
+    var el = document.getElementById('modalSpeciesTitle');
+    var name = el && el.textContent ? el.textContent.trim() : '';
+    return name || 'The record';
+}
+
+/** The reason typed into the modal's review note field, trimmed. */
+function reviewNoteValue() {
+    var input = document.getElementById('reviewNoteInput');
+    return input && input.value ? input.value.trim() : '';
+}
+
+function clearReviewNote() {
+    var input = document.getElementById('reviewNoteInput');
+    if (!input) return;
+    input.value = '';
+    input.classList.remove('review-note-input-error');
+    input.removeAttribute('aria-invalid');
+}
+
+/**
+ * Flag is a decision *about* the record, so it needs a reason. Rather than a
+ * native dialog (already logged as debt under #52), the field is marked invalid
+ * and focused so the correction is obvious in place.
+ */
+function requireReviewNote() {
+    var reason = reviewNoteValue();
+    if (reason) return reason;
+    var input = document.getElementById('reviewNoteInput');
+    if (input) {
+        input.classList.add('review-note-input-error');
+        input.setAttribute('aria-invalid', 'true');
+        input.focus();
+    }
+    // The field is marked in place as well as announced: the red border says
+    // where, the toast says why.
+    reviewToast('A reason is required to flag a record.', 'warning');
+    return null;
+}
+
+/* ───── REVIEW DECISION PANEL (#80) ───── */
+
+/** Status awaiting a reason while the decision panel is open. */
+var pendingReviewStatus = null;
+
+/**
+ * Flag opens the reason panel instead of demanding a reason up front.
+ *
+ * The old flow had it backwards: the note field was always on screen, so the
+ * admin had to type a reason *before* finding the button, and an editable input
+ * sat permanently inside what is otherwise a read-only record view.
+ */
+function handleFlag() {
+    openReviewDecision('Flagged');
+}
+
+function openReviewDecision(toStatus) {
+    var panel = document.getElementById('reviewDecision');
+    if (!panel) return;
+
+    pendingReviewStatus = toStatus;
+
+    var isFlag = toStatus === 'Flagged';
+    var label = document.getElementById('reviewDecisionLabel');
+    if (label) label.textContent = isFlag ? 'Reason for flagging' : 'Reason';
+
+    var confirmBtn = document.getElementById('btnConfirmReview');
+    if (confirmBtn) confirmBtn.textContent = isFlag ? 'Confirm flag' : 'Confirm';
+
+    var input = document.getElementById('reviewNoteInput');
+    if (input) {
+        input.value = '';
+        input.classList.remove('review-note-input-error');
+        input.removeAttribute('aria-invalid');
+    }
+
+    panel.removeAttribute('hidden');
+    if (input) input.focus();
+}
+
+/** Abandon an in-progress decision and return the modal to its read state. */
+function cancelReviewDecision() {
+    var panel = document.getElementById('reviewDecision');
+    if (panel) panel.setAttribute('hidden', '');
+    pendingReviewStatus = null;
+
+    var input = document.getElementById('reviewNoteInput');
+    if (input) {
+        input.value = '';
+        input.classList.remove('review-note-input-error');
+        input.removeAttribute('aria-invalid');
+    }
+}
+
+/** Commit the pending decision. The reason is required, validated here. */
+function confirmReviewDecision() {
+    var reason = requireReviewNote();
+    if (!reason) return;
+
+    var status = pendingReviewStatus || 'Flagged';
+    var panel = document.getElementById('reviewDecision');
+    if (panel) panel.setAttribute('hidden', '');
+    pendingReviewStatus = null;
+
+    submitReview(status, reason);
+}
+
+/** Decision count shown beside the collapsed Review history heading. */
+function setReviewHistoryCount(count) {
+    var el = document.getElementById('reviewHistoryCount');
+    if (!el) return;
+    el.textContent = (count > 0)
+        ? (count === 1 ? '1 decision' : count + ' decisions')
+        : '';
 }
 
 // ───── EDIT MODE ─────
@@ -544,24 +1000,145 @@ function parseCoords(str) {
     return { lat: lat, lng: lng };
 }
 
-// Handle delete — confirms with user, then removes from data layer
-// and refreshes the table. A notification is not generated for deletion.
+// Archive (not destroy) an observation. It is soft-deleted via `deleted_at` so
+// it can be restored from the Archived view — a mis-click used to be
+// unrecoverable (issue #74). The wording now matches what actually happens.
 function handleDelete() {
     if (!window.BioData) return;
     var obsId = document.getElementById('viewModal').getAttribute('data-obs-id');
     var speciesName = document.getElementById('modalSpeciesTitle').textContent;
     if (!obsId) return;
-    if (confirm('Are you sure you want to delete the observation for ' + speciesName + '?')) {
+    if (confirm('Archive the observation for ' + speciesName + '?\n\nIt will leave this list and can be restored from the Archived view.')) {
         window.BioData.deleteObservation(obsId);
-        // Write-through delete to Supabase (non-fatal on failure).
+        // Write-through archive to Supabase (non-fatal on failure).
         if (window.BioSync && window.BioSync.deleteObservation) {
             window.BioSync.deleteObservation(obsId).catch(function(err) {
-                console.warn('BioSync: failed to delete observation in Supabase:', err && err.message);
+                console.warn('BioSync: failed to archive observation in Supabase:', err && err.message);
             });
         }
         closeViewModal();
         renderObsTable();
     }
+}
+
+/**
+ * Render the append-only review log for a record (issue #73).
+ *
+ * Read-only by design: `observation_reviews` has no INSERT/UPDATE/DELETE policy,
+ * so the UI cannot fabricate or rewrite history. Field officers can read the
+ * decisions on their own submissions through the RLS policy on that table.
+ */
+function renderReviewHistory(obsId) {
+    var list = document.getElementById('reviewHistoryList');
+    if (!list) return;
+    list.innerHTML = '<p class="review-history-empty">Loading…</p>';
+    setReviewHistoryCount(0);
+
+    if (!(window.BioSync && window.BioSync.getObservationReviews)) {
+        list.innerHTML = '<p class="review-history-empty">History needs a connection.</p>';
+        return;
+    }
+
+    window.BioSync.getObservationReviews(obsId).then(function(res) {
+        // A late response for a record the admin has already navigated away from
+        // must not overwrite the panel for the current one.
+        if (currentObsId !== obsId) return;
+        if (res && res.error) throw res.error;
+        var rows = (res && res.data) || [];
+        if (rows.length === 0) {
+            list.innerHTML = '<p class="review-history-empty">No decisions recorded yet.</p>';
+            setReviewHistoryCount(0);
+            return;
+        }
+        setReviewHistoryCount(rows.length);
+        list.innerHTML = rows.map(function(r) {
+            var reason = r.reason
+                ? escapeHtmlObs(r.reason)
+                : '<em>No reason given</em>';
+            var when = (r.created_at || '').split('T')[0];
+            return '<div class="review-history-item">' +
+                '<div class="review-history-head">' +
+                    '<span class="review-history-actor">' + escapeHtmlObs(r.actor_name || 'System') + '</span>' +
+                    '<span class="review-history-when">' + escapeHtmlObs(formatObsDate(when)) + '</span>' +
+                '</div>' +
+                '<div class="review-history-transition">' +
+                    escapeHtmlObs(r.from_status || '—') + ' → ' + escapeHtmlObs(r.to_status || '—') +
+                '</div>' +
+                '<div class="review-history-reason">' + reason + '</div>' +
+            '</div>';
+        }).join('');
+    }).catch(function(err) {
+        console.warn('Could not load review history:', err && err.message);
+        list.innerHTML = '<p class="review-history-empty">History could not be loaded.</p>';
+    });
+}
+
+/* ───── ARCHIVED RECORDS (issue #74) ───── */
+
+function openArchivedModal() {
+    var modal = document.getElementById('archivedModal');
+    var list = document.getElementById('archivedList');
+    if (!modal || !list) return;
+    modal.classList.add('active');
+    list.innerHTML = '<p class="archived-empty">Loading…</p>';
+
+    if (!(window.BioSync && window.BioSync.loadArchivedObservations)) {
+        list.innerHTML = '<p class="archived-empty">Archived records need a connection.</p>';
+        return;
+    }
+
+    window.BioSync.loadArchivedObservations().then(function(res) {
+        if (res && res.error) throw res.error;
+        var rows = (res && res.data) || [];
+        if (rows.length === 0) {
+            // Say what archiving is, not just that the list is empty — "Nothing
+            // archived." alone reads as a dead end with no explanation of why
+            // the button exists.
+            list.innerHTML = '<p class="archived-empty">Nothing archived yet.</p>' +
+                '<p class="archived-hint">Archiving a record removes it from the ' +
+                'observations list without destroying it. Archived records are kept ' +
+                'here and can be restored at any time.</p>';
+            return;
+        }
+        list.innerHTML = rows.map(function(r) {
+            var name = r.common_name || r.scientific_name || 'Unknown species';
+            var when = (r.deleted_at || '').split('T')[0];
+            return '<div class="archived-item">' +
+                '<div class="archived-item-meta">' +
+                    '<span class="archived-item-title">' + escapeHtmlObs(name) + '</span>' +
+                    '<span class="archived-item-sub">' + escapeHtmlObs(r.observation_id || '') +
+                        ' · ' + escapeHtmlObs(r.focus_area || '—') +
+                        ' · archived ' + escapeHtmlObs(when) + '</span>' +
+                '</div>' +
+                '<button class="btn-export" data-restore-id="' + escapeHtmlObs(r.observation_id || '') + '">Restore</button>' +
+            '</div>';
+        }).join('');
+    }).catch(function(err) {
+        console.warn('Could not load archived records:', err && err.message);
+        list.innerHTML = '<p class="archived-empty">Archived records could not be loaded.</p>';
+    });
+}
+
+function closeArchivedModal() {
+    var modal = document.getElementById('archivedModal');
+    if (modal) modal.classList.remove('active');
+}
+
+function restoreArchivedRecord(obsId) {
+    if (!obsId) return;
+    if (!(window.BioSync && window.BioSync.restoreObservation)) return;
+    window.BioSync.restoreObservation(obsId).then(function(res) {
+        if (res && res.error) throw res.error;
+        openArchivedModal();   // refresh the archived list
+        // Re-hydrate so the restored row reappears in the main list.
+        if (typeof window.BioSync.loadFromCloud === 'function') {
+            window.BioSync.loadFromCloud();
+        } else {
+            window.location.reload();
+        }
+    }).catch(function(err) {
+        console.warn('Restore failed:', err && err.message);
+    });
 }
 
 // Parse the ?obs= query param with a manual fallback (URLSearchParams is
@@ -707,6 +1284,70 @@ if (typeof document !== 'undefined') {
         // Flag button
         var btnFlag = document.getElementById('btnFlagRecord');
         if (btnFlag) btnFlag.addEventListener('click', handleFlag);
+
+        // Review decision panel (#80)
+        var btnConfirmReview = document.getElementById('btnConfirmReview');
+        if (btnConfirmReview) btnConfirmReview.addEventListener('click', confirmReviewDecision);
+
+        var btnCancelReview = document.getElementById('btnCancelReview');
+        if (btnCancelReview) btnCancelReview.addEventListener('click', cancelReviewDecision);
+
+        var reviewInput = document.getElementById('reviewNoteInput');
+        if (reviewInput) {
+            reviewInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmReviewDecision();
+                } else if (e.key === 'Escape') {
+                    // Stop the modal's own Escape handler from closing the whole
+                    // dialog when the admin only meant to abandon the decision.
+                    e.preventDefault();
+                    e.stopPropagation();
+                    cancelReviewDecision();
+                }
+            });
+        }
+
+        // Review history disclosure (#80). Bound here rather than with an inline
+        // onclick, keeping JS out of the markup.
+        var historyToggle = document.getElementById('reviewHistoryToggle');
+        if (historyToggle) {
+            historyToggle.addEventListener('click', function() {
+                var section = document.getElementById('sectionHistory');
+                if (!section) return;
+                var open = section.classList.toggle('open');
+                historyToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        }
+
+        // Archived records (issue #74). Restore buttons are rendered
+        // dynamically, so their clicks are delegated from the list container.
+        var btnArchived = document.getElementById('btnArchivedRecords');
+        if (btnArchived) btnArchived.addEventListener('click', openArchivedModal);
+
+        // Review-queue status filter (#70)
+        initStatusFilter();
+
+        // Export the filtered queue (#69)
+        var btnExportObs = document.getElementById('btnExportObs');
+        if (btnExportObs) btnExportObs.addEventListener('click', handleExportObservations);
+
+        var closeArchivedBtn = document.getElementById('closeArchivedModalBtn');
+        if (closeArchivedBtn) closeArchivedBtn.addEventListener('click', closeArchivedModal);
+
+        var archivedList = document.getElementById('archivedList');
+        if (archivedList) {
+            archivedList.addEventListener('click', function(e) {
+                var target = e.target;
+                while (target && target !== archivedList) {
+                    if (target.getAttribute && target.getAttribute('data-restore-id')) {
+                        restoreArchivedRecord(target.getAttribute('data-restore-id'));
+                        return;
+                    }
+                    target = target.parentNode;
+                }
+            });
+        }
 
         // Delete button
         var btnDelete = document.getElementById('btnDeleteRecord');
