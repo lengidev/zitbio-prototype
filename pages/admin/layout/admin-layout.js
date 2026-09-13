@@ -786,6 +786,35 @@ function runAnalyticsEvaluation() {
   }
 }
 
+/* ============================================
+   AUTH-PENDING HOLD (#76)
+   Protected pages ship `auth-pending` on <body> in their static markup so the
+   protected shell cannot paint before the route guard has decided. The guard
+   is asynchronous and its offline retry budget is ~10s, so without this hold a
+   signed-in field officer opening an admin URL saw the full admin chrome.
+   ============================================ */
+
+/**
+ * Reveal the page. Idempotent, and safe to call before the guard runs.
+ */
+function clearAuthPending() {
+  if (document.body) document.body.classList.remove('auth-pending');
+}
+
+// Safety net: if a script fails to load or throws before a terminal guard path
+// runs, the page must not stay invisible forever. Unconditional, and
+// deliberately longer than the guard's worst-case decision window so it never
+// races the real result. (styles/global.css carries a CSS-only equivalent for
+// the case where this file itself never loads.)
+window.setTimeout(clearAuthPending, 12000);
+
+// Back/forward cache: a page left while still held is restored with that
+// hidden state, but the timeout above does not re-run on restore — so the
+// class must be dropped on a persisted pageshow or the page stays invisible.
+window.addEventListener('pageshow', function(event) {
+  if (event.persisted) clearAuthPending();
+});
+
 // Initialize when DOM is ready.
 // Protected pages run through the AuthGuard first so unauthenticated or
 // wrong-role users are redirected before any privileged UI mounts.
@@ -847,14 +876,22 @@ if (typeof document !== 'undefined') {
         : AuthGuard.requireAuthenticated();
 
       guardPromise.then(function(result) {
+        // Deliberately still held when redirecting: the page is navigating
+        // away, and revealing it would repaint the exact chrome this hold
+        // exists to hide. If that navigation never lands, the 12s safety net
+        // above reveals the page anyway — a refused user is never stranded.
         if (result && result.redirecting) return; // being redirected — don't mount UI
+        clearAuthPending();
         mountUI();
       }).catch(function() {
         // Guard failed (network, config) — fall back to login to be safe.
+        // Held for the same reason as the redirect branch; the safety net
+        // covers a navigation that never completes.
         window.location.href = '../../../index.html';
       });
     } else {
       // AuthGuard not loaded (legacy/mock path) — proceed as before.
+      clearAuthPending();
       mountUI();
     }
   });
