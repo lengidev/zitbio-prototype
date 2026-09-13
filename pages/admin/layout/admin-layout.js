@@ -219,7 +219,7 @@ function handleUserDropdownAction(item) {
     if (helpLink) {
       helpLink.click();
     } else {
-      alert('Help documentation would open here.');
+      reportPlaceholder();
     }
   } else if (action === 'logout') {
     endSessionAndRedirect();
@@ -315,9 +315,20 @@ function initHeaderActions() {
   if (helpLink) {
     helpLink.addEventListener('click', function(event) {
       event.preventDefault();
-      alert('Help documentation would open here.');
+      reportPlaceholder();
     });
   }
+}
+
+/**
+ * Help is still a stub. Reported as a toast rather than a blocking alert() — a
+ * modal dialog for "this does nothing yet" interrupts the task for no reason
+ * (#52).
+ */
+function reportPlaceholder() {
+  var message = 'Help documentation is not available yet.';
+  if (typeof showToast === 'function') showToast(message, 'warning');
+  else console.warn(message);
 }
 
 /* ============================================

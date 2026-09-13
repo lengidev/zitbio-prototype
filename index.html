@@ -20,7 +20,8 @@
     <!-- Top-right navigation -->
     <nav class="top-nav">
         <a href="#" class="nav-link">Public Insights</a>
-        <a href="#" class="nav-link">Request Access</a>
+        <!-- Was a dead href="#". Now opens the self-signup view below. -->
+        <a href="#request-access" class="nav-link" id="requestAccessLink">Request Access</a>
     </nav>
 
     <div class="login-card">
@@ -102,10 +103,64 @@
             </form>
             <a href="#" id="backToLoginLink" class="forgot-password">&larr; Back to sign in</a>
         </div>
+
+        <!-- Request Access — self-signup. Replaces a nav link that pointed at
+             nothing. Creates an ACTIVE field_officer account immediately via the
+             access-request edge function; the role is set server-side and cannot
+             be chosen here. No email is sent, so the person picks their own
+             password now. See Notes/brain/brain-access-request-decision. -->
+        <div id="requestAccessView" class="recovery-view" hidden>
+            <p class="recovery-note">Create an account to record observations.</p>
+            <form id="requestAccessForm">
+                <div class="form-group">
+                    <label class="form-label" for="raName">Full Name</label>
+                    <input type="text" id="raName" class="form-input" placeholder="e.g. Jane Doe" autocomplete="name">
+                    <p class="form-field-error" id="raNameError" hidden></p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="raEmail">Email Address</label>
+                    <input type="email" id="raEmail" class="form-input" placeholder="your.email@example.com" autocomplete="email">
+                    <p class="form-field-error" id="raEmailError" hidden></p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="raInstitution">Institution</label>
+                    <input type="text" id="raInstitution" class="form-input" placeholder="e.g. The Copperbelt University" autocomplete="organization">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="raPassword">Password</label>
+                    <div class="input-wrapper">
+                        <input
+                            type="password"
+                            id="raPassword"
+                            class="form-input"
+                            placeholder="At least 8 characters"
+                            autocomplete="new-password"
+                        >
+                        <button type="button" id="raPasswordToggleBtn" class="password-toggle" aria-label="Toggle password visibility">
+                            <svg id="raEyeIcon" class="material-icons" aria-hidden="true"><use href="#i-visibility"/></svg>
+                        </button>
+                    </div>
+                    <p class="form-field-error" id="raPasswordError" hidden></p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="raConfirm">Confirm Password</label>
+                    <input type="password" id="raConfirm" class="form-input" placeholder="Re-enter password" autocomplete="new-password">
+                    <p class="form-field-error" id="raConfirmError" hidden></p>
+                </div>
+
+                <button type="submit" id="requestAccessBtn" class="login-btn">Create Account</button>
+            </form>
+            <a href="#" id="backFromAccessLink" class="forgot-password">&larr; Back to sign in</a>
+        </div>
     </div>
 
     <!-- Scripts -->
     <script defer src="config.js"></script>
+    <script defer src="lib/password.js"></script>
     <script defer src="lib/supabase-client.js"></script>
     <script defer src="lib/data.js"></script>
     <script defer src="pages/login/login.js"></script>

@@ -70,7 +70,7 @@ function renderTable() {
     const footer = document.getElementById('paginationFooter');
 
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="table-empty-cell">No users found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="table-empty-cell">No users found</td></tr>';
         footer.textContent = 'Showing 0 of 0 users';
         return;
     }
@@ -80,14 +80,7 @@ function renderTable() {
         var roleDisplay = getRoleDisplayName(user.role);
         var roleClass = roleDisplay === 'Administrator' ? 'admin' : 'officer';
 
-        // Use real lastLogin from data layer, or show "Never" if the user
-        // has never logged in (seed accounts or newly created users).
-        var relativeTime;
-        if (user.lastLogin) {
-          relativeTime = getRelativeTime(new Date(user.lastLogin));
-        } else {
-          relativeTime = 'Never';
-        }
+        var isActive = user.active !== false;
 
         html += '<tr>' +
             '<td class="name-cell">' + escapeHtml(user.name) + '</td>' +
@@ -95,19 +88,24 @@ function renderTable() {
             '<td><span class="role-badge ' + roleClass + '">' + escapeHtml(roleDisplay) + '</span></td>' +
             '<td class="institution-cell">' + escapeHtml(user.institution_name || '—') + '</td>' +
             '<td class="date-cell">' + escapeHtml(user.created) + '</td>' +
-            '<td class="last-login-cell">' +
-                '<span class="last-login-wrapper">' +
-                    '<svg class="material-symbols-outlined last-login-icon" aria-hidden="true"><use href="#i-schedule"/></svg>' +
-                    escapeHtml(relativeTime) +
+            // No class on this cell: a global `.status-cell { display: inline-flex }`
+            // rule breaks the table cell and floats the pill out of alignment.
+            '<td>' +
+                '<span class="user-status ' + (isActive ? 'is-active' : 'is-inactive') + '">' +
+                    (isActive ? 'Active' : 'Deactivated') +
                 '</span>' +
             '</td>' +
+            // All three actions are text buttons. Two icons plus one label read as
+            // a mistake rather than a choice, and there is no suitable icon for
+            // deactivate on this page.
             '<td class="actions-cell">' +
-                '<button class="action-icon-btn edit-user" data-id="' + escapeHtml(user.id) + '" title="Edit">' +
-                    '<svg class="material-symbols-outlined" style="width:18px;height:18px;" aria-hidden="true"><use href="#i-edit"/></svg>' +
+                '<button class="action-text-btn edit-user" data-id="' + escapeHtml(user.id) + '">Edit</button>' +
+                '<button class="action-text-btn ' + (isActive ? 'is-deactivate' : 'is-reactivate') +
+                    ' toggle-user-active" data-id="' + escapeHtml(user.id) +
+                    '" data-active="' + (isActive ? 'true' : 'false') + '">' +
+                    (isActive ? 'Deactivate' : 'Reactivate') +
                 '</button>' +
-                '<button class="action-icon-btn delete delete-user" data-id="' + escapeHtml(user.id) + '" title="Delete">' +
-                    '<svg class="material-symbols-outlined" style="width:18px;height:18px;" aria-hidden="true"><use href="#i-delete"/></svg>' +
-                '</button>' +
+                '<button class="action-text-btn is-delete delete-user" data-id="' + escapeHtml(user.id) + '">Delete</button>' +
             '</td>' +
             '</tr>';
     });
@@ -131,11 +129,13 @@ function openAddUserModal() {
     if (pwdEl) pwdEl.value = '';
     document.getElementById('addUserRole').value = 'field_officer';
     document.getElementById('addUserInstitution').value = '';
-    document.getElementById('addUserModal').classList.add('active');
+    // Through the shared helper so focus moves into the dialog, Tab stays inside
+    // it, the page behind is inert, and focus returns here on close (#51).
+    ModalManager.open('addUserModal');
 }
 
 function closeAddUserModal() {
-    document.getElementById('addUserModal').classList.remove('active');
+    ModalManager.closeById('addUserModal');
 }
 
 function openEditUserModal(id) {
@@ -150,11 +150,142 @@ function openEditUserModal(id) {
     document.getElementById('editUserRole').value = user.role || 'field_officer';
     document.getElementById('editUserInstitution').value = user.institution_name || '';
     document.getElementById('editUserSubtitle').textContent = 'Editing ' + (user.name || 'user');
-    document.getElementById('editUserModal').classList.add('active');
+    ModalManager.open('editUserModal');
 }
 
 function closeEditUserModal() {
-    document.getElementById('editUserModal').classList.remove('active');
+    ModalManager.closeById('editUserModal');
+}
+
+/* ───── FORM VALIDATION (#52) ───── */
+
+/**
+ * Field-level validation for the user forms.
+ *
+ * These forms used native `alert()`: blocking, unstyled, with no field-level
+ * message, no `aria-invalid`, and focus never moved to the offending field — so
+ * a screen-reader user learned nothing. Errors now render next to the field, the
+ * field is marked invalid and described, and the first error takes focus.
+ */
+
+var ADD_USER_FIELDS = ['addUserName', 'addUserEmail', 'addUserPassword'];
+var EDIT_USER_FIELDS = ['editUserName'];
+
+/**
+ * Show or clear the error attached to a field.
+ * @param {string} inputId
+ * @param {string} [message] omit or pass '' to clear
+ */
+function setFieldError(inputId, message) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+
+    var field = input.closest('.form-field') || input.parentNode;
+    var errorId = inputId + 'Error';
+    var errorEl = document.getElementById(errorId);
+
+    if (!message) {
+        if (errorEl && errorEl.parentNode) errorEl.parentNode.removeChild(errorEl);
+        input.classList.remove('input-error');
+        input.removeAttribute('aria-invalid');
+        input.removeAttribute('aria-describedby');
+        return;
+    }
+
+    if (!errorEl) {
+        errorEl = document.createElement('p');
+        errorEl.id = errorId;
+        errorEl.className = 'form-field-error';
+        errorEl.setAttribute('role', 'alert');
+        field.appendChild(errorEl);
+    }
+    errorEl.textContent = message;
+    input.classList.add('input-error');
+    input.setAttribute('aria-invalid', 'true');
+    input.setAttribute('aria-describedby', errorId);
+}
+
+function clearFieldErrors(ids) {
+    Array.prototype.forEach.call(ids, function(id) { setFieldError(id, ''); });
+}
+
+function focusField(inputId) {
+    var input = document.getElementById(inputId);
+    if (input) input.focus();
+}
+
+/**
+ * Deliberately permissive: this exists to catch typos client-side rather than to
+ * reject unusual-but-valid addresses. Anything it lets through, the server still
+ * validates.
+ */
+function isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(value || '').trim());
+}
+
+/**
+ * Validate the Add User form.
+ * @returns {string|null} the first invalid field's id, or null when valid
+ */
+function validateAddUserForm(fields) {
+    var firstInvalid = null;
+    function fail(id, message) {
+        setFieldError(id, message);
+        if (!firstInvalid) firstInvalid = id;
+    }
+
+    if (!fields.name) fail('addUserName', 'Enter a full name.');
+
+    if (!fields.email) {
+        fail('addUserEmail', 'Enter an email address.');
+    } else if (!isValidEmail(fields.email)) {
+        fail('addUserEmail', 'Enter a valid email address, for example name@zitbu.ac.zm.');
+    }
+
+    if (!fields.password || !fields.password.length) {
+        fail('addUserPassword', 'Set a temporary password.');
+    } else {
+        // Shared policy (#54) — this form used to accept 12345678.
+        var strength = window.BioPassword
+            ? window.BioPassword.check(fields.password)
+            : { ok: fields.password.length >= 8, message: 'Use at least 8 characters.' };
+        if (!strength.ok) fail('addUserPassword', strength.message);
+    }
+
+    return firstInvalid;
+}
+
+/**
+ * Turn an API error into something a person can act on.
+ *
+ * Raw strings were shown verbatim before: an invalid email surfaced
+ * "Unable to validate email address: invalid format", which is GoTrue's wording
+ * for something this form should have caught itself.
+ */
+function friendlyUserError(err, action) {
+    var raw = (err && err.message) ? String(err.message) : '';
+    var lower = raw.toLowerCase();
+
+    if (lower.indexOf('invalid format') !== -1 || lower.indexOf('validate email') !== -1) {
+        return 'That email address was rejected. Check it and try again.';
+    }
+    if (lower.indexOf('already') !== -1 || lower.indexOf('duplicate') !== -1 || lower.indexOf('exists') !== -1) {
+        return 'A user with that email already exists.';
+    }
+    if (lower.indexOf('not authorized') !== -1 || lower.indexOf('unauthorized') !== -1 || lower.indexOf('jwt') !== -1) {
+        return 'Your session has expired. Sign in again and retry.';
+    }
+    if (raw) return 'Could not ' + action + ' the user — ' + raw.slice(0, 140);
+    return 'Could not ' + action + ' the user.';
+}
+
+/** Toast wrapper, with a console fallback so an outcome is never swallowed. */
+function userToast(message, type) {
+    if (window.BioToast && typeof window.BioToast.show === 'function') {
+        window.BioToast.show(message, type);
+        return;
+    }
+    console.warn('Users: ' + message);
 }
 
 // Create a REAL Supabase Auth user via the admin-users Edge Function, then
@@ -169,20 +300,12 @@ function handleSaveAddUser() {
     var role = document.getElementById('addUserRole').value;
     var institution = document.getElementById('addUserInstitution').value.trim();
 
-    function notice(text, isError) {
-        if (isError && typeof showToast === 'function') {
-            showToast(text, 'error');
-        } else if (typeof showToast === 'function') {
-            showToast(text, 'success');
-        } else {
-            alert(text);
-        }
-    }
-
-    if (!name) { alert('Please enter a name.'); return; }
-    if (!email) { alert('Please enter an email.'); return; }
-    if (!password || password.length < 8) {
-        alert('Please set a temporary password of at least 8 characters.');
+    clearFieldErrors(ADD_USER_FIELDS);
+    var invalid = validateAddUserForm({ name: name, email: email, password: password });
+    if (invalid) {
+        // Marked in place, then focused — the red field says where, the message
+        // says what, and focus puts the correction within reach.
+        focusField(invalid);
         return;
     }
 
@@ -194,22 +317,22 @@ function handleSaveAddUser() {
             role: role,
             institution: institution
         }).then(function() {
-            notice('User created. They can sign in now.');
             closeAddUserModal();
+            userToast(name + ' created and saved.', 'success');
             // Refresh from cloud so the table shows the real auth user + profile.
             return window.BioSync.loadFromCloud();
         }).then(function() {
             renderTable();
         }).catch(function(err) {
-            alert(err && err.message ? err.message : 'Unable to create user.');
+            userToast(friendlyUserError(err, 'create'), 'error');
         });
     } else {
         // Function not deployed — keep local-cache behaviour so the page
-        // still works, and tell the admin the cloud step is pending.
+        // still works, and say plainly that the cloud step is pending.
         window.BioData.addUser({ name: name, email: email, role: role, institution_name: institution });
-        notice('User saved locally. Deploy admin-users function to create in Supabase.');
         closeAddUserModal();
         renderTable();
+        userToast(name + ' saved on this device only — the server was not reached.', 'warning');
     }
 }
 
@@ -226,9 +349,12 @@ function handleSaveEditUser() {
     var institution = document.getElementById('editUserInstitution').value.trim();
 
     if (!name) {
-        alert('Please enter a name.');
+        clearFieldErrors(EDIT_USER_FIELDS);
+        setFieldError('editUserName', 'Enter a full name.');
+        focusField('editUserName');
         return;
     }
+    clearFieldErrors(EDIT_USER_FIELDS);
 
     if (window.BioSync && typeof window.BioSync.adminUsers === 'function' && window.BioSync.getAdminUsersUrl()) {
         window.BioSync.adminUsers('update', {
@@ -241,13 +367,15 @@ function handleSaveEditUser() {
             return window.BioSync.loadFromCloud();
         }).then(function() {
             renderTable();
+            userToast(name + ' updated and saved.', 'success');
         }).catch(function(err) {
-            alert(err && err.message ? err.message : 'Unable to update user.');
+            userToast(friendlyUserError(err, 'update'), 'error');
         });
     } else {
         window.BioData.updateUser(id, { name: name, role: role, institution_name: institution });
         closeEditUserModal();
         renderTable();
+        userToast(name + ' updated on this device only — the server was not reached.', 'warning');
     }
 }
 
@@ -260,37 +388,250 @@ document.addEventListener('click', function(e) {
         var id = e.target.closest('.edit-user').getAttribute('data-id');
         openEditUserModal(id);
     }
+
+    // Deactivate / reactivate (#53). Reversible, so it is a labelled button
+    // rather than a third ambiguous icon in the actions column.
+    if (e.target.closest('.toggle-user-active')) {
+        var toggleBtn = e.target.closest('.toggle-user-active');
+        var toggleId = toggleBtn.getAttribute('data-id');
+        var currentlyActive = toggleBtn.getAttribute('data-active') === 'true';
+        var target = window.BioData.getUserById(String(toggleId)) || window.BioData.getUserById(parseInt(toggleId, 10));
+        openStatusConfirm(toggleId, target ? target.name : 'this user', currentlyActive);
+        return;
+    }
     if (e.target.closest('.delete-user')) {
         var id = e.target.closest('.delete-user').getAttribute('data-id');
         // Look up by string (cloud UUID) or numeric (legacy) id.
         var user = window.BioData.getUserById(String(id)) || window.BioData.getUserById(parseInt(id, 10));
-        if (user && confirm('Delete user "' + user.name + '" (ID: ' + id + ')?')) {
-            var doDelete = function() {
-                if (window.BioSync && typeof window.BioSync.adminUsers === 'function' && window.BioSync.getAdminUsersUrl()) {
-                    return window.BioSync.adminUsers('delete', { id: id });
-                }
-                return Promise.resolve({ ok: false, skipped: true });
-            };
-            doDelete().then(function() {
-                // Remove from local cache regardless (cloud deleted or fallback),
-                // then refresh from the cloud to reflect the authoritative state.
-                window.BioData.deleteUser(String(id));
-                return window.BioSync && typeof window.BioSync.loadFromCloud === 'function'
-                    ? window.BioSync.loadFromCloud()
-                    : Promise.resolve();
-            }).then(function() {
-                renderTable();
-            }).catch(function(err) {
-                alert(err && err.message ? err.message : 'Unable to delete user.');
-            });
-        }
+        if (user) openDeleteConfirm(id, user.name);
     }
 });
+
+/* ───── ACCESS REQUESTS ───── */
+
+/**
+ * Read-only list of people who used "Request Access" on the sign-in page.
+ *
+ * Approval is automatic, so this is not a queue — it exists so an admin can see
+ * who joined and when. Loaded on first expand rather than at page load, because
+ * it is reference material, not the page's purpose.
+ */
+function renderAccessRequests() {
+    var list = document.getElementById('accessRequestList');
+    var count = document.getElementById('accessRequestsCount');
+    if (!list) return;
+
+    if (!(window.BioSync && typeof window.BioSync.loadAccessRequests === 'function')) {
+        list.innerHTML = '<p class="access-request-empty">Access requests need a connection.</p>';
+        if (count) count.textContent = '';
+        return;
+    }
+
+    window.BioSync.loadAccessRequests().then(function(res) {
+        if (res && res.error) throw res.error;
+        var rows = (res && res.data) || [];
+
+        if (count) {
+            count.textContent = rows.length
+                ? (rows.length === 1 ? '1 request' : rows.length + ' requests')
+                : '';
+        }
+
+        if (rows.length === 0) {
+            list.innerHTML = '<p class="access-request-empty">No requests yet. ' +
+                'People who create an account from the sign-in page appear here.</p>';
+            return;
+        }
+
+        list.innerHTML = rows.map(function(r) {
+            var when = (r.requested_at || '').split('T')[0];
+            return '<div class="access-request-item">' +
+                '<span class="access-request-name">' + escapeHtml(r.full_name || 'Unnamed') + '</span>' +
+                '<span class="access-request-meta">' + escapeHtml(r.email || '') +
+                    (r.institution ? ' · ' + escapeHtml(r.institution) : '') +
+                    (when ? ' · ' + escapeHtml(when) : '') +
+                '</span>' +
+            '</div>';
+        }).join('');
+    }).catch(function(err) {
+        console.warn('Could not load access requests:', err && err.message);
+        list.innerHTML = '<p class="access-request-empty">Could not load access requests.</p>';
+        if (count) count.textContent = '';
+    });
+}
+
+/* ───── DEACTIVATION / DELETION CONFIRMATION (#53) ───── */
+
+var pendingStatusChange = null;
+var pendingDelete = null;
+
+/**
+ * Ask before changing an account's status.
+ *
+ * Replaces window.confirm(), which blocks the page, cannot be styled, and can
+ * only say a sentence — it has no room to explain that deactivation is
+ * reversible, which is the whole reason it exists over delete.
+ */
+function openStatusConfirm(id, name, isActive) {
+    pendingStatusChange = { id: id, name: name, isActive: isActive };
+
+    var card = document.getElementById('confirmStatusCard');
+    var icon = document.getElementById('confirmStatusIcon');
+    var title = document.getElementById('confirmStatusTitle');
+    var lead = document.getElementById('confirmStatusSubtitle');
+    var note = document.getElementById('confirmStatusNote');
+    var accept = document.getElementById('acceptConfirmStatusBtn');
+
+    if (title) title.textContent = isActive ? 'Deactivate account' : 'Reactivate account';
+    if (lead) {
+        lead.textContent = 'You\u2019re about to ' +
+            (isActive ? 'deactivate' : 'reactivate') +
+            ' \u201C' + (name || 'this account') + '\u201D.';
+    }
+    if (note) {
+        note.textContent = isActive
+            ? 'They will no longer be able to sign in. Their observations and ' +
+              'review history are kept, and this can be undone at any time.'
+            : 'They will be able to sign in again with their existing password.';
+    }
+    if (accept) {
+        accept.textContent = isActive ? 'Yes, deactivate' : 'Yes, reactivate';
+        // Reactivating restores access, so it should not be dressed as a
+        // destructive action.
+        accept.className = 'btn ' + (isActive ? 'btn--danger' : 'btn--primary');
+    }
+
+    // Opposite actions, opposite glyphs and tones. The delete dialog's warning
+    // triangle means "this destroys something" — reusing it here would overstate
+    // what either of these does.
+    if (icon) icon.setAttribute('href', isActive ? '#i-person_off' : '#i-how_to_reg');
+    if (card) card.classList.toggle('is-positive', !isActive);
+
+    ModalManager.open('confirmStatusModal');
+}
+
+function closeStatusConfirm() {
+    pendingStatusChange = null;
+    ModalManager.closeById('confirmStatusModal');
+}
+
+/** Run the change the modal was asking about, then confirm it with a toast. */
+function applyStatusChange() {
+    var pending = pendingStatusChange;
+    if (!pending) return;
+
+    closeStatusConfirm();
+
+    if (!(window.BioSync && typeof window.BioSync.adminUsers === 'function' && window.BioSync.getAdminUsersUrl())) {
+        userToast('Changing account status needs the admin-users function. It is not available.', 'error');
+        return;
+    }
+
+    window.BioSync.adminUsers(pending.isActive ? 'deactivate' : 'reactivate', { id: pending.id })
+        .then(function() {
+            return window.BioSync.loadFromCloud();
+        })
+        .then(function() {
+            renderTable();
+            userToast(pending.name + (pending.isActive ? ' deactivated.' : ' reactivated.'), 'success');
+        })
+        .catch(function(err) {
+            userToast(friendlyUserError(err, pending.isActive ? 'deactivate' : 'reactivate'), 'error');
+        });
+}
+
+/* ───── DELETE CONFIRMATION ───── */
+
+/**
+ * Ask before deleting an account.
+ *
+ * Deactivation moved to a dialog but this stayed on window.confirm(), which was
+ * both inconsistent and actively unhelpful: it printed the raw UUID (meaningless
+ * to an admin) and had no room to warn that deletion is irreversible — the exact
+ * distinction that makes it different from Deactivate.
+ */
+function openDeleteConfirm(id, name) {
+    pendingDelete = { id: id, name: name };
+
+    var lead = document.getElementById('confirmDeleteLead');
+    var detail = document.getElementById('confirmDeleteDetail');
+
+    // textContent, not innerHTML: a display name is user-supplied data.
+    if (lead) {
+        lead.textContent = 'You\u2019re about to delete \u201C' +
+            (name || 'this account') + '\u201D.';
+    }
+    if (detail) {
+        detail.textContent = 'The account and its sign-in details are removed ' +
+            'permanently. Their field observations are kept in the dataset, but ' +
+            'are no longer linked to an account.';
+    }
+
+    ModalManager.open('confirmDeleteModal');
+}
+
+function closeDeleteConfirm() {
+    pendingDelete = null;
+    ModalManager.closeById('confirmDeleteModal');
+}
+
+/** Run the delete the modal was asking about, then confirm it with a toast. */
+function applyDelete() {
+    var pending = pendingDelete;
+    if (!pending) return;
+
+    closeDeleteConfirm();
+
+    if (!(window.BioSync && typeof window.BioSync.adminUsers === 'function' && window.BioSync.getAdminUsersUrl())) {
+        userToast('Deleting an account needs the admin-users function. It is not available.', 'error');
+        return;
+    }
+
+    window.BioSync.adminUsers('delete', { id: pending.id })
+        .then(function() {
+            // Drop it from the local cache too. loadFromCloud merges rather than
+            // replaces, so without this the deleted row lingers in the table.
+            window.BioData.deleteUser(String(pending.id));
+            return window.BioSync.loadFromCloud();
+        })
+        .then(function() {
+            renderTable();
+            userToast(pending.name + ' deleted. Their observations were kept.', 'success');
+        })
+        .catch(function(err) {
+            userToast(friendlyUserError(err, 'delete'), 'error');
+        });
+}
 
 // Re-render the table after the Supabase sync layer seeds cloud data.
 if (typeof window !== 'undefined') {
   window.addEventListener('biodata:synced', function() {
     renderTable();
+  });
+  document.addEventListener('DOMContentLoaded', function() {
+    var toggle = document.getElementById('accessRequestsToggle');
+    var section = document.getElementById('accessRequestsSection');
+    if (toggle && section) {
+      toggle.addEventListener('click', function() {
+        var open = section.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) renderAccessRequests();
+      });
+    }
+
+    // Deactivation confirmation modal. No close button: Cancel and Escape are
+    // the exits, matching the other confirmation dialogs.
+    var acceptStatus = document.getElementById('acceptConfirmStatusBtn');
+    if (acceptStatus) acceptStatus.addEventListener('click', applyStatusChange);
+    var cancelStatus = document.getElementById('cancelConfirmStatusBtn');
+    if (cancelStatus) cancelStatus.addEventListener('click', closeStatusConfirm);
+
+    // Deletion confirmation modal. No close button: the reference design and a
+    // destructive action both want Cancel or Escape as the only exits.
+    var acceptDelete = document.getElementById('acceptConfirmDeleteBtn');
+    if (acceptDelete) acceptDelete.addEventListener('click', applyDelete);
+    var cancelDelete = document.getElementById('cancelConfirmDeleteBtn');
+    if (cancelDelete) cancelDelete.addEventListener('click', closeDeleteConfirm);
   });
 }
 

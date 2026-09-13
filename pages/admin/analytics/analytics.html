@@ -68,7 +68,7 @@
         <!-- Sidebar (same as other admin pages) -->
         <aside class="sidebar" id="adminSidebar">
             <div class="sidebar-header">
-                <button id="sidebarToggle" class="sidebar-toggle-btn">
+                <button id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Toggle sidebar" aria-expanded="true" aria-controls="adminSidebar">
                     <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-menu"/></svg>
                 </button>
                 <img class="sidebar-logo-img" src="../../../assets/favicon/logo-txt3.png" alt="ZitBIO Logo">
@@ -115,7 +115,7 @@
                 <span class="footer-left">&copy; 2026 ZitBIO</span>
                 <span class="footer-right">
                     <span class="status-dot" id="statusDot"></span>
-                    <span class="status-text" id="statusText">Syncing</span>
+                    <span class="status-text" id="statusText" role="status" aria-live="polite">Syncing</span>
                 v0.6.0-beta
                 </span>
             </div>
@@ -183,7 +183,7 @@
                             <svg class="material-symbols-outlined search-icon" aria-hidden="true"><use href="#i-search"/></svg>
                             <input type="text" class="search-input" placeholder="Search observations...">
                         </div>
-                        <button class="observation-filter-btn" id="analyticsFilterToggle">
+                        <button class="observation-filter-btn" id="analyticsFilterToggle" aria-label="Filter observations" aria-expanded="false">
                             <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-filter_alt"/></svg>
                             Filters
                             <span class="filter-count-badge" id="filterCountBadge">0</span>
@@ -301,16 +301,16 @@
                             <!-- Pagination Footer -->
                             <div class="observations-pagination">
                                 <div class="pagination-controls">
-                                    <button class="pagi-btn" disabled>
+                                    <button class="pagi-btn" disabled aria-label="Previous page">
                                         <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-chevron_left"/></svg>
                                     </button>
                                     <div class="page-numbers">
                                     </div>
-                                    <button class="pagi-btn">
+                                    <button class="pagi-btn" aria-label="Next page">
                                         <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-chevron_right"/></svg>
                                     </button>
                                 </div>
-                                <div class="pagination-info">
+                                <div class="pagination-info" role="status" aria-live="polite">
                                 </div>
                             </div>
                         </div>
@@ -363,31 +363,31 @@
                         
                         <!-- Hidden legacy zoom controls (kept for JS proxy) -->
                         <div id="map-zoom-controls">
-                            <button id="map-zoom-in" class="map-zoom-btn">
+                            <button id="map-zoom-in" class="map-zoom-btn" aria-label="Zoom in">
                                 <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-add"/></svg>
                             </button>
-                            <button id="map-zoom-out" class="map-zoom-btn">
+                            <button id="map-zoom-out" class="map-zoom-btn" aria-label="Zoom out">
                                 <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-remove"/></svg>
                             </button>
                         </div>
                         
                         <!-- Consolidated toolbar (middle-right) -->
                         <div id="map-toolbar" class="map-toolbar">
-                            <button id="toolbar-zoom-in" class="toolbar-btn" data-tooltip="Zoom in">
+                            <button id="toolbar-zoom-in" class="toolbar-btn" data-tooltip="Zoom in" aria-label="Zoom in">
                                 <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-zoom_in"/></svg>
                             </button>
-                            <button id="toolbar-zoom-out" class="toolbar-btn" data-tooltip="Zoom out">
+                            <button id="toolbar-zoom-out" class="toolbar-btn" data-tooltip="Zoom out" aria-label="Zoom out">
                                 <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-zoom_out"/></svg>
                             </button>
                             <div class="toolbar-divider"></div>
-                            <button id="toolbar-focus-toggle" class="toolbar-btn" data-tooltip="Switch to Campus">
+                            <button id="toolbar-focus-toggle" class="toolbar-btn" data-tooltip="Switch to Campus" aria-label="Switch to Campus">
                                 <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-center_focus_strong"/></svg>
                             </button>
-                            <button id="toolbar-fit" class="toolbar-btn" data-tooltip="Fit area">
+                            <button id="toolbar-fit" class="toolbar-btn" data-tooltip="Fit area" aria-label="Fit area">
                                 <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-fit_screen"/></svg>
                             </button>
                             <div class="toolbar-divider"></div>
-                            <button id="toolbar-mode-toggle" class="toolbar-btn" data-tooltip="Switch to Satellite">
+                            <button id="toolbar-mode-toggle" class="toolbar-btn" data-tooltip="Switch to Satellite" aria-label="Switch to Satellite">
                                 <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-layers"/></svg>
                             </button>
                         </div>
@@ -443,7 +443,7 @@
                         <div class="analytics-card report-card">
                             <div class="analytics-card-header"><h3>Summary</h3></div>
                             <div class="analytics-card-body">
-                                <div class="report-summary-grid">
+                                <div class="report-summary-grid" role="status" aria-live="polite">
                                     <div class="report-kpi">
                                         <span class="report-kpi-value" id="reportKpiSpecies">0</span>
                                         <span class="report-kpi-label">Species</span>

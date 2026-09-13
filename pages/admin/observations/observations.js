@@ -283,8 +283,10 @@ function getObsColumns() {
             label: 'Date',
             cellClass: 'date-cell',
             render: function(obs) {
-                var dateStr = obs.timestamp ? obs.timestamp.split('T')[0] : null;
-                return formatObsDate(dateStr);
+                // LOCAL calendar date. Slicing the ISO string took the raw UTC
+                // day, so a record submitted at 00:06 local (UTC+2) was listed
+                // under the previous day (#46).
+                return formatObsDate(window.BioDate.localDateInput(obs.timestamp));
             }
         },
         {
@@ -364,15 +366,8 @@ function handleObsSearch() {
     renderObsTable();
 }
 
-// Format time from timestamp
 function formatTimeStr(timestamp) {
-    if (!timestamp) return '—';
-    var parts = timestamp.split('T');
-    if (parts.length < 2) return '—';
-    var timePart = parts[1].split('+')[0].split('Z')[0];
-    var timeParts = timePart.split(':');
-    if (timeParts.length < 2) return '—';
-    return timeParts[0] + ':' + timeParts[1];
+    return window.BioDate.shortTime(timestamp);
 }
 
 // Format coordinates
@@ -429,9 +424,8 @@ function viewRecordById(id) {
     document.getElementById('fldPopulation').textContent = obs.count || 0;
     document.getElementById('fldActivity').textContent = obs.activity || 'Not recorded';
     
-    var dateStr = obs.timestamp ? obs.timestamp.split('T')[0] : '';
-    document.getElementById('fldDate').textContent = formatObsDate(dateStr);
-    document.getElementById('fldTime').textContent = formatTimeStr(obs.timestamp);
+    document.getElementById('fldDate').textContent = formatObsDate(window.BioDate.localDateInput(obs.timestamp));
+    document.getElementById('fldTime').textContent = window.BioDate.shortTime(obs.timestamp);
 
     // Location fields
     document.getElementById('fldCountry').textContent = loc.country || '—';
@@ -460,14 +454,14 @@ function viewRecordById(id) {
 
     // Store current observation ID for actions
     document.getElementById('viewModal').setAttribute('data-obs-id', obs.observation_id);
-    document.getElementById('viewModal').classList.add('active');
+    ModalManager.open('viewModal');
 }
 
 // Close view modal
 function closeViewModal() {
     cancelEdit();
     cancelReviewDecision();
-    document.getElementById('viewModal').classList.remove('active');
+    ModalManager.closeById('viewModal');
     currentObsId = null;
 }
 
@@ -807,8 +801,8 @@ function makeFieldsEditable(enable) {
     var editableFields = [
         { id: 'fldPopulation', type: 'number', value: obs.count },
         { id: 'fldActivity', type: 'select', value: obs.activity || '', options: ['', 'Feeding', 'Resting', 'Moving', 'Breeding', 'Foraging', 'Vocalizing', 'Other'] },
-        { id: 'fldDate', type: 'date', value: obs.timestamp ? obs.timestamp.split('T')[0] : '' },
-        { id: 'fldTime', type: 'time', value: obs.timestamp ? formatTimeInput(obs.timestamp) : '' },
+        { id: 'fldDate', type: 'date', value: window.BioDate.localDateInput(obs.timestamp) },
+        { id: 'fldTime', type: 'time', value: window.BioDate.localTimeInput(obs.timestamp) },
         { id: 'fldCountry', type: 'text', value: loc.country || '' },
         { id: 'fldProvince', type: 'select', value: loc.administrative_area || '', options: getProvinceOptions() },
         { id: 'fldCity', type: 'text', value: loc.city || '' },
@@ -886,13 +880,7 @@ function makeFieldsEditable(enable) {
 }
 
 function formatTimeInput(timestamp) {
-    if (!timestamp) return '';
-    var parts = timestamp.split('T');
-    if (parts.length < 2) return '';
-    var timePart = parts[1].split('+')[0].split('Z')[0];
-    var timeParts = timePart.split(':');
-    if (timeParts.length < 2) return '';
-    return timeParts[0] + ':' + timeParts[1];
+    return window.BioDate.localTimeInput(timestamp);
 }
 
 function getProvinceOptions() {
@@ -927,7 +915,11 @@ function saveChanges() {
     var activity = getEditValue('fldActivity');
     var dateVal = getEditValue('fldDate');
     var timeVal = getEditValue('fldTime');
-    var timestamp = dateVal ? dateVal + 'T' + (timeVal || '00:00') + ':00Z' : obs.timestamp;
+    // The typed wall-clock is LOCAL, so it must be resolved against the viewer's
+    // zone. Appending 'Z' stored the local reading as though it were already UTC,
+    // shifting the saved instant by the offset (#46). The field-officer form
+    // already did this correctly with `new Date(date + 'T' + time)`.
+    var timestamp = dateVal ? (window.BioDate.toUtcIso(dateVal, timeVal) || obs.timestamp) : obs.timestamp;
     var country = getEditValue('fldCountry');
     var province = getEditValue('fldProvince');
     var city = getEditValue('fldCity');
@@ -1000,25 +992,79 @@ function parseCoords(str) {
     return { lat: lat, lng: lng };
 }
 
-// Archive (not destroy) an observation. It is soft-deleted via `deleted_at` so
-// it can be restored from the Archived view — a mis-click used to be
-// unrecoverable (issue #74). The wording now matches what actually happens.
+/* ───── ARCHIVE CONFIRMATION ───── */
+
+var pendingArchive = null;
+
+/**
+ * Ask before archiving, through the shared confirmation dialog.
+ *
+ * window.confirm() was part of why this looked broken: it blocks the page, and
+ * on success nothing else on screen changed — the table refills from the next
+ * page of results, so the row count barely moves and the archive appears to have
+ * done nothing at all. The toast below is the missing signal.
+ */
+function openArchiveConfirm(id, speciesName) {
+    pendingArchive = { id: id, species: speciesName };
+
+    var lead = document.getElementById('archiveConfirmLead');
+    var detail = document.getElementById('archiveConfirmDetail');
+    if (lead) {
+        lead.textContent = 'Archive the observation for \u201C' + speciesName + '\u201D?';
+    }
+    if (detail) {
+        detail.textContent = 'It leaves the main list and can be restored at any ' +
+            'time from Archived records.';
+    }
+    ModalManager.open('archiveConfirmModal');
+}
+
+function closeArchiveConfirm() {
+    pendingArchive = null;
+    ModalManager.closeById('archiveConfirmModal');
+}
+
+/** Archive the record the dialog was asking about, then report the outcome. */
+function applyArchive() {
+    var pending = pendingArchive;
+    if (!pending) return;
+    closeArchiveConfirm();
+
+    if (!window.BioData) return;
+
+    window.BioData.deleteObservation(pending.id);
+    closeViewModal();
+    renderObsTable();
+
+    // Without this the action is completely silent, which is what made it read
+    // as a broken button rather than a successful archive.
+    if (window.BioToast) {
+        window.BioToast.show(pending.species + ' archived. Restore it from Archived records.', 'success');
+    }
+
+    if (window.BioSync && window.BioSync.deleteObservation) {
+        window.BioSync.deleteObservation(pending.id).catch(function(err) {
+            // Previously console-only, so a failed write read as a success until
+            // the record quietly reappeared on the next page load.
+            if (window.BioToast) {
+                window.BioToast.show('Could not archive ' + pending.species + ' on the server. It may return on reload.', 'error');
+            }
+            console.warn('BioSync: failed to archive observation in Supabase:', err && err.message);
+        });
+    }
+}
+
+/**
+ * Archive (not destroy) an observation. It is soft-deleted via `deleted_at` so
+ * it can be restored from the Archived view — a mis-click used to be
+ * unrecoverable (issue #74). The wording now matches what actually happens.
+ */
 function handleDelete() {
     if (!window.BioData) return;
     var obsId = document.getElementById('viewModal').getAttribute('data-obs-id');
     var speciesName = document.getElementById('modalSpeciesTitle').textContent;
     if (!obsId) return;
-    if (confirm('Archive the observation for ' + speciesName + '?\n\nIt will leave this list and can be restored from the Archived view.')) {
-        window.BioData.deleteObservation(obsId);
-        // Write-through archive to Supabase (non-fatal on failure).
-        if (window.BioSync && window.BioSync.deleteObservation) {
-            window.BioSync.deleteObservation(obsId).catch(function(err) {
-                console.warn('BioSync: failed to archive observation in Supabase:', err && err.message);
-            });
-        }
-        closeViewModal();
-        renderObsTable();
-    }
+    openArchiveConfirm(obsId, speciesName);
 }
 
 /**
@@ -1079,7 +1125,7 @@ function openArchivedModal() {
     var modal = document.getElementById('archivedModal');
     var list = document.getElementById('archivedList');
     if (!modal || !list) return;
-    modal.classList.add('active');
+    ModalManager.open('archivedModal');
     list.innerHTML = '<p class="archived-empty">Loading…</p>';
 
     if (!(window.BioSync && window.BioSync.loadArchivedObservations)) {
@@ -1120,8 +1166,7 @@ function openArchivedModal() {
 }
 
 function closeArchivedModal() {
-    var modal = document.getElementById('archivedModal');
-    if (modal) modal.classList.remove('active');
+    ModalManager.closeById('archivedModal');
 }
 
 function restoreArchivedRecord(obsId) {
@@ -1184,12 +1229,12 @@ window.openObservationDeepLink = openObservationDeepLink;
 // Open add modal
 function openAddModal() {
     if (!window.BioData) return;
-    document.getElementById('addModal').classList.add('active');
+    ModalManager.open('addModal');
 }
 
 // Close add modal
 function closeAddModal() {
-    document.getElementById('addModal').classList.remove('active');
+    ModalManager.closeById('addModal');
 }
 
 // Initialize page when DOM is ready
@@ -1353,6 +1398,12 @@ if (typeof document !== 'undefined') {
         var btnDelete = document.getElementById('btnDeleteRecord');
         if (btnDelete) btnDelete.addEventListener('click', handleDelete);
 
+        // Archive confirmation dialog
+        var acceptArchive = document.getElementById('acceptArchiveConfirmBtn');
+        if (acceptArchive) acceptArchive.addEventListener('click', applyArchive);
+        var cancelArchive = document.getElementById('cancelArchiveConfirmBtn');
+        if (cancelArchive) cancelArchive.addEventListener('click', closeArchiveConfirm);
+
         // Close add modal buttons
         var closeAddBtn = document.getElementById('closeAddModalBtn');
         var closeAddFooterBtn = document.getElementById('closeAddModalFooterBtn');
@@ -1373,13 +1424,9 @@ if (typeof document !== 'undefined') {
             });
         }
 
-        // Keyboard escape to close modals
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeViewModal();
-                closeAddModal();
-            }
-        });
+        // Escape is owned by ModalManager now, bound per-dialog rather than to
+        // the document (#51). The old handler here closed BOTH modals on any
+        // Escape and would race the helper's own handling.
     });
 }
 

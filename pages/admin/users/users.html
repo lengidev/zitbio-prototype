@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="../../../components/modals.css">
     <link rel="stylesheet" href="users.css">
     <link rel="stylesheet" href="../../../components/notifications.css">
+    <link rel="stylesheet" href="../../../components/toast.css">
     <link rel="stylesheet" href="../../../components/user-dropdown.css">
 </head>
 <body class="page-users">
@@ -46,6 +47,11 @@
     <symbol id="i-check" viewBox="0 -960 960 960"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></symbol>
     <symbol id="i-edit" viewBox="0 -960 960 960"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></symbol>
     <symbol id="i-schedule" viewBox="0 -960 960 960"><path d="m612-292 56-56-148-148v-184h-80v216l172 172ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-400Zm0 320q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Z"/></symbol>
+    <symbol id="i-warning" viewBox="0 -960 960 960"><path d="M40-120l440-760 440 760H40Zm138-80h604L480-720 178-200Zm302-40q17 0 28.5-11.5T520-280q0-17-11.5-28.5T480-320q-17 0-28.5 11.5T440-280q0 17 11.5 28.5T480-240Zm-40-120h80v-200h-80v200Z"/></symbol>
+    <!-- Account status. Distinct from i-warning on purpose: deactivate/reactivate
+         change access, they do not destroy data. -->
+    <symbol id="i-person_off" viewBox="0 -960 960 960"><path d="M791-55 686-160H160v-112q0-34 17.5-62.5T224-378q45-23 91.5-37t94.5-21L55-791l57-57 736 736-57 57ZM240-240h366L486-360h-6q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm496-138q29 14 46 42.5t18 61.5L666-408q18 7 35.5 14t34.5 16ZM568-506l-59-59q23-9 37-29.5t14-45.5q0-33-23.5-56.5T480-720q-25 0-45.5 14T405-669l-59-59q23-34 58-53t76-19q66 0 113 47t47 113q0 41-19 76t-53 58Zm38 266H240h366ZM457-617Z"/></symbol>
+    <symbol id="i-how_to_reg" viewBox="0 -960 960 960"><path d="M80-160v-112q0-33 17-62t47-44q51-26 115-44t141-18q30 0 58.5 3t55.5 9l-70 70q-11-2-21.5-2H400q-71 0-127.5 17T180-306q-9 5-14.5 14t-5.5 20v32h250l80 80H80Zm542 16L484-282l56-56 82 82 202-202 56 56-258 258ZM400-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm10 240Zm-10-320q33 0 56.5-23.5T480-640q0-33-23.5-56.5T400-720q-33 0-56.5 23.5T320-640q0 33 23.5 56.5T400-560Zm0-80Z"/></symbol>
   </svg>
 
   
@@ -53,7 +59,7 @@
         
         <aside class="sidebar" id="adminSidebar">
             <div class="sidebar-header">
-                <button id="sidebarToggle" class="sidebar-toggle-btn">
+                <button id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Toggle sidebar" aria-expanded="true" aria-controls="adminSidebar">
                     <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-menu"/></svg>
                 </button>
                 <img class="sidebar-logo-img" src="../../../assets/favicon/logo-txt3.png" alt="ZitBIO Logo">
@@ -100,7 +106,7 @@
                 <span class="footer-left">&copy; 2026 ZitBIO</span>
                 <span class="footer-right">
                     <span class="status-dot" id="statusDot"></span>
-                    <span class="status-text" id="statusText">Syncing</span>
+                    <span class="status-text" id="statusText" role="status" aria-live="polite">Syncing</span>
                 v0.6.0-beta
                 </span>
             </div>
@@ -182,8 +188,8 @@
                                 <th>Role</th>
                                 <th>Institution</th>
                                 <th>Created Date</th>
-                                <th>Last Login</th>
-                                <th class="text-right">Actions</th>
+                                <th>Status</th>
+                                <th class="actions-header">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="userTableBody">
@@ -191,22 +197,81 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="pagination-footer" id="paginationFooter">
+                <div class="pagination-footer" id="paginationFooter" role="status" aria-live="polite">
                     Showing 1–4 of 4 users
+                </div>
+
+                <!-- Access requests written by the login page's Request Access
+                     form. Read-only: approval is automatic, so this records who
+                     joined and when rather than being a queue to action. -->
+                <div class="access-requests" id="accessRequestsSection">
+                    <button class="access-requests-head" id="accessRequestsToggle"
+                            aria-expanded="false" aria-controls="accessRequestsPanel">
+                        <svg class="material-symbols-outlined toggle-icon" aria-hidden="true"><use href="#i-person_add"/></svg>
+                        Access requests
+                        <span class="access-requests-count" id="accessRequestsCount"></span>
+                        <svg class="chevron material-symbols-outlined" aria-hidden="true"><use href="#i-expand_more"/></svg>
+                    </button>
+                    <div class="access-requests-panel" id="accessRequestsPanel">
+                        <div id="accessRequestList">
+                            <p class="access-request-empty">Loading…</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Deactivate / reactivate (#53). Uses the shared critical layout, but with
+         its own glyph and accent tone: this changes access rather than destroying
+         anything, and it is reversible — so it gets the attention of a critical
+         action without borrowing the warning triangle that means "data loss". -->
+    <div class="modal-overlay" id="confirmStatusModal" role="dialog" aria-modal="true"
+         aria-labelledby="confirmStatusTitle" aria-describedby="confirmStatusNote">
+        <div class="modal-card confirm-dialog-card" id="confirmStatusCard">
+            <span class="confirm-dialog-icon" aria-hidden="true">
+                <svg class="material-symbols-outlined"><use id="confirmStatusIcon" href="#i-person_off"/></svg>
+            </span>
+            <h2 class="confirm-dialog-title" id="confirmStatusTitle">Deactivate account</h2>
+            <p class="confirm-dialog-lead" id="confirmStatusSubtitle">—</p>
+            <p class="confirm-dialog-detail" id="confirmStatusNote">—</p>
+            <div class="confirm-dialog-actions">
+                <button class="btn btn--secondary" id="cancelConfirmStatusBtn">No, keep it</button>
+                <button class="btn btn--danger" id="acceptConfirmStatusBtn">Yes, deactivate</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete confirmation. Centred and icon-led: this is the only destructive,
+         irreversible action on the page, so it should not read like the ordinary
+         form dialogs above it. No close X — Cancel and Escape are the exits. -->
+    <div class="modal-overlay" id="confirmDeleteModal" role="dialog" aria-modal="true"
+         aria-labelledby="confirmDeleteTitle" aria-describedby="confirmDeleteDetail">
+        <div class="modal-card confirm-dialog-card">
+            <span class="confirm-dialog-icon" aria-hidden="true">
+                <svg class="material-symbols-outlined"><use href="#i-warning"/></svg>
+            </span>
+            <h2 class="confirm-dialog-title" id="confirmDeleteTitle">Delete account</h2>
+            <p class="confirm-dialog-lead" id="confirmDeleteLead">—</p>
+            <p class="confirm-dialog-detail" id="confirmDeleteDetail">—</p>
+            <p class="confirm-dialog-warning">This cannot be undone. To suspend access temporarily instead, use Deactivate.</p>
+            <div class="confirm-dialog-actions">
+                <button class="btn btn--secondary" id="cancelConfirmDeleteBtn">No, keep it</button>
+                <button class="btn btn--danger" id="acceptConfirmDeleteBtn">Yes, delete</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Add User Modal (styled to match the Observation view modal) -->
-    <div class="modal-overlay" id="addUserModal">
+    <div class="modal-overlay" id="addUserModal" role="dialog" aria-modal="true"
+         aria-labelledby="addUserModalTitle">
         <div class="modal-card user-modal-card">
             <div class="modal-header user-modal-header">
                 <div>
                     <div class="header-title-row">
-                        <h2 class="modal-title">Add New User</h2>
+                        <h2 class="modal-title" id="addUserModalTitle">Add user</h2>
                     </div>
-                    <p class="modal-subtitle">Create a new system account</p>
+                    <p class="modal-subtitle" id="addUserModalSubtitle">Create an account and choose what they can access.</p>
                 </div>
                 <div class="header-actions">
                     <button class="icon-btn" id="closeAddUserModalBtn" data-tip="Close" aria-label="Close">
@@ -215,55 +280,48 @@
                 </div>
             </div>
             <div class="modal-body user-modal-body">
-                <div class="section-static">
-                    <div class="section-heading">
-                        <svg class="material-symbols-outlined section-icon" aria-hidden="true"><use href="#i-person_add"/></svg>
-                        User Details
+                <div class="user-form-grid">
+                    <div class="form-field">
+                        <label class="form-label" for="addUserName">Full name <span class="form-required" aria-hidden="true">*</span></label>
+                        <input type="text" id="addUserName" class="form-input" placeholder="e.g. Jane Doe" required>
                     </div>
-                    <div class="user-form-grid">
-                        <div class="form-field form-field-full">
-                            <label class="form-label" for="addUserName">Full Name</label>
-                            <input type="text" id="addUserName" class="form-input" placeholder="e.g. Jane Doe">
-                        </div>
-                        <div class="form-field form-field-full">
-                            <label class="form-label" for="addUserEmail">Email</label>
-                            <input type="email" id="addUserEmail" class="form-input" placeholder="name@zitbio.org">
-                        </div>
-                        <div class="form-field form-field-full">
-                            <label class="form-label" for="addUserPassword">Temporary Password (min. 8 characters)</label>
-                            <input type="password" id="addUserPassword" class="form-input" placeholder="Set an initial password">
-                        </div>
-                        <div class="form-field form-field-full">
-                            <label class="form-label" for="addUserRole">Role</label>
-                            <select id="addUserRole" class="form-input">
-                                <option value="field_officer">Field Officer</option>
-                                <option value="admin">Administrator</option>
-                            </select>
-                        </div>
-                        <div class="form-field form-field-full">
-                            <label class="form-label" for="addUserInstitution">Institution</label>
-                            <input type="text" id="addUserInstitution" class="form-input" placeholder="e.g. The Copperbelt University">
-                        </div>
+                    <div class="form-field">
+                        <label class="form-label" for="addUserEmail">Email <span class="form-required" aria-hidden="true">*</span></label>
+                        <input type="email" id="addUserEmail" class="form-input" placeholder="name@zitbio.org" required>
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label" for="addUserRole">Role <span class="form-required" aria-hidden="true">*</span></label>
+                        <select id="addUserRole" class="form-input">
+                            <option value="field_officer">Field Officer</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label" for="addUserInstitution">Institution</label>
+                        <input type="text" id="addUserInstitution" class="form-input" placeholder="e.g. The Copperbelt University">
+                    </div>
+                    <div class="form-field form-field-full">
+                        <label class="form-label" for="addUserPassword">Temporary password <span class="form-required" aria-hidden="true">*</span></label>
+                        <input type="password" id="addUserPassword" class="form-input" placeholder="Set an initial password" required>
+                        <p class="form-hint">At least 8 characters, and not a common password. They will be asked to change it at first sign-in.</p>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer user-modal-footer">
-                <button class="btn-export" id="closeAddUserModalFooterBtn">Cancel</button>
-                <button class="btn-add" id="saveAddUserBtn">
-                    <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-check"/></svg>
-                    Save User
-                </button>
+            <div class="modal-footer user-modal-footer user-modal-footer--split">
+                <button class="btn btn--secondary" id="closeAddUserModalFooterBtn">Cancel</button>
+                <button class="btn btn--primary" id="saveAddUserBtn">Save user</button>
             </div>
         </div>
     </div>
 
     <!-- Edit User Modal (styled to match the Observation view modal) -->
-    <div class="modal-overlay" id="editUserModal">
+    <div class="modal-overlay" id="editUserModal" role="dialog" aria-modal="true"
+         aria-labelledby="editUserModalTitle">
         <div class="modal-card user-modal-card">
             <div class="modal-header user-modal-header">
                 <div>
                     <div class="header-title-row">
-                        <h2 class="modal-title">Edit User</h2>
+                        <h2 class="modal-title" id="editUserModalTitle">Edit User</h2>
                     </div>
                     <p class="modal-subtitle" id="editUserSubtitle">Update account details</p>
                 </div>
@@ -275,46 +333,39 @@
             </div>
             <div class="modal-body user-modal-body">
                 <input type="hidden" id="editUserId">
-                <div class="section-static">
-                    <div class="section-heading">
-                        <svg class="material-symbols-outlined section-icon" aria-hidden="true"><use href="#i-edit"/></svg>
-                        User Details
+                <div class="user-form-grid">
+                    <div class="form-field">
+                        <label class="form-label" for="editUserName">Full name</label>
+                        <input type="text" id="editUserName" class="form-input">
                     </div>
-                    <div class="user-form-grid">
-                        <div class="form-field form-field-full">
-                            <label class="form-label" for="editUserName">Full Name</label>
-                            <input type="text" id="editUserName" class="form-input">
-                        </div>
-                        <div class="form-field form-field-full">
-                            <label class="form-label" for="editUserEmail">Email</label>
-                            <input type="email" id="editUserEmail" class="form-input">
-                        </div>
-                        <div class="form-field form-field-full">
-                            <label class="form-label" for="editUserRole">Role</label>
-                            <select id="editUserRole" class="form-input">
-                                <option value="field_officer">Field Officer</option>
-                                <option value="admin">Administrator</option>
-                            </select>
-                        </div>
-                        <div class="form-field form-field-full">
-                            <label class="form-label" for="editUserInstitution">Institution</label>
-                            <input type="text" id="editUserInstitution" class="form-input">
-                        </div>
+                    <div class="form-field">
+                        <label class="form-label" for="editUserEmail">Email</label>
+                        <input type="email" id="editUserEmail" class="form-input">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label" for="editUserRole">Role</label>
+                        <select id="editUserRole" class="form-input">
+                            <option value="field_officer">Field Officer</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label" for="editUserInstitution">Institution</label>
+                        <input type="text" id="editUserInstitution" class="form-input">
                     </div>
                 </div>
             </div>
-            <div class="modal-footer user-modal-footer">
-                <button class="btn-export" id="closeEditUserModalFooterBtn">Cancel</button>
-                <button class="btn-add" id="saveEditUserBtn">
-                    <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-check"/></svg>
-                    Save
-                </button>
+            <div class="modal-footer user-modal-footer user-modal-footer--split">
+                <button class="btn btn--secondary" id="closeEditUserModalFooterBtn">Cancel</button>
+                <button class="btn btn--primary" id="saveEditUserBtn">Save changes</button>
             </div>
         </div>
     </div>
 
     <script defer src="../../../config.js"></script>
     <script defer src="../../../lib/escape.js"></script>
+    <script defer src="../../../lib/toast.js"></script>
+    <script defer src="../../../lib/password.js"></script>
     <script defer src="../../../lib/supabase-client.js"></script>
     <script defer src="../../../lib/auth-guard.js"></script>
     <script defer src="../../../lib/data.js"></script>

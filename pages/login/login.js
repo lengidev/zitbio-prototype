@@ -80,11 +80,21 @@ function redirectByRole(userId) {
   if (window.BioSupabase) {
     BioSupabase.ready()
       .then(function(client) {
-        return client.from('profiles').select('role').eq('id', userId).maybeSingle();
+        return client.from('profiles').select('role, password_changed_at').eq('id', userId).maybeSingle();
       })
       .then(function(result) {
         if (result.error) throw result.error;
-        var role = result.data && result.data.role;
+        var profile = result.data || {};
+
+        // Forced first-login change (#54). An admin creating an account sets a
+        // password by hand and passes it on out of band; without this gate that
+        // temporary password stays valid forever.
+        if (!profile.password_changed_at) {
+          enterForcedPasswordChange(userId);
+          return;
+        }
+
+        var role = profile.role;
         if (role === 'admin') {
           window.location.href = 'pages/admin/dashboard/dashboard.html';
         } else {
@@ -233,6 +243,198 @@ var recoveryActive = false;
 // The reset email link lands on index.html with a recovery token (implicit
 // flow: #access_token=...&type=recovery). Swap the login form for the
 // "set a new password" form.
+/* ───── REQUEST ACCESS (self-signup) ───── */
+
+/**
+ * Swap between the sign-in form and the Request Access form, mirroring
+ * setRecoveryView so each view's DOM toggling lives in one place.
+ */
+function setAccessView(active) {
+  var loginForm = document.getElementById('loginForm');
+  var forgotLink = document.getElementById('forgotPasswordLink');
+  var resetView = document.getElementById('resetView');
+  var accessView = document.getElementById('requestAccessView');
+  var subtitle = document.getElementById('cardSubtitle');
+
+  if (loginForm) loginForm.hidden = active;
+  if (forgotLink) forgotLink.hidden = active;
+  if (resetView) resetView.hidden = true;
+  if (accessView) accessView.hidden = !active;
+  if (subtitle) subtitle.textContent = active ? 'Create your account' : 'Sign in to your account';
+
+  if (active) {
+    var name = document.getElementById('raName');
+    if (name) name.focus();
+  }
+}
+
+var ACCESS_FIELDS = ['raName', 'raEmail', 'raPassword', 'raConfirm'];
+
+function clearAccessErrors() {
+  for (var i = 0; i < ACCESS_FIELDS.length; i++) {
+    var id = ACCESS_FIELDS[i];
+    var input = document.getElementById(id);
+    var error = document.getElementById(id + 'Error');
+    if (input) {
+      input.classList.remove('input-error');
+      input.removeAttribute('aria-invalid');
+      input.removeAttribute('aria-describedby');
+    }
+    if (error) {
+      error.hidden = true;
+      error.textContent = '';
+    }
+  }
+}
+
+function setAccessError(id, message) {
+  var input = document.getElementById(id);
+  var error = document.getElementById(id + 'Error');
+  if (error) {
+    error.textContent = message;
+    error.hidden = false;
+    error.setAttribute('role', 'alert');
+  }
+  if (input) {
+    input.classList.add('input-error');
+    input.setAttribute('aria-invalid', 'true');
+    input.setAttribute('aria-describedby', id + 'Error');
+  }
+}
+
+/** Endpoint for the public signup function. */
+function getAccessRequestUrl() {
+  var cfg = window.SUPABASE_CONFIG || {};
+  if (cfg.accessRequestUrl) return cfg.accessRequestUrl;
+  if (!cfg.url) return '';
+  return cfg.url.replace(/\/$/, '') + '/functions/v1/access-request';
+}
+
+function handleRequestAccess(e) {
+  e.preventDefault();
+  clearAccessErrors();
+
+  var name = (document.getElementById('raName').value || '').trim();
+  var email = (document.getElementById('raEmail').value || '').trim().toLowerCase();
+  var institution = (document.getElementById('raInstitution').value || '').trim();
+  var password = document.getElementById('raPassword').value || '';
+  var confirm = document.getElementById('raConfirm').value || '';
+
+  // Validate here so the answer is immediate. The function validates again,
+  // because it is reachable without this form.
+  var firstInvalid = null;
+  function fail(id, message) {
+    setAccessError(id, message);
+    if (!firstInvalid) firstInvalid = id;
+  }
+
+  if (!name) fail('raName', 'Enter your full name.');
+
+  if (!email) {
+    fail('raEmail', 'Enter your email address.');
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    fail('raEmail', 'Enter a valid email address.');
+  }
+
+  if (!password || !password.length) {
+    fail('raPassword', 'Choose a password.');
+  } else if (window.BioPassword && !window.BioPassword.check(password).ok) {
+    fail('raPassword', window.BioPassword.check(password).message);
+  } else if (password !== confirm) {
+    fail('raConfirm', 'Both passwords must match.');
+  }
+
+  if (firstInvalid) {
+    var el = document.getElementById(firstInvalid);
+    if (el) el.focus();
+    return;
+  }
+
+  var url = getAccessRequestUrl();
+  var anonKey = (window.SUPABASE_CONFIG || {}).anonKey;
+  if (!url || !anonKey) {
+    showLoginError('Account creation is unavailable: Supabase is not configured.');
+    return;
+  }
+
+  var btn = document.getElementById('requestAccessBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Creating account…';
+  }
+
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': anonKey,
+      'Authorization': 'Bearer ' + anonKey
+    },
+    body: JSON.stringify({
+      email: email,
+      full_name: name,
+      password: password,
+      institution: institution
+    })
+  }).then(function (res) {
+    return res.json().catch(function () { return {}; }).then(function (data) {
+      return { ok: res.ok, status: res.status, data: data };
+    });
+  }).then(function (result) {
+    if (!result.ok) {
+      var message = (result.data && result.data.error) || 'Could not create your account.';
+      // Server-side problems that belong to a field are shown against it.
+      if (result.status === 409) setAccessError('raEmail', message);
+      else showLoginError(message);
+      return;
+    }
+    // Success: return to sign-in with the email filled in, so the next step is
+    // obvious rather than making them retype what they just entered.
+    setAccessView(false);
+    var loginEmail = document.getElementById('email');
+    if (loginEmail) loginEmail.value = email;
+    var pw = document.getElementById('password');
+    if (pw) {
+      pw.value = '';
+      pw.focus();
+    }
+    showLoginSuccess('Account created. Sign in with the password you just chose.');
+  }).catch(function (err) {
+    showLoginError('Could not reach the server. ' + ((err && err.message) || 'Check your connection.'));
+  }).then(function () {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Create Account';
+    }
+  });
+}
+
+// Bound independently of initLogin: nothing is shared with the sign-in wiring,
+// and this keeps the feature working if that wiring changes.
+document.addEventListener('DOMContentLoaded', function () {
+  var accessLink = document.getElementById('requestAccessLink');
+  if (accessLink) {
+    accessLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      clearAccessErrors();
+      setAccessView(true);
+    });
+  }
+
+  var backLink = document.getElementById('backFromAccessLink');
+  if (backLink) {
+    backLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      setAccessView(false);
+    });
+  }
+
+  var accessForm = document.getElementById('requestAccessForm');
+  if (accessForm) accessForm.addEventListener('submit', handleRequestAccess);
+
+  bindPasswordToggle('raPassword', 'raEyeIcon', 'raPasswordToggleBtn');
+});
+
 function isRecoveryLink() {
   return window.location.hash.indexOf('type=recovery') !== -1;
 }
@@ -260,8 +462,59 @@ function enterRecoveryMode() {
 
 function exitRecoveryMode(message) {
   recoveryActive = false;
+  forcedPasswordChange = false;
+  forcedChangeUserId = null;
   setRecoveryView(false);
   if (message) showLoginSuccess(message);
+}
+
+/* ───── FORCED FIRST-LOGIN CHANGE (#54) ───── */
+
+var forcedPasswordChange = false;
+var forcedChangeUserId = null;
+
+/**
+ * Sent here instead of into the app when the profile has no
+ * `password_changed_at` — i.e. the password in use is still the temporary one an
+ * admin set by hand.
+ *
+ * Reuses the reset view: same two fields, different framing. A third password
+ * form would be more surface for no benefit.
+ */
+function enterForcedPasswordChange(userId) {
+  forcedPasswordChange = true;
+  forcedChangeUserId = userId;
+  enterRecoveryMode();
+  var note = document.querySelector('#resetView .recovery-note');
+  if (note) {
+    note.textContent = 'Your account was created with a temporary password. ' +
+      'Choose your own password to continue.';
+  }
+}
+
+/**
+ * Record that the password is no longer the temporary one.
+ *
+ * Without this the gate would fire again on the next sign-in and the person
+ * would be stuck in it. Non-fatal on failure, but logged loudly: a silent failure
+ * here is a repeated prompt nobody can explain.
+ */
+function stampPasswordChanged(userId) {
+  return BioSupabase.ready().then(function(client) {
+    return client.from('profiles')
+      .update({ password_changed_at: new Date().toISOString() })
+      .eq('id', userId)
+      .then(function(res) {
+        if (res && res.error) {
+          console.warn('Could not record password_changed_at:', res.error.message);
+          return false;
+        }
+        return true;
+      });
+  }).catch(function(err) {
+    console.warn('Could not record password_changed_at:', err && err.message);
+    return false;
+  });
 }
 
 function handleUpdatePassword(e) {
@@ -274,6 +527,12 @@ function handleUpdatePassword(e) {
   var newPassword = pw.value;
   if (!newPassword || newPassword.length < 6) {
     showLoginError('Password must be at least 6 characters long.');
+    return;
+  }  var strength = window.BioPassword
+    ? window.BioPassword.check(newPassword)
+    : { ok: newPassword.length >= 8, message: 'Use at least 8 characters.' };
+  if (!strength.ok) {
+    showLoginError(strength.message);
     return;
   }
   if (newPassword !== confirm.value) {
@@ -293,6 +552,13 @@ function handleUpdatePassword(e) {
         showLoginError(result.error.message || 'Unable to update password. Try again.');
         return false;
       }
+      // Forced first-login change (#54): stamp the profile BEFORE signing out,
+      // or the gate fires again on the next sign-in.
+      if (forcedPasswordChange && forcedChangeUserId) {
+        return stampPasswordChanged(forcedChangeUserId).then(function() {
+          return BioSupabase.signOut().then(function() { return true; });
+        });
+      }
       // Invalidate the recovery session so only this device keeps the change.
       return BioSupabase.signOut().then(function() { return true; });
     })
@@ -300,9 +566,12 @@ function handleUpdatePassword(e) {
       btn.disabled = false;
       btn.textContent = 'Update Password';
       if (ok) {
+        var wasForced = forcedPasswordChange;
         pw.value = '';
         confirm.value = '';
-        exitRecoveryMode('Password updated successfully. Sign in with your new password.');
+        exitRecoveryMode(wasForced
+          ? 'Password set. Sign in with your new password.'
+          : 'Password updated successfully. Sign in with your new password.');
       }
     })
     .catch(function() {

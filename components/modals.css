@@ -171,10 +171,13 @@
     opacity: 1;
 }
 
-/* ---- Shared modal-card base (observations view modal + users add/edit modals).
-   Only max-width differs — handled by the per-page overrides below. ---- */
+/* ---- Shared modal-card base. Only max-width differs — handled by the
+   per-page overrides below. Matched on `.modal-card`, not `.user-modal-card`:
+   naming one variant meant any new dialog variant silently got no base styling
+   at all (no positioning, no background, no opacity:0) — the same trap that
+   hid the confirmation modals. ---- */
 .page-observations .modal-card,
-.page-users .user-modal-card {
+.page-users .modal-card {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -194,7 +197,90 @@
 }
 
 .page-observations .modal-card { max-width: 620px; }
-.page-users .user-modal-card { max-width: 460px; }
+.page-users .modal-card { max-width: 460px; }
+
+/* ──────────────────────────────────────────────────────────────
+   Confirmation dialog — shared by every critical, hard-to-undo action.
+
+   Centred and icon-led, so it cannot be mistaken at a glance for one of the
+   ordinary form dialogs. Lives here rather than in a page stylesheet so a new
+   critical action gets the same treatment by reusing the markup.
+
+   Selectors carry `.modal-overlay.active` (three classes) so they beat the
+   per-page `.page-users .modal-card` / `.page-observations .modal-card`
+   max-width rules regardless of stylesheet order — a two-class selector would
+   tie and lose on source order.
+   ────────────────────────────────────────────────────────────── */
+.modal-overlay.active .confirm-dialog-card {
+    /* Tone for the icon and the warning line. Danger by default, because most
+       critical actions destroy something. A dialog whose action is serious but
+       not destructive overrides it with `.is-positive` rather than restating
+       every rule. */
+    --confirm-accent: var(--color-danger);
+    max-width: 400px;
+    padding: 26px 24px 20px;
+    text-align: center;
+}
+
+.modal-overlay.active .confirm-dialog-card.is-positive {
+    --confirm-accent: var(--color-primary);
+}
+
+.modal-overlay.active .confirm-dialog-icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 13px;
+    color: var(--confirm-accent);
+}
+
+.modal-overlay.active .confirm-dialog-icon .material-symbols-outlined {
+    width: 34px;
+    height: 34px;
+}
+
+.modal-overlay.active .confirm-dialog-title {
+    margin: 0 0 10px;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--color-text-main);
+}
+
+.modal-overlay.active .confirm-dialog-lead {
+    margin: 0 0 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-text-main);
+}
+
+.modal-overlay.active .confirm-dialog-detail {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+}
+
+.modal-overlay.active .confirm-dialog-warning {
+    margin: 10px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    font-weight: 600;
+    color: var(--confirm-accent);
+}
+
+/* Two equal buttons side by side, so neither reads as the default. */
+.modal-overlay.active .confirm-dialog-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-overlay.active .confirm-dialog-actions .btn {
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 600;
+}
 
 /* Modal Footer */
 .modal-footer,

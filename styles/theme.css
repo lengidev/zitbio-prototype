@@ -10,6 +10,12 @@
   --color-primary-light: #e8f5e9;
   --color-primary-lighter: #f0f7f0;
 
+  /* Focus ring, as a token so every control draws the same indicator. The ring
+     this replaces was 10-20% alpha, which is invisible on the light input
+     background - focus was effectively unmarked across the product. */
+  --focus-ring: 0 0 0 3px rgba(46, 125, 50, 0.35);
+  --focus-ring-danger: 0 0 0 3px rgba(229, 57, 53, 0.35);
+
   /* Secondary Colors - Earth Brown */
   --color-secondary: #8D6E63;
   --color-secondary-hover: #7a5c52;
@@ -136,6 +142,10 @@
   --border-color-dark: #52665a;
   --color-primary-light: #214a2a;
   --color-primary-lighter: #1d3824;
+  /* Lighter and stronger in dark mode: a 35% green ring on a dark surface reads
+     as a smudge, so this shifts toward the light tint and raises the alpha. */
+  --focus-ring: 0 0 0 3px rgba(129, 199, 132, 0.45);
+  --focus-ring-danger: 0 0 0 3px rgba(239, 154, 154, 0.45);
   --color-secondary-light: #3a302d;
   --color-accent-light: #4a3922;
   --color-danger-light: #4a2929;

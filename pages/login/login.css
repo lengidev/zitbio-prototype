@@ -126,7 +126,7 @@
 
 .page-login .form-input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.2);
+  box-shadow: var(--focus-ring);
 }
 
 /* ---------- Password Toggle ---------- */

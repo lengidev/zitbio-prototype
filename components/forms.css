@@ -74,7 +74,7 @@
 
 .form-input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.2);
+  box-shadow: var(--focus-ring);
   outline: none;
 }
 
@@ -90,12 +90,12 @@
 
 .form-input.error {
   border-color: var(--color-danger);
-  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
+  box-shadow: var(--focus-ring-danger);
 }
 
 .form-input.success {
   border-color: var(--color-success);
-  box-shadow: 0 0 0 3px rgba(129, 199, 132, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 /* ============================================

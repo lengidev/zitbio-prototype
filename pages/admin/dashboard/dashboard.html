@@ -53,7 +53,7 @@
     
         <aside class="sidebar" id="adminSidebar">
         <div class="sidebar-header">
-            <button id="sidebarToggle" class="sidebar-toggle-btn">
+            <button id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Toggle sidebar" aria-expanded="true" aria-controls="adminSidebar">
                 <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-menu"/></svg>
             </button>
             <img class="sidebar-logo-img" src="../../../assets/favicon/logo-txt3.png" alt="ZitBIO Logo">
@@ -100,7 +100,7 @@
             <span class="footer-left">&copy; 2026 ZitBIO</span>
             <span class="footer-right">
                 <span class="status-dot" id="statusDot"></span>
-                <span class="status-text" id="statusText">Syncing</span>
+                <span class="status-text" id="statusText" role="status" aria-live="polite">Syncing</span>
                 v0.6.0-beta
             </span>
         </div>
@@ -162,7 +162,7 @@
             </div>
 
             <!-- Stats -->
-            <div class="stats-grid">
+            <div class="stats-grid" role="status" aria-live="polite">
                 <div class="stat-card">
                     <div class="stat-info">
                         <div class="stat-icon">

@@ -18,5 +18,10 @@ window.SUPABASE_CONFIG = {
   // service_role key server-side; the browser only ever sends the caller's JWT.
   // URL format: https://<project-ref>.supabase.co/functions/v1/admin-users
   // Set to '' until the function is deployed.
-  adminUsersUrl: 'https://hhudwocgyrpgzqoffdqg.supabase.co/functions/v1/admin-users'
+  adminUsersUrl: 'https://hhudwocgyrpgzqoffdqg.supabase.co/functions/v1/admin-users',
+
+  // Public self-signup used by the "Request Access" form on the login page.
+  // The ONLY unauthenticated endpoint in the project: it takes no JWT and always
+  // creates a field_officer, ignoring any role in the request body.
+  accessRequestUrl: 'https://hhudwocgyrpgzqoffdqg.supabase.co/functions/v1/access-request'
 };

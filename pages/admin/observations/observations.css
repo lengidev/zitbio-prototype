@@ -63,6 +63,13 @@
     border-color: var(--border-color-dark);
 }
 
+/* This control sets `outline: none` above and only had a :hover rule, so the
+   per-row primary action had no focus indicator at all (#65). */
+.page-observations .btn-view:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
 /* Actions cell alignment */
 .page-observations .data-table td.actions-cell {
     text-align: left;
@@ -697,7 +704,7 @@
 
 .page-observations .field-row .edit-input:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px var(--color-primary-light);
+    box-shadow: var(--focus-ring);
 }
 
 .page-observations .field-row .edit-select {
@@ -716,7 +723,7 @@
 
 .page-observations .field-row .edit-select:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px var(--color-primary-light);
+    box-shadow: var(--focus-ring);
 }
 
 .page-observations .field-row .edit-textarea {
@@ -737,7 +744,7 @@
 
 .page-observations .field-row .edit-textarea:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px var(--color-primary-light);
+    box-shadow: var(--focus-ring);
 }
 
 .page-observations .field-row.editing .edit-input,

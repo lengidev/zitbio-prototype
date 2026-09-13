@@ -127,20 +127,21 @@
    Add / Edit User Modals (mirrors Observation view modal)
    ============================================ */
 
-/* Overlay */
-.page-users .modal-overlay#addUserModal,
-.page-users .modal-overlay#editUserModal {
+/* Overlay. Scoped to the class, NOT a list of ids: naming ids meant any newly
+   added dialog silently inherited opacity:0 from modals.css and stayed
+   invisible — the #53 confirmation modal did exactly that. */
+.page-users .modal-overlay {
     z-index: var(--z-modal-backdrop);
 }
 
-.page-users .modal-overlay#addUserModal.active,
-.page-users .modal-overlay#editUserModal.active {
+.page-users .modal-overlay.active {
     display: flex;
 }
 
-/* Modal Card Base — shared with observations modal (see modals.css) */
-.page-users .modal-overlay#addUserModal.active .user-modal-card,
-.page-users .modal-overlay#editUserModal.active .user-modal-card {
+/* Modal Card Base — shared with observations modal (see modals.css).
+   This rule is what actually reveals a card: the base sets opacity:0.
+   Matched on `.modal-card` so every dialog variant is covered. */
+.page-users .modal-overlay.active .modal-card {
     opacity: 1;
     pointer-events: auto;
     transform: translate(-50%, -50%) translateY(0) scale(1);
@@ -209,34 +210,44 @@
     color: var(--color-text-muted);
 }
 
-/* Form grid */
+/* Form grid. Two columns, so related pairs (name/email, role/institution) read
+   as a unit and the dialog stays short. */
 .page-users .user-form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px 16px;
+    gap: 16px;
 }
 
 .page-users .user-form-grid .form-field {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 7px;
 }
 
 .page-users .user-form-grid .form-field-full {
     grid-column: 1 / -1;
 }
 
+/* Labels are full-strength text, not muted. The field name is the thing being
+   scanned, and muting it made the form read as placeholder-heavy. */
 .page-users .user-form-grid .form-label {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--color-text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+/* Required marker. aria-hidden because the input already carries `required`, so
+   announcing the asterisk too would just be noise. */
+.page-users .user-form-grid .form-required {
+    color: var(--color-danger);
+    font-weight: 600;
 }
 
 .page-users .user-form-grid .form-input {
     width: 100%;
     font-size: 14px;
     color: var(--color-text-main);
-    padding: 8px 10px;
+    padding: 10px 12px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     background: var(--color-bg-white);
@@ -245,9 +256,209 @@
     font-family: inherit;
 }
 
+.page-users .user-form-grid .form-input::placeholder {
+    color: var(--color-text-muted);
+}
+
 .page-users .user-form-grid .form-input:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px var(--color-primary-light);
+    box-shadow: var(--focus-ring);
+}
+
+/* Helper text for a rule the field actually enforces, rather than a rule the
+   user discovers only by failing. */
+.page-users .user-form-grid .form-hint {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--color-text-muted);
+}
+
+/* Account status. Deliberately identical to the role pill beside it — same
+   padding, radius, font-size and weight — so the two read as the same kind of
+   information. It previously used a small radius and heavier weight, and sat in
+   a <td> carrying a global `.status-cell { display: inline-flex }` rule, which
+   broke the table cell and floated the pill out of line with the row. */
+.page-users .user-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+    background-color: var(--color-bg-header);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.page-users .user-status.is-active {
+    background-color: var(--color-success-light);
+    color: var(--color-primary);
+}
+
+/* Deactivated is the state worth noticing, so it takes the danger pair. */
+.page-users .user-status.is-inactive {
+    background-color: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+/* Row actions. Text for all three: two icons beside one label read as an
+   oversight rather than a choice, and this page has no suitable deactivate
+   glyph — inventing one is how the observations export icon ended up invisible.
+   Square rather than pill-shaped, so they read as controls and not as a second
+   badge column sitting under the status pills. */
+.page-users .action-text-btn {
+    padding: 4px 10px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background-color: var(--color-bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: color 150ms ease, border-color 150ms ease;
+}
+
+/* Spacing goes between buttons only. A leading margin on every button pushed
+   the first one out of line with the Actions header above it. */
+.page-users .action-text-btn + .action-text-btn {
+    margin-left: 6px;
+}
+
+.page-users .action-text-btn:hover {
+    color: var(--color-text-main);
+    border-color: var(--border-color-dark);
+}
+
+.page-users .action-text-btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.page-users .action-text-btn.is-deactivate:hover,
+.page-users .action-text-btn.is-delete:hover {
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+}
+
+.page-users .action-text-btn.is-reactivate:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+/* Actions column: the header and its cells share one alignment so the label
+   sits over the buttons rather than off to one side of them. Left-aligned to
+   match every other header in the table, overriding the global
+   `.actions-cell { text-align: right }` in components/tables.css. */
+.page-users .data-table th.actions-header,
+.page-users .data-table td.actions-cell {
+    text-align: left;
+}
+
+/* The deactivate/reactivate copy now uses the shared confirmation dialog, so
+   `.confirm-status-note` is no longer needed here. */
+
+/* The confirmation dialog styles moved to components/modals.css, where the
+   observations page can reuse them — both pages now run the same critical-action
+   dialog rather than two drifting copies. */
+
+/* Access requests. Self-contained rather than reusing the collapsible classes
+   from observations.css, which this page does not load. */
+.page-users .access-requests {
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.page-users .access-requests-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 4px 0;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-main);
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: color 150ms ease;
+}
+
+.page-users .access-requests-head:hover {
+    color: var(--color-primary);
+}
+
+.page-users .access-requests-head:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.page-users .access-requests-head .toggle-icon {
+    width: 18px;
+    height: 18px;
+    color: var(--color-text-muted);
+}
+
+/* Count is visible while collapsed, so history is discoverable without opening
+   the section. */
+.page-users .access-requests-count {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+.page-users .access-requests-head .chevron {
+    width: 20px;
+    height: 20px;
+    color: var(--color-text-muted);
+    transition: transform 250ms ease;
+}
+
+.page-users .access-requests.is-open .access-requests-head .chevron {
+    transform: rotate(180deg);
+}
+
+.page-users .access-requests-panel {
+    display: none;
+    padding-top: 12px;
+    /* Bounded so a busy sign-up period scrolls here instead of stretching the
+       page. */
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.page-users .access-requests.is-open .access-requests-panel {
+    display: block;
+}
+
+.page-users .access-request-item {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    background: var(--color-bg-input);
+    border-radius: 6px;
+}
+
+.page-users .access-request-name {
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+.page-users .access-request-meta {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.page-users .access-request-empty {
+    font-size: 13px;
+    color: var(--color-text-muted);
 }
 
 /* Footer */
@@ -259,6 +470,19 @@
     padding: 12px 18px;
     border-top: 1px solid var(--border-color);
     background: var(--color-bg-white);
+}
+
+/* Form dialogs split the footer instead of hugging the right edge: the two
+   actions read as a pair, and the primary gets a genuine target. Opt-in via a
+   modifier class rather than an id, so a new dialog cannot silently inherit it
+   and an existing one cannot silently lose it. */
+.page-users .user-modal-footer--split {
+    gap: 12px;
+    padding: 16px 24px;
+}
+
+.page-users .user-modal-footer--split .btn {
+    flex: 1;
 }
 
 /* Responsive */

@@ -150,7 +150,7 @@
                             <label class="fo-label">Common Name <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
                                 <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-pets"/></svg>
-                                <input type="text" id="commonName" class="fo-input" placeholder="Zebra" required>
+                                <input type="text" id="commonName" class="fo-input" placeholder="Zebra" required list="commonNameOptions">
                             </div>
                             <span class="fo-error" id="commonNameError">Common name is required</span>
                         </div>
@@ -158,7 +158,7 @@
                             <label class="fo-label">Scientific Name <span class="fo-required">*</span></label>
                             <div class="fo-input-wrap">
                                 <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-nature"/></svg>
-                                <input type="text" id="scientificName" class="fo-input fo-input-italic" placeholder="Equus quagga" required>
+                                <input type="text" id="scientificName" class="fo-input fo-input-italic" placeholder="Equus quagga" required list="scientificNameOptions">
                             </div>
                             <span class="fo-error" id="scientificNameError">Scientific name is required</span>
                         </div>
@@ -323,7 +323,14 @@
         </form>
     </main>
 
-    <script defer src="../../config.js"></script>
+        <!-- Species suggestions (#47). A datalist, not a closed picker: the officer
+         must stay free to record a species that is not in the registry, because
+         a correctly-entered new species is still a valid record. These only
+         offer the known names so a match is easy when one exists. -->
+    <datalist id="commonNameOptions"></datalist>
+    <datalist id="scientificNameOptions"></datalist>
+
+<script defer src="../../config.js"></script>
     <script defer src="../../lib/escape.js"></script>
     <script defer src="../../lib/supabase-client.js"></script>
     <script defer src="../../lib/auth-guard.js"></script>

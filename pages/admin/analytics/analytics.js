@@ -2033,7 +2033,13 @@ function buildReportEcosystemPdf(data) {
 function exportReportPdf() {
   var PDFLib = window.jspdf;
   if (!PDFLib || !PDFLib.jsPDF) {
-    alert('The PDF library failed to load. Check your connection and reload the page.');
+    // A blocking alert() was the wrong surface for a failed optional dependency:
+    // it stops the whole page for something the person can retry.
+    if (typeof showToast === 'function') {
+      showToast('The PDF library did not load. Check your connection and reload.', 'error');
+    } else {
+      console.warn('PDF library failed to load.');
+    }
     return;
   }
 

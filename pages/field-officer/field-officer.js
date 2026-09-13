@@ -169,6 +169,55 @@ function initFieldOfficer() {
     });
   }
 
+  // --- Species suggestions (#47) ---
+  // A datalist, not a closed picker. The officer stays free to record a species
+  // that is not in the registry — a correctly-entered new species is still a
+  // valid record — while the known names are one keystroke away, which is what
+  // keeps `common_name` matching the registry instead of drifting.
+  //
+  // The registry is hydrated from the cloud, so this also runs on
+  // `biodata:synced`; on a cold load it would otherwise be empty.
+  function populateSpeciesOptions() {
+    var commonList = document.getElementById('commonNameOptions');
+    var sciList = document.getElementById('scientificNameOptions');
+    if (!commonList || !sciList) return;
+
+    var registry = (CentralDataStore && CentralDataStore.getSpeciesRegistry)
+      ? CentralDataStore.getSpeciesRegistry() : [];
+
+    var seen = {};
+    var commonHtml = '';
+    var sciHtml = '';
+    registry.forEach(function(sp) {
+      var common = (sp.common_name || '').trim();
+      if (common && !seen['c:' + common.toLowerCase()]) {
+        seen['c:' + common.toLowerCase()] = true;
+        commonHtml += '<option value="' + escapeFoOption(common) + '"></option>';
+      }
+      var sci = (sp.scientific_name || '').trim();
+      if (sci && !seen['s:' + sci.toLowerCase()]) {
+        seen['s:' + sci.toLowerCase()] = true;
+        sciHtml += '<option value="' + escapeFoOption(sci) + '"></option>';
+      }
+    });
+
+    commonList.innerHTML = commonHtml;
+    sciList.innerHTML = sciHtml;
+  }
+
+  // Registry values are data, not markup, so they are escaped before being
+  // interpolated. Falls back to a local escaper if lib/escape.js did not load.
+  function escapeFoOption(value) {
+    if (window.BioEscape && typeof window.BioEscape.escapeHtml === 'function') {
+      return window.BioEscape.escapeHtml(value);
+    }
+    return String(value).replace(/[&<>"']/g, function(c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  populateSpeciesOptions();
+
   // --- Habitat auto-select from focus area ---
   // Habitat is derived from the selected focus area (app-wide 2-option
   // system): the Nature Park → park habitat; campus → urban. Officers
@@ -215,6 +264,7 @@ function initFieldOfficer() {
   // The registry is seeded locally, then replaced by the cloud copy during
   // hydration — re-populate so newly added sites appear without a reload.
   window.addEventListener('biodata:synced', populateFocusAreaOptions);
+  window.addEventListener('biodata:synced', populateSpeciesOptions);
 
   if (focusAreaEl && habitatTypeEl && CentralDataStore && CentralDataStore.getHabitatForFocusArea) {
     var syncHabitatFromFocus = function() {

@@ -165,7 +165,7 @@ input:focus,
 textarea:focus,
 select:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+  box-shadow: var(--focus-ring);
 }
 
 input::placeholder,
@@ -206,6 +206,22 @@ th {
 td {
   font-size: 13px;
   color: var(--color-text-main);
+}
+
+/* Field-level validation message. Referenced by the input's aria-describedby so
+   it is announced with the field, rather than replaced by a blocking dialog. */
+.form-field-error {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.input-error {
+  border-color: var(--color-danger) !important;
+}
+
+.input-error:focus {
+  box-shadow: 0 0 0 2px var(--color-danger-light) !important;
 }
 
 /* ============================================
@@ -287,6 +303,25 @@ td {
   fill: currentColor;
   flex-shrink: 0;
   vertical-align: middle;
+}
+
+/* ============================================
+   Focus visibility — site-wide
+   ============================================ */
+/* One indicator for the whole product.
+
+   `:focus-visible` rather than `:focus`, so clicking a control with a mouse does
+   not leave a ring behind — the reason `:focus` rings are usually suppressed and
+   then forgotten about.
+
+   An `outline` rather than a box-shadow, so an ancestor's `overflow: hidden`
+   cannot clip it away.
+
+   Controls that set `outline: none` and draw their own ring are expected to keep
+   that ring at least as visible as this — see `--focus-ring`. */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* ============================================

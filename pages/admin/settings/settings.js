@@ -141,9 +141,11 @@ function initSettingsPage() {
     function notify(message, type) {
       if (typeof showToast === 'function') {
         showToast(message, type || 'success');
-      } else {
-        alert(message);
+        return;
       }
+      // Falls back to the console instead of alert(): a blocking dialog for a
+      // form message is exactly what #52 removed.
+      console.warn('Settings: ' + message);
     }
 
     if (!current || !newPwd || !confirm) {
@@ -331,8 +333,14 @@ function initBaselinesSection() {
         var value = (raw === '' || raw == null) ? null : parseInt(raw, 10);
 
         if (value != null && (isNaN(value) || value < 0)) {
+          // Focus the offending input as well as announcing, so the correction
+          // is within reach rather than only in a transient message.
+          if (input) {
+            input.classList.add('input-error');
+            input.setAttribute('aria-invalid', 'true');
+            input.focus();
+          }
           if (typeof showToast === 'function') showToast('Baseline must be a positive number or blank.', 'error');
-          else alert('Baseline must be a positive number or blank.');
           return;
         }
 

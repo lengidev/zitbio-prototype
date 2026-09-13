@@ -46,6 +46,7 @@
          previously reused here, which read as "delete" for a non-destructive
          view. -->
     <symbol id="i-archive" viewBox="0 -960 960 960"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm80-80h400v-80H280v80Zm-80-400h560v-80H200v80Z"/></symbol>
+    <symbol id="i-warning" viewBox="0 -960 960 960"><path d="M40-120l440-760 440 760H40Zm138-80h604L480-720 178-200Zm302-40q17 0 28.5-11.5T520-280q0-17-11.5-28.5T480-320q-17 0-28.5 11.5T440-280q0 17 11.5 28.5T480-240Zm-40-120h80v-200h-80v200Z"/></symbol>
     <symbol id="i-chevron_left" viewBox="0 -960 960 960"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></symbol>
     <symbol id="i-chevron_right" viewBox="0 -960 960 960"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></symbol>
     <symbol id="i-search" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></symbol>
@@ -67,7 +68,7 @@
         
         <aside class="sidebar" id="adminSidebar">
     <div class="sidebar-header">
-        <button id="sidebarToggle" class="sidebar-toggle-btn">
+        <button id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Toggle sidebar" aria-expanded="true" aria-controls="adminSidebar">
             <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-menu"/></svg>
         </button>
         <img class="sidebar-logo-img" src="../../../assets/favicon/logo-txt3.png" alt="ZitBIO Logo">
@@ -114,7 +115,7 @@
             <span class="footer-left">&copy; 2026 ZitBIO</span>
             <span class="footer-right">
                 <span class="status-dot" id="statusDot"></span>
-                <span class="status-text" id="statusText">Syncing</span>
+                <span class="status-text" id="statusText" role="status" aria-live="polite">Syncing</span>
                 v0.6.0-beta
             </span>
         </div>
@@ -178,7 +179,7 @@
                         <div class="search-container">
                             <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-search"/></svg>
                             <input type="text" class="search-input" id="searchInput" placeholder="Search">
-                            <button class="obs-filter-btn" id="obsFilterBtn">
+                            <button class="obs-filter-btn" id="obsFilterBtn" aria-label="Filter by verification status" aria-expanded="false" aria-controls="obsFilterMenu">
                                 <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-filter_list"/></svg>
                             </button>
                             <div class="obs-search-dropdown" id="obsSearchDropdown">
@@ -240,14 +241,14 @@
                 <!-- Pagination Footer -->
                 <div class="observations-pagination">
                     <div class="pagination-controls">
-                        <button class="pagi-btn" disabled>
+                        <button class="pagi-btn" disabled aria-label="Previous page">
                             <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-chevron_left"/></svg>
                         </button>
-                        <button class="pagi-btn">
+                        <button class="pagi-btn" aria-label="Next page">
                             <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-chevron_right"/></svg>
                         </button>
                     </div>
-                    <div class="pagination-info"></div>
+                    <div class="pagination-info" role="status" aria-live="polite"></div>
                 </div>
             </div>
         </main>
@@ -255,7 +256,10 @@
 
     <!-- View Modal (Redesigned) -->
     <div class="modal-overlay" id="viewModal">
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <!-- aria-labelledby pointed at "modalTitle", which does not exist on this
+             page — the heading's id is "modalSpeciesTitle" — so the dialog had no
+             accessible name (#51). -->
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalSpeciesTitle">
             <!-- Header -->
             <div class="modal-header">
                 <div class="modal-heading">
@@ -431,6 +435,24 @@
         </div>
     </div>
 
+    <!-- Archive confirmation. Same shared dialog as the users page uses, so a
+         critical action looks and behaves the same wherever it appears. -->
+    <div class="modal-overlay" id="archiveConfirmModal" role="dialog" aria-modal="true"
+         aria-labelledby="archiveConfirmTitle" aria-describedby="archiveConfirmDetail">
+        <div class="modal-card confirm-dialog-card">
+            <span class="confirm-dialog-icon" aria-hidden="true">
+                <svg class="material-symbols-outlined"><use href="#i-warning"/></svg>
+            </span>
+            <h2 class="confirm-dialog-title" id="archiveConfirmTitle">Archive record</h2>
+            <p class="confirm-dialog-lead" id="archiveConfirmLead">—</p>
+            <p class="confirm-dialog-detail" id="archiveConfirmDetail">—</p>
+            <div class="confirm-dialog-actions">
+                <button class="btn btn--secondary" id="cancelArchiveConfirmBtn">No, keep it</button>
+                <button class="btn btn--danger" id="acceptArchiveConfirmBtn">Yes, archive</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Archived records (issue #74): soft-deleted rows, with restore. -->
     <div class="modal-overlay" id="archivedModal">
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="archivedModalTitle">
@@ -457,10 +479,10 @@
 
     <!-- Add Record Modal -->
     <div class="modal-overlay" id="addModal">
-        <div class="add-modal">
+        <div class="add-modal" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
             <div class="add-modal-header">
-                <h3 class="add-modal-title">Add New Record</h3>
-                <button class="modal-close" id="closeAddModalBtn">
+                <h3 class="add-modal-title" id="addModalTitle">Add New Record</h3>
+                <button class="modal-close" id="closeAddModalBtn" aria-label="Close">
                     <svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-close"/></svg>
                 </button>
             </div>
@@ -475,6 +497,7 @@
 
     <script defer src="../../../config.js"></script>
     <script defer src="../../../lib/escape.js"></script>
+    <script defer src="../../../lib/date.js"></script>
     <script defer src="../../../lib/toast.js"></script>
     <script defer src="../../../lib/csv.js"></script>
     <script defer src="../../../lib/supabase-client.js"></script>
