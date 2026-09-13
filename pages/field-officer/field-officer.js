@@ -320,18 +320,18 @@ function initFieldOfficer() {
                 cityEl.value = cityVal;
               }
 
-              // Province/State — match against Zambia province list
-              var stateVal = addr.state || '';
-              var provEl = document.getElementById('provinceState');
-              if (provEl && stateVal) {
-                var options = provEl.options;
-                for (var i = 0; i < options.length; i++) {
-                  if (options[i].text.toLowerCase() === stateVal.toLowerCase()) {
-                    options[i].selected = true;
-                    break;
-                  }
-                }
-              }
+              // Province/State — deliberately NOT auto-filled here.
+              //
+              // The Province field is a `readonly` input pinned to "Copperbelt
+              // Province" for current scope (see the note at the top of this
+              // file); the 10-province expansion is tracked in futureupdates.md.
+              //
+              // This block used to iterate `provEl.options` as though the field
+              // were a <select>. On an <input>, `.options` is undefined, so
+              // `options.length` threw a TypeError on EVERY successful reverse
+              // geocode — swallowed by the .catch() below, which is why nobody
+              // noticed. There is no option list to select from and the field is
+              // locked, so there is genuinely nothing to do.
             })
             .catch(function() { /* silently fail — coordinates already captured */ });
         },
