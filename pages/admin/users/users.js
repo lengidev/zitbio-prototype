@@ -90,22 +90,22 @@ function renderTable() {
         }
 
         html += '<tr>' +
-            '<td class="name-cell">' + user.name + '</td>' +
-            '<td class="email-cell">' + user.email + '</td>' +
-            '<td><span class="role-badge ' + roleClass + '">' + roleDisplay + '</span></td>' +
-            '<td class="institution-cell">' + (user.institution_name || '—') + '</td>' +
-            '<td class="date-cell">' + user.created + '</td>' +
+            '<td class="name-cell">' + escapeHtml(user.name) + '</td>' +
+            '<td class="email-cell">' + escapeHtml(user.email) + '</td>' +
+            '<td><span class="role-badge ' + roleClass + '">' + escapeHtml(roleDisplay) + '</span></td>' +
+            '<td class="institution-cell">' + escapeHtml(user.institution_name || '—') + '</td>' +
+            '<td class="date-cell">' + escapeHtml(user.created) + '</td>' +
             '<td class="last-login-cell">' +
                 '<span class="last-login-wrapper">' +
                     '<svg class="material-symbols-outlined last-login-icon" aria-hidden="true"><use href="#i-schedule"/></svg>' +
-                    relativeTime +
+                    escapeHtml(relativeTime) +
                 '</span>' +
             '</td>' +
             '<td class="actions-cell">' +
-                '<button class="action-icon-btn edit-user" data-id="' + user.id + '" title="Edit">' +
+                '<button class="action-icon-btn edit-user" data-id="' + escapeHtml(user.id) + '" title="Edit">' +
                     '<svg class="material-symbols-outlined" style="width:18px;height:18px;" aria-hidden="true"><use href="#i-edit"/></svg>' +
                 '</button>' +
-                '<button class="action-icon-btn delete delete-user" data-id="' + user.id + '" title="Delete">' +
+                '<button class="action-icon-btn delete delete-user" data-id="' + escapeHtml(user.id) + '" title="Delete">' +
                     '<svg class="material-symbols-outlined" style="width:18px;height:18px;" aria-hidden="true"><use href="#i-delete"/></svg>' +
                 '</button>' +
             '</td>' +

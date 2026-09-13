@@ -28,13 +28,19 @@ function renderDashboardStats() {
   var html = '';
   BioData.recentActivity(5).forEach(function(act) {
     html += '<tr>' +
-      '<td class="date-cell">' + act.date + '</td>' +
-      '<td class="species-cell">' + act.species + '</td>' +
-      '<td class="location-cell">' + act.location + '</td>' +
-      '<td class="officer-cell">' + act.officer + '</td>' +
+      '<td class="date-cell">' + escapeActivity(act.date) + '</td>' +
+      '<td class="species-cell">' + escapeActivity(act.species) + '</td>' +
+      '<td class="location-cell">' + escapeActivity(act.location) + '</td>' +
+      '<td class="officer-cell">' + escapeActivity(act.officer) + '</td>' +
       '</tr>';
   });
   tbody.innerHTML = html;
+}
+
+// Escapes untrusted activity fields before they reach innerHTML — species
+// names, localities and officer names are all user-entered in the field form.
+function escapeActivity(value) {
+  return window.BioEscape.escapeHtml(value);
 }
 
 /**

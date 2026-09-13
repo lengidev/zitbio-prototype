@@ -86,8 +86,17 @@ document.addEventListener('DOMContentLoaded', () => {
             item.classList.add('active');
         }
 
-        // On click: update active class and close mobile sidebar
-        item.addEventListener('click', function() {
+        // On click: update active class and close mobile sidebar.
+        // Logout is an <a href> pointing at the login page, so it must be
+        // intercepted — otherwise the browser navigates before the session is
+        // ended and the next person on the machine inherits a live admin
+        // session (#39).
+        item.addEventListener('click', function (e) {
+            if (item.id === 'navLogout' || item.getAttribute('data-action') === 'logout') {
+                e.preventDefault();
+                endSessionAndRedirect();
+                return;
+            }
             navItems.forEach(n => n.classList.remove('active'));
             this.classList.add('active');
             if (window.innerWidth <= 768) {
@@ -213,24 +222,52 @@ function handleUserDropdownAction(item) {
       alert('Help documentation would open here.');
     }
   } else if (action === 'logout') {
-    // End the real Supabase session (also clears the mock BioData session
-    // for compatibility), then redirect to the login page.
-    var doneRedirecting = false;
-    function finishLogout() {
-      if (doneRedirecting) return;
-      doneRedirecting = true;
-      if (window.BioData) {
-        BioData.logout();
-      }
-      // Determine correct relative path based on page depth
-      var isAdminPage = window.location.pathname.indexOf('/admin/') !== -1;
-      window.location.href = isAdminPage ? '../../../index.html' : '../../index.html';
+    endSessionAndRedirect();
+  }
+}
+
+/* ============================================
+   LOGOUT — the single path for every logout control
+   ============================================ */
+
+// Guards against a double invocation when both the dropdown item and the
+// sidebar link are reachable in the same click sequence.
+var _loggingOut = false;
+
+/**
+ * End the session, then return to the login page.
+ *
+ * Used by BOTH the avatar dropdown item (data-action="logout") and the sidebar
+ * link (#navLogout) so the two controls cannot behave differently again (#39).
+ *
+ * Clears AUTHENTICATION state only. The cached observation/registry data is
+ * deliberately preserved so offline field work survives a logout — see the
+ * Security + Identity milestone, decision #2.
+ */
+function endSessionAndRedirect() {
+  if (_loggingOut) return;
+  _loggingOut = true;
+
+  function finish() {
+    if (window.BioData) {
+      BioData.logout();
     }
-    if (window.BioSupabase && window.BioSupabase.isConfigured()) {
-      BioSupabase.signOut().then(finishLogout).catch(finishLogout);
-    } else {
-      finishLogout();
-    }
+    // BioData.logout() writes an explicit null; drop the key entirely so no
+    // stale session marker survives on a shared machine. (Signing out also
+    // removes the sb-*-auth-token key, which is what actually matters.)
+    try { localStorage.removeItem('biodata_session'); } catch (err) { /* storage unavailable */ }
+
+    // Correct relative path depends on page depth.
+    var isAdminPage = window.location.pathname.indexOf('/admin/') !== -1;
+    window.location.href = isAdminPage ? '../../../index.html' : '../../index.html';
+  }
+
+  if (window.BioSupabase && window.BioSupabase.isConfigured()) {
+    // Redirect regardless of whether signOut resolves or rejects — a failed
+    // network call must not leave the user stuck on a protected page.
+    BioSupabase.signOut().then(finish).catch(finish);
+  } else {
+    finish();
   }
 }
 
@@ -588,13 +625,13 @@ function formatTimeAgo(dateStr) {
 }
 
 /**
- * Simple HTML escaping
+ * Simple HTML escaping.
+ * Delegates to lib/escape.js so the app has one implementation; this was a
+ * second copy that happened to be correct.
  */
 function escapeHtml(str) {
   if (!str) return '';
-  var div = document.createElement('div');
-  div.appendChild(document.createTextNode(str));
-  return div.innerHTML;
+  return window.BioEscape.escapeHtml(str);
 }
 
 // ============================================================
