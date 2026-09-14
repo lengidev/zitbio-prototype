@@ -61,6 +61,89 @@ body.auth-pending {
 }
 
 /* ============================================
+   Boot layer
+   ============================================
+   The hold above means a protected page paints NOTHING until the route guard
+   has verified the session, and that needs at least one Supabase round trip.
+   Measured window: 1.6-6s, and up to the 12s safety net when Supabase is
+   unreachable. It used to be a flat rectangle of --color-bg — #F5F7FA in
+   light, #17211b in dark — which reads as a broken page rather than a loading
+   one. This layer is STATIC MARKUP, so it paints with no JS and no data.
+
+   It is allowed to show itself inside a hidden body because `visibility` is
+   inherited and a descendant may switch it back on. Nothing privileged lives
+   inside it (a ring and a sentence), so it cannot leak the chrome the #76 hold
+   exists to conceal.
+   ============================================ */
+.app-boot {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-boot);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+  background-color: var(--color-bg);
+  /* Resolved state. `visibility` is NOT transitioned, on purpose: this layer is
+     opaque and covers the viewport, and a transition only advances while the
+     document is ticking. A page revealed in a background tab (or by a browser
+     that throttles it) would otherwise leave the spinner sitting on top of the
+     finished app — verified happening, `elementFromPoint` was the boot layer.
+     Instant and unconditional is the only safe end state. */
+  opacity: 0;
+  visibility: hidden;
+}
+
+body.auth-pending .app-boot {
+  visibility: visible;
+  opacity: 1;
+  /* Entry fade only, and only for opacity: 120ms of delay so a guard that
+     resolves immediately does not flash a spinner. If this transition never
+     advances, the layer is simply never shown — the pre-fix behaviour, still
+     no worse — because it cannot affect the hidden/resolved state above. */
+  transition: opacity var(--transition-normal) 120ms;
+  /* Mirrors the 12s CSS safety net on `body.auth-pending`. Without it, a page
+     whose scripts never load would be revealed by the keyframe above while
+     this opaque layer stayed on top of it — the net would hide the very page
+     it exists to rescue. Deliberately 12s and forwards in both places. */
+  animation: app-boot-hide 0s linear 12s forwards;
+}
+
+@keyframes app-boot-hide {
+  to { opacity: 0; visibility: hidden; }
+}
+
+.app-boot-mark {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--color-spinner);
+  border-radius: var(--radius-full);
+  animation: app-boot-spin 800ms linear infinite;
+}
+
+@keyframes app-boot-spin {
+  to { transform: rotate(360deg); }
+}
+
+.app-boot-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* A spinner frozen mid-rotation reads as a broken spinner, so under
+   `prefers-reduced-motion` the moving part is dropped and the sentence — the
+   part that actually carries the information — stays. */
+@media (prefers-reduced-motion: reduce) {
+  .app-boot-mark {
+    display: none;
+  }
+}
+
+/* ============================================
    Reduced motion (#68)
    ============================================
    `prefers-reduced-motion: reduce` is a request to be spared MOVEMENT, not a

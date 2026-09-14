@@ -101,23 +101,38 @@ function initFieldOfficer() {
   var observationForm = document.getElementById('observationForm');
   if (!observationForm) return;
 
-  // --- Pre-populate session data to reduce field entry errors ---
-  if (CentralDataStore) {
-    var session = CentralDataStore.getSession();
-    if (session) {
-      var userNameEl = document.querySelector('.user-menu-name');
-      if (userNameEl) userNameEl.textContent = session.name;
+  /**
+   * Paint the signed-in officer's identity into the read-only observer fields.
+   *
+   * Re-run whenever the identity settles, because this page's scripts run before
+   * the route guard has resolved: the first call can find no session at all and
+   * then leaves the markup's placeholder name in a field that is **submitted as
+   * the observation's attribution** (#86 — the same timing defect that labelled an
+   * admin "Field Officer" in the header dropdown). The fields are `readonly`, so
+   * repainting them can never discard anything the officer typed.
+   */
+  function applySessionIdentity() {
+    var session = CentralDataStore ? CentralDataStore.getSession() : null;
+    if (!session) return;
 
-      var officerEl = document.getElementById('officerName');
-      if (officerEl) officerEl.value = session.name;
+    var userNameEl = document.querySelector('.user-menu-name');
+    if (userNameEl && session.name) userNameEl.textContent = session.name;
 
-      var instEl = document.getElementById('institutionName');
-      if (instEl) instEl.value = session.institution_name || '';
-    }
+    var officerEl = document.getElementById('officerName');
+    if (officerEl) officerEl.value = session.name || '';
 
-    // Province and Country are locked to Copperbelt/Zambia for current scope.
-    // See [[futureupdates#10-Province Expansion|futureupdates.md]] for expansion plans.
+    var instEl = document.getElementById('institutionName');
+    if (instEl) instEl.value = session.institution_name || '';
   }
+
+  // --- Pre-populate session data to reduce field entry errors ---
+  applySessionIdentity();
+  if (CentralDataStore && typeof CentralDataStore.subscribe === 'function') {
+    CentralDataStore.subscribe('session:changed', applySessionIdentity);
+  }
+
+  // Province and Country are locked to Copperbelt/Zambia for current scope.
+  // See [[futureupdates#10-Province Expansion|futureupdates.md]] for expansion plans.
 
   // --- Default date/time to now ---
   var dateEl = document.getElementById('obsDate');
@@ -377,8 +392,6 @@ function initFieldOfficer() {
       return;
     }
 
-    var session = CentralDataStore ? CentralDataStore.getSession() : null;
-    var officerName = document.getElementById('officerName').value;
     var institutionName = document.getElementById('institutionName').value;
     var date = document.getElementById('obsDate').value;
     var time = document.getElementById('obsTime').value;
@@ -439,17 +452,13 @@ function initFieldOfficer() {
 
     showToast('Observation recorded successfully!', 'success');
 
-    // Reset form but preserve session values so officer can
+    // Reset form but preserve the session identity so the officer can
     // immediately submit the next observation without re-entering
-    // their personal details.
+    // their personal details. Read live from the session rather than from the
+    // snapshot taken on submit, so the attribution fields always match the
+    // person who is actually signed in.
     observationForm.reset();
-    if (session) {
-      var officerEl = document.getElementById('officerName');
-      if (officerEl) officerEl.value = session.name;
-
-      var instEl = document.getElementById('institutionName');
-      if (instEl) instEl.value = session.institution_name || '';
-    }
+    applySessionIdentity();
 
     // Reset date/time to now and clear validation errors
     resetDateTimeAndErrors();

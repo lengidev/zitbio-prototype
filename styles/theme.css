@@ -67,6 +67,11 @@
      theme only, so using it as active-nav text put dark-green on a dark surface
      in dark mode — 2.49:1 (issue #60). This token is theme-aware. */
   --color-nav-active-fg: #1B5E20;
+  /* Moving indicator of the pre-paint boot layer (styles/global.css). It is
+     defined once, by reference, because --color-nav-active-fg is already the
+     green that passes contrast on --color-bg in BOTH themes — so there is no
+     second pair of values to keep in step. */
+  --color-spinner: var(--color-nav-active-fg);
   --color-warning: #ffb74d;
   --color-warning-light: #fff3e0;
 
@@ -128,6 +133,9 @@
   --z-modal: 301;
   --z-toast: 400;
   --z-tooltip: 500;
+  /* Above every surface including toasts: the boot layer covers the whole
+     viewport while the route guard decides, so nothing may sit on top of it. */
+  --z-boot: 600;
 }
 
 [data-theme="dark"] {

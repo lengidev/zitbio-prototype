@@ -108,19 +108,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* ============================================
    USER MENU DROPDOWN
-   Populated dynamically from BioData session so the displayed
-   name/role/ID always reflects the logged-in user.
+   Populated from the *verified* identity handed over by the route guard, so
+   the displayed name/role/account always describes the person who is actually
+   signed in. Before #86 this painted from a session whose profile had not
+   arrived yet, and its `|| 'field_officer'` fallback is why an admin could read
+   "Role: Field Officer" next to a hardcoded "Account ID: ADM-001".
    ============================================ */
-function initUserMenu() {
+
+// Repaint hook for the one `session:changed` subscription below. Kept at module
+// scope so a later initUserMenu() cannot leave the subscription pointing at a
+// dropdown that has been replaced.
+var repaintUserMenu = null;
+var userMenuRepaintBound = false;
+
+function initUserMenu(verifiedProfile) {
   const userMenu = document.getElementById('userMenu');
   if (!userMenu) return;
 
   const dropdown = userMenu.querySelector('.user-dropdown');
   if (!dropdown) return;
 
-  // Populate dropdown from session data
-  if (window.BioData) {
-    updateUserDropdownFromSession(dropdown);
+  // Populate dropdown from the identity the guard verified
+  repaintUserMenu = function() {
+    if (window.BioData) {
+      updateUserDropdownFromSession(dropdown, verifiedProfile);
+    }
+  };
+  repaintUserMenu();
+
+  // Repaint whenever the identity settles. The guard's verdict is already on the
+  // session by the time this runs, but two later events can still change what we
+  // should show — the session hydrating from the profile fetch, and a token
+  // refresh carrying a new role. Without this, the first paint was permanent.
+  if (window.BioData && typeof BioData.subscribe === 'function' && !userMenuRepaintBound) {
+    userMenuRepaintBound = true;
+    BioData.subscribe('session:changed', function() {
+      if (repaintUserMenu) repaintUserMenu();
+    });
   }
 
   // Toggle dropdown on user menu click
@@ -164,47 +188,43 @@ function initUserMenu() {
 }
 
   /**
-   * Update user dropdown content from the current session.
-   * Pulls name, email, role, and a generated Account ID from BioData
-   * so the dropdown is always in sync with the session state.
+   * Paint the user dropdown from the current identity.
+   *
+   * `verifiedProfile` is the route guard's verdict and always wins over the
+   * cached session, which is a cache that may not have hydrated yet: this is the
+   * difference between showing the role that was verified and showing a guess.
+   * Name, email, role and account code are all rewritten on every call, because
+   * the markup ships one person's details as a hardcoded placeholder — correct
+   * for exactly one of the accounts that can load these pages.
    */
-function updateUserDropdownFromSession(dropdown) {
-  var session = BioData.getSession();
-  if (!session) return;
+function updateUserDropdownFromSession(dropdown, verifiedProfile) {
+  var session = (window.BioData && BioData.getSession) ? BioData.getSession() : null;
+  if (!session && !verifiedProfile) return;
+
+  var role = (verifiedProfile && verifiedProfile.role) || (session && session.role) || null;
+  var name = (verifiedProfile && verifiedProfile.full_name) || (session && session.name) || '';
+  var email = (verifiedProfile && verifiedProfile.email) || (session && session.email) || '';
+  var accountSource = (verifiedProfile && verifiedProfile.id) || (session && session.id) || '';
+  var roleLabel = role === 'admin' ? 'Admin'
+    : (role === 'field_officer' ? 'Field Officer' : '\u2014');
 
   // Update header title
   var titleEl = dropdown.querySelector('.user-dropdown-title');
-  if (titleEl) titleEl.textContent = session.name;
+  if (titleEl && name) titleEl.textContent = name;
 
   // Update header subtitle
   var subtitleEl = dropdown.querySelector('.user-dropdown-subtitle');
-  if (subtitleEl) subtitleEl.textContent = session.email;
+  if (subtitleEl && email) subtitleEl.textContent = email;
 
   // Update user-menu name in the trigger
   var userNameEl = document.querySelector('.user-menu-name');
-  if (userNameEl) userNameEl.textContent = session.name;
+  if (userNameEl && name) userNameEl.textContent = name;
 
-  // Update footer
+  // Update footer — role, then the account code that belongs to that same person
   var footerSpans = dropdown.querySelectorAll('.user-dropdown-footer span');
   if (footerSpans.length >= 2) {
-    // Role
-    var roleLabel = session.role === 'admin' ? 'Admin' : 'Field Officer';
     footerSpans[0].textContent = 'Role: ' + roleLabel;
-
-    // Account ID - look up user to get their id
-    var user = BioData.getUserByEmail(session.email);
-    if (user) {
-      var prefix = session.role === 'admin' ? 'ADMIN' : 'FO';
-      // Numeric legacy users get a padded code (ADMIN-001); cloud-backed
-      // profiles carry a UUID, so show a friendly short handle instead.
-      var accountId = prefix + '-' + user.id;
-      if (/^\d+$/.test(String(user.id)) && window.BioData && typeof window.BioData.padZero === 'function') {
-        accountId = prefix + '-' + window.BioData.padZero(user.id, 3);
-      } else if (String(user.id).indexOf('-') !== -1) {
-        accountId = prefix + '-' + String(user.id).slice(0, 4).toUpperCase();
-      }
-      footerSpans[1].textContent = 'Account ID: ' + accountId;
-    }
+    footerSpans[1].textContent = 'Account ID: ' + BioData.formatAccountId(accountSource, role);
   }
 }
 
@@ -828,9 +848,36 @@ window.addEventListener('pageshow', function(event) {
 // Initialize when DOM is ready.
 // Protected pages run through the AuthGuard first so unauthenticated or
 // wrong-role users are redirected before any privileged UI mounts.
+/* ============================================
+   CLOUD HYDRATION
+   ============================================
+   Started as soon as the document is ready — deliberately NOT inside the
+   guard's callback. `loadFromCloud()` is a read: RLS decides what comes back,
+   and it mounts nothing, so it has no business waiting for a role verdict.
+   Serialising it behind the guard is why the shell appeared first and the
+   numbers, tables and charts arrived a second or two later — a visible SECOND
+   wave of loading after the page had already revealed itself.
+   One shared promise, so the guard path still waits on exactly one fetch, and
+   a page that reveals before it lands renders what is already cached: the
+   `biodata:synced` event re-renders when the rest arrives.
+   ============================================ */
+var cloudSyncPromise = null;
+
+function startCloudSync() {
+  if (cloudSyncPromise) return cloudSyncPromise;
+  if (typeof window.BioSync === 'undefined' || typeof window.BioSync.loadFromCloud !== 'function') {
+    return null;
+  }
+  cloudSyncPromise = window.BioSync.loadFromCloud();
+  return cloudSyncPromise;
+}
+
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', function() {
-    function mountUI() {
+    // Start the read now: it runs ALONGSIDE the guard rather than after it.
+    startCloudSync();
+
+    function mountUI(verifiedProfile) {
       // Mount the shell chrome FIRST — the bell and the user menu read only
       // local state (the session and the local notification cache), so they have
       // nothing to wait for. They used to be mounted inside the
@@ -838,13 +885,19 @@ if (typeof document !== 'undefined') {
       // immediately but the top bar stayed half-empty for one further network
       // round trip. Cloud notifications still refresh the list when they arrive,
       // via the `biodata:notifications` event that loadNotifications() dispatches.
-      initUserMenu();
+      //
+      // `verifiedProfile` is the route guard's verdict — the one identity that is
+      // allowed to say which role the person in front of us holds (#86).
+      initUserMenu(verifiedProfile);
       initNotifications();
 
       // Hydrate the in-memory BioData cache from Supabase on load, then let
-      // pages render cloud data. Non-fatal if offline/unconfigured.
-      if (typeof window.BioSync !== 'undefined' && typeof window.BioSync.loadFromCloud === 'function') {
-        window.BioSync.loadFromCloud()
+      // pages render cloud data. Non-fatal if offline/unconfigured. The read
+      // itself was already started above, alongside the guard — this waits on
+      // that same promise rather than issuing a second one.
+      var cloudSync = startCloudSync();
+      if (cloudSync) {
+        cloudSync
           .then(function() {
             // Re-mount UI after cloud data is seeded so tables/charts reflect
             // the authoritative dataset.
@@ -896,7 +949,7 @@ if (typeof document !== 'undefined') {
         // above reveals the page anyway — a refused user is never stranded.
         if (result && result.redirecting) return; // being redirected — don't mount UI
         clearAuthPending();
-        mountUI();
+        mountUI(result && result.profile);
       }).catch(function() {
         // Guard failed (network, config) — fall back to login to be safe.
         // Held for the same reason as the redirect branch; the safety net
@@ -960,11 +1013,11 @@ function setSyncStatus(label, state) {
 }
 
 function applySavedTheme() {
-  var savedTheme = 'system';
-  try { savedTheme = localStorage.getItem('biodata_theme') || 'system'; } catch (err) { /* storage unavailable */ }
-  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  var activeTheme = savedTheme === 'dark' || (savedTheme === 'system' && prefersDark) ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', activeTheme);
+  // Resolution lives in lib/theme-init.js, which runs in <head> BEFORE the
+  // stylesheets so the palette is already on <html> for the first paint. This
+  // call therefore only re-syncs what depends on chrome this script owns: the
+  // toggle's icon and the browser's own theme-color meta.
+  var activeTheme = window.BioTheme ? window.BioTheme.apply() : 'light';
   syncThemeColorMeta(activeTheme);
   updateThemeToggleIcon(activeTheme);
 }
@@ -977,11 +1030,13 @@ function applySavedTheme() {
  * theme at runtime, and without this the mobile address bar / status bar would
  * stay light green-grey over a dark page — the one part of the UI the theme
  * cannot reach from CSS. Values mirror --color-bg in styles/theme.css.
+ *
+ * One implementation, shared with the early bootstrap: lib/theme-init.js needs
+ * the same two values before this script has loaded, and a second copy of them
+ * is exactly how they drift apart.
  */
 function syncThemeColorMeta(activeTheme) {
-  var meta = document.querySelector('meta[name="theme-color"]');
-  if (!meta) return;
-  meta.setAttribute('content', activeTheme === 'dark' ? '#17211b' : '#F5F7FA');
+  if (window.BioTheme && window.BioTheme.syncMeta) window.BioTheme.syncMeta(activeTheme);
 }
 
 function updateThemeToggleIcon(activeTheme) {
@@ -1001,8 +1056,11 @@ function initThemeToggle() {
     e.preventDefault();
     var current = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark' ? 'dark' : 'light';
     var next = current === 'dark' ? 'light' : 'dark';
-    try { localStorage.setItem('biodata_theme', next); } catch (err) { /* storage unavailable */ }
-    document.documentElement.setAttribute('data-theme', next);
+    if (window.BioTheme) {
+      window.BioTheme.set(next);
+    } else {
+      document.documentElement.setAttribute('data-theme', next);
+    }
     syncThemeColorMeta(next);
     updateThemeToggleIcon(next);
   });

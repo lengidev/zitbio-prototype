@@ -110,6 +110,33 @@ function fetchProfileForRouting(client, userId, attempt) {
 }
 
 /**
+ * Route from the SIGNED access token's claims when they are usable.
+ *
+ * The fresh token issued by signIn already carries `user_role` (custom access
+ * token hook) and — since migration 202609140003 — `password_changed_at`, the
+ * two facts this redirect needs. Reading them from the verified token removes
+ * the last `GET /rest/v1/profiles` round trip from sign-in, which was the whole
+ * reason the button sat on "Signing in…" after the password had already been
+ * accepted. Resolves null whenever the claims can't carry the decision (old
+ * token without the stamp, hook disabled, verification failure) so the caller
+ * falls back to the /profiles read — the gate cannot be skipped by holding an
+ * outdated token.
+ */
+function routeFromVerifiedClaims(userId) {
+  if (!window.BioSupabase || typeof BioSupabase.getVerifiedClaims !== 'function') {
+    return Promise.resolve(null);
+  }
+  return BioSupabase.getVerifiedClaims().then(function(claims) {
+    if (!claims || String(claims.sub) !== String(userId)) return null;
+    if (claims.user_role !== 'admin' && claims.user_role !== 'field_officer') return null;
+    if (!('password_changed_at' in claims)) return null;
+    return { role: claims.user_role, password_changed_at: claims.password_changed_at };
+  }).catch(function() {
+    return null;
+  });
+}
+
+/**
  * Look up the user's role from the profiles table and redirect accordingly.
  *
  * On a failed lookup the user is NOT navigated anywhere — see the catch below
@@ -144,8 +171,14 @@ function redirectByRole(userId) {
     });
   }, ROLE_LOOKUP_TIMEOUT_MS);
 
-  BioSupabase.ready()
-    .then(function(client) { return fetchProfileForRouting(client, userId, 1); })
+  // Token claims first (zero extra network); the /profiles read is the
+  // fallback for a token that predates the password_changed_at claim.
+  routeFromVerifiedClaims(userId)
+    .then(function(fromToken) {
+      if (fromToken) return fromToken;
+      return BioSupabase.ready()
+        .then(function(client) { return fetchProfileForRouting(client, userId, 1); });
+    })
     .then(function(profile) {
       settle(function() {
         // Forced first-login change (#54). An admin creating an account sets a

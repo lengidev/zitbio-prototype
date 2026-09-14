@@ -24,30 +24,32 @@ function formatSettingsDateTime(isoStr) {
 }
 
 /**
- * Populate Account Information from the live Supabase profile +
- * system_meta + a real DB health check.
+ * Paint the identity half of Account Information: the fields this page can fill
+ * from the session alone.
+ *
+ * Split out of populateAccountInfo() because the `session:changed` subscription
+ * at the bottom of this file repaints the identity when the route guard's
+ * verified profile arrives, and must not re-fire that function's three live
+ * Supabase reads to do it.
  */
-function populateAccountInfo() {
+function renderAccountIdentity() {
   if (!window.BioData) return;
 
   var session = BioData.getSession();
   if (!session) return;
 
   var user = BioData.getUserByEmail(session.email);
-  var prefix = session.role === 'admin' ? 'ADMIN' : 'FO';
-  var roleDisplay = session.role === 'admin' ? 'Administrator' : 'Field Officer';
+  // Account code comes from the shared formatter so this page and the header
+  // dropdown can never show the same person two different codes. The previous
+  // local copy fell back to the *email* when the profile row had not arrived,
+  // which rendered nonsense like "ADMIN-SINY" next to the real role (#86).
+  var accountSource = session.id || (user && user.id) || '';
+  var roleDisplay = session.role === 'admin' ? 'Administrator'
+    : (session.role === 'field_officer' ? 'Field Officer' : '\u2014');
 
-  // User ID — numeric legacy users get padded code; cloud UUIDs get a friendly prefix.
   var userIdEl = document.getElementById('settingsUserId');
   if (userIdEl) {
-    var uid = user ? user.id : session.email;
-    var accountId = prefix + '-' + uid;
-    if (/^\d+$/.test(String(uid)) && window.BioData && typeof window.BioData.padZero === 'function') {
-      accountId = prefix + '-' + window.BioData.padZero(uid, 3);
-    } else if (String(uid).indexOf('-') !== -1) {
-      accountId = prefix + '-' + String(uid).slice(0, 4).toUpperCase();
-    }
-    userIdEl.textContent = accountId;
+    userIdEl.textContent = BioData.formatAccountId(accountSource, session.role);
   }
 
   var roleEl = document.getElementById('settingsRole');
@@ -62,6 +64,20 @@ function populateAccountInfo() {
   } else if (lastLoginEl) {
     lastLoginEl.textContent = 'Never';
   }
+}
+
+/**
+ * Populate Account Information from the live Supabase profile +
+ * system_meta + a real DB health check.
+ */
+function populateAccountInfo() {
+  if (!window.BioData) return;
+
+  var session = BioData.getSession();
+  if (!session) return;
+
+  var user = BioData.getUserByEmail(session.email);
+  renderAccountIdentity();
 
   // Live Supabase data for the other fields.
   if (window.BioSupabase && window.BioSupabase.isConfigured()) {
@@ -431,6 +447,16 @@ if (typeof document !== 'undefined') {
 window.addEventListener('biodata:synced', function() {
   initBaselinesSection();
 });
+
+// This page reads the session during DOMContentLoaded, which can beat the route
+// guard's profile lookup. Repaint the identity (locally — no extra reads) when
+// the verified identity lands, so Account Information never keeps a placeholder
+// role or a stale account code (#86).
+if (window.BioData && typeof BioData.subscribe === 'function') {
+  BioData.subscribe('session:changed', function() {
+    if (document.getElementById('changePwdBtn')) renderAccountIdentity();
+  });
+}
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
