@@ -831,17 +831,25 @@ window.addEventListener('pageshow', function(event) {
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', function() {
     function mountUI() {
+      // Mount the shell chrome FIRST — the bell and the user menu read only
+      // local state (the session and the local notification cache), so they have
+      // nothing to wait for. They used to be mounted inside the
+      // `loadFromCloud()` callback, which meant the sidebar and header painted
+      // immediately but the top bar stayed half-empty for one further network
+      // round trip. Cloud notifications still refresh the list when they arrive,
+      // via the `biodata:notifications` event that loadNotifications() dispatches.
+      initUserMenu();
+      initNotifications();
+
       // Hydrate the in-memory BioData cache from Supabase on load, then let
       // pages render cloud data. Non-fatal if offline/unconfigured.
-        if (typeof window.BioSync !== 'undefined' && typeof window.BioSync.loadFromCloud === 'function') {
+      if (typeof window.BioSync !== 'undefined' && typeof window.BioSync.loadFromCloud === 'function') {
         window.BioSync.loadFromCloud()
           .then(function() {
             // Re-mount UI after cloud data is seeded so tables/charts reflect
             // the authoritative dataset.
-            initUserMenu();
             initHeaderActions();
             initDashboardActions();
-            initNotifications();
             // Cloud notifications: initial load + live postgres_changes updates.
             if (window.BioSync.loadNotifications && window.BioSync.registerNotificationRealtime) {
               window.BioSync.loadNotifications();
@@ -858,17 +866,13 @@ if (typeof document !== 'undefined') {
             runAnalyticsEvaluation();
           })
           .catch(function() {
-            // Offline or not configured — fall back to local cache.
-            initUserMenu();
+            // Offline or not configured — the local cache is already mounted.
             initHeaderActions();
             initDashboardActions();
-            initNotifications();
           });
       } else {
-        initUserMenu();
         initHeaderActions();
         initDashboardActions();
-        initNotifications();
       }
     }
 
