@@ -72,20 +72,82 @@ function setLoginLoading(isLoading) {
   }
 }
 
+/* One retry, 400 ms apart. The network case is ALREADY retried inside
+   supabase-js — a failed fetch there keeps retrying with backoff for ~20s
+   (measured) — so a hand-rolled loop adds little and mostly delays the honest
+   failure. One retry still covers the fast transient: an HTTP error response,
+   which supabase-js does not retry at all. */
+var ROLE_LOOKUP_ATTEMPTS = 2;
+
+/* Upper bound on the whole routing decision. supabase-js's internal retry can
+   hold this promise for ~20s, and for all of that time the button sits on
+   "Signing in…" with nothing telling the user anything is wrong. */
+var ROLE_LOOKUP_TIMEOUT_MS = 12000;
+
+/**
+ * Read the role for a user, with one retry.
+ *
+ * This exists because a single failed read used to decide the user's whole
+ * destination: the old catch sent EVERYONE to the field-officer page as the
+ * "most restricted and safest fallback". So an admin whose lookup hiccuped
+ * right after sign-in — the moment the access token is least settled — was
+ * deposited on the officer page with no explanation. Reported as "logging in as
+ * an admin sometimes takes you to the field officer page". Reading one row is
+ * idempotent, so retrying is free.
+ */
+function fetchProfileForRouting(client, userId, attempt) {
+  return client.from('profiles').select('role, password_changed_at').eq('id', userId).maybeSingle()
+    .then(function(result) {
+      if (result.error) throw result.error;
+      if (!result.data) throw new Error('No profile row for user');
+      return result.data;
+    })
+    .catch(function(error) {
+      if (attempt >= ROLE_LOOKUP_ATTEMPTS) throw error;
+      return new Promise(function(resolve) { setTimeout(resolve, 400); })
+        .then(function() { return fetchProfileForRouting(client, userId, attempt + 1); });
+    });
+}
+
 /**
  * Look up the user's role from the profiles table and redirect accordingly.
- * On failure, falls back to the field officer page (most restricted, safe).
+ *
+ * On a failed lookup the user is NOT navigated anywhere — see the catch below
+ * for why that matters.
  */
 function redirectByRole(userId) {
-  if (window.BioSupabase) {
-    BioSupabase.ready()
-      .then(function(client) {
-        return client.from('profiles').select('role, password_changed_at').eq('id', userId).maybeSingle();
-      })
-      .then(function(result) {
-        if (result.error) throw result.error;
-        var profile = result.data || {};
+  if (!window.BioSupabase) {
+    // Unreachable via handleLogin, which gates on isConfigured — but kept
+    // honest rather than kept convenient: guessing a destination is the bug
+    // this function was fixed for.
+    showLoginError('Supabase is not configured. Please check config.js.');
+    setLoginLoading(false);
+    return;
+  }
 
+  // Exactly one outcome wins. Without this, the timeout could report a failure
+  // and a late-arriving success would then navigate on top of it.
+  var settled = false;
+  var timer = null;
+  function settle(action) {
+    if (settled) return;
+    settled = true;
+    if (timer) clearTimeout(timer);
+    action();
+  }
+
+  timer = setTimeout(function() {
+    settle(function() {
+      console.warn('Role lookup did not resolve within ' + ROLE_LOOKUP_TIMEOUT_MS + ' ms.');
+      showLoginError('Signed in, but your account details could not be loaded. Please try again.');
+      setLoginLoading(false);
+    });
+  }, ROLE_LOOKUP_TIMEOUT_MS);
+
+  BioSupabase.ready()
+    .then(function(client) { return fetchProfileForRouting(client, userId, 1); })
+    .then(function(profile) {
+      settle(function() {
         // Forced first-login change (#54). An admin creating an account sets a
         // password by hand and passes it on out of band; without this gate that
         // temporary password stays valid forever.
@@ -93,35 +155,37 @@ function redirectByRole(userId) {
           enterForcedPasswordChange(userId);
           return;
         }
-
-        var role = profile.role;
-        if (role === 'admin') {
-          window.location.href = 'pages/admin/dashboard/dashboard.html';
-        } else {
-          window.location.href = 'pages/field-officer/field-officer.html';
-        }
-      })
-      .catch(function() {
-        // Role lookup failed (RLS/misc) — default to the field officer page
-        // which is the most restricted and safest fallback.
-        window.location.href = 'pages/field-officer/field-officer.html';
+        window.location.href = profile.role === 'admin'
+          ? 'pages/admin/dashboard/dashboard.html'
+          : 'pages/field-officer/field-officer.html';
       });
-
-    // Record the login timestamp in the profile (fires in parallel; the
-    // RLS "Users update own profile" policy permits updating own row).
-    BioSupabase.ready()
-      .then(function(client) {
-        return client.from('profiles')
-          .update({ last_login: new Date().toISOString() })
-          .eq('id', userId);
-      })
-      .catch(function(err) {
-        console.warn('Failed to record last_login:', err && err.message);
+    })
+    .catch(function(error) {
+      // Stay on the login page and say so. This deliberately does NOT fall back
+      // to a guessed destination: signIn() already succeeded, so the network was
+      // up and a failure here is transient or a permissions problem — not "the
+      // user is offline". Navigating anyway turned a recoverable error into an
+      // admin silently landing on the officer page, which reads as a broken app
+      // rather than a failed lookup. Staying put keeps it visible and makes the
+      // retry one click away.
+      settle(function() {
+        console.warn('Role lookup failed:', error && error.message);
+        showLoginError('Signed in, but your account details could not be loaded. Please try again.');
+        setLoginLoading(false);
       });
-  } else {
-    // Supabase not available — degrade to the field officer page.
-    window.location.href = 'pages/field-officer/field-officer.html';
-  }
+    });
+
+  // Record the login timestamp in the profile (fires in parallel; the
+  // RLS "Users update own profile" policy permits updating own row).
+  BioSupabase.ready()
+    .then(function(client) {
+      return client.from('profiles')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', userId);
+    })
+    .catch(function(err) {
+      console.warn('Failed to record last_login:', err && err.message);
+    });
 }
 
 /* ============================================
