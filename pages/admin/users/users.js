@@ -1,9 +1,5 @@
-/**
- * ZitBio — Users Page Logic
- * Reads/writes from unified BioData layer instead of a local array.
- * All user CRUD operations go through the data layer so changes are
- * immediately reflected across the entire application.
- */
+// ZitBio: Users Page Logic. Reads and writes through the BioData layer so a user
+// change is immediately reflected everywhere else.
 
 let filteredData = [];
 let currentPage = 1;
@@ -30,8 +26,7 @@ function renderTable() {
         filteredData = allUsers.slice();
     }
 
-    // Update the total user count badge — always shows total registered,
-    // not filtered count, so admins see the overall system size at a glance.
+    // Always the total, not the filtered count: the badge shows system size.
     document.getElementById('userCountBadge').textContent = window.BioData.totalUsers();
 
     const totalPages = Math.ceil(filteredData.length / recordsPerPage);
@@ -69,9 +64,8 @@ function renderTable() {
                     (isActive ? 'Active' : 'Deactivated') +
                 '</span>' +
             '</td>' +
-            // All three actions are text buttons. Two icons plus one label read as
-            // a mistake rather than a choice, and there is no suitable icon for
-            // deactivate on this page.
+            // All three actions are text buttons: two icons plus one label read as
+            // a mistake, and there is no icon for deactivate on this page.
             '<td class="actions-cell">' +
                 '<button class="action-text-btn edit-user" data-id="' + escapeHtml(user.id) + '">Edit</button>' +
                 '<button class="action-text-btn ' + (isActive ? 'is-deactivate' : 'is-reactivate') +
@@ -96,15 +90,14 @@ function handleSearch() {
 }
 
 function openAddUserModal() {
-    // Reset fields for a fresh entry
     document.getElementById('addUserName').value = '';
     document.getElementById('addUserEmail').value = '';
     var pwdEl = document.getElementById('addUserPassword');
     if (pwdEl) pwdEl.value = '';
     document.getElementById('addUserRole').value = 'field_officer';
     document.getElementById('addUserInstitution').value = '';
-    // Through the shared helper so focus moves into the dialog, Tab stays inside
-    // it, the page behind is inert, and focus returns here on close (#51).
+    // Through the shared helper: it moves focus into the dialog, traps Tab, makes
+    // the page behind inert, and returns focus here on close.
     ModalManager.open('addUserModal');
 }
 
@@ -131,24 +124,18 @@ function closeEditUserModal() {
     ModalManager.closeById('editUserModal');
 }
 
-/* ───── FORM VALIDATION (#52) ───── */
+/* Form validation */
 
 /**
- * Field-level validation for the user forms.
- *
- * These forms used native `alert()`: blocking, unstyled, with no field-level
- * message, no `aria-invalid`, and focus never moved to the offending field — so
- * a screen-reader user learned nothing. Errors now render next to the field, the
- * field is marked invalid and described, and the first error takes focus.
+ * Errors render next to the field, the field is marked invalid and described,
+ * and the first error takes focus: native `alert()` gave none of that.
  */
 
 var ADD_USER_FIELDS = ['addUserName', 'addUserEmail', 'addUserPassword'];
 var EDIT_USER_FIELDS = ['editUserName'];
 
 /**
- * Show or clear the error attached to a field.
- * @param {string} inputId
- * @param {string} [message] omit or pass '' to clear
+ * Omit `message`, or pass '', to clear the field's error.
  */
 function setFieldError(inputId, message) {
     var input = document.getElementById(inputId);
@@ -189,17 +176,15 @@ function focusField(inputId) {
 }
 
 /**
- * Deliberately permissive: this exists to catch typos client-side rather than to
- * reject unusual-but-valid addresses. Anything it lets through, the server still
- * validates.
+ * Deliberately permissive: catch typos, not unusual-but-valid addresses. The
+ * server validates whatever gets through.
  */
 function isValidEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(value || '').trim());
 }
 
 /**
- * Validate the Add User form.
- * @returns {string|null} the first invalid field's id, or null when valid
+ * Returns the first invalid field's id, or null when valid.
  */
 function validateAddUserForm(fields) {
     var firstInvalid = null;
@@ -219,7 +204,7 @@ function validateAddUserForm(fields) {
     if (!fields.password || !fields.password.length) {
         fail('addUserPassword', 'Set a temporary password.');
     } else {
-        // Shared policy (#54) — this form used to accept 12345678.
+        // Shared policy; this form used to accept 12345678.
         var strength = window.BioPassword
             ? window.BioPassword.check(fields.password)
             : { ok: fields.password.length >= 8, message: 'Use at least 8 characters.' };
@@ -230,11 +215,8 @@ function validateAddUserForm(fields) {
 }
 
 /**
- * Turn an API error into something a person can act on.
- *
- * Raw strings were shown verbatim before: an invalid email surfaced
- * "Unable to validate email address: invalid format", which is GoTrue's wording
- * for something this form should have caught itself.
+ * Raw API strings are not shown verbatim: GoTrue's "invalid format" wording for
+ * a bad email reads as nonsense to the person who typed it.
  */
 function friendlyUserError(err, action) {
     var raw = (err && err.message) ? String(err.message) : '';
@@ -262,9 +244,8 @@ function userToast(message, type) {
     console.warn('Users: ' + message);
 }
 
-// Create a REAL Supabase Auth user via the admin-users Edge Function, then
-// refresh the table from the cloud. Falls back to the local cache if the
-// function is not deployed yet.
+// Creates a real Auth user through the admin-users function; falls back to the
+// local cache when it is not deployed.
 function handleSaveAddUser() {
     if (!window.BioData) return;
     var name = document.getElementById('addUserName').value.trim();
@@ -277,8 +258,7 @@ function handleSaveAddUser() {
     clearFieldErrors(ADD_USER_FIELDS);
     var invalid = validateAddUserForm({ name: name, email: email, password: password });
     if (invalid) {
-        // Marked in place, then focused — the red field says where, the message
-        // says what, and focus puts the correction within reach.
+        // Marked in place and focused: the field says where, the message says what.
         focusField(invalid);
         return;
     }
@@ -301,8 +281,8 @@ function handleSaveAddUser() {
             userToast(friendlyUserError(err, 'create'), 'error');
         });
     } else {
-        // Function not deployed — keep local-cache behaviour so the page
-        // still works, and say plainly that the cloud step is pending.
+        // Function not deployed: keep local-cache behaviour, but say the cloud step
+        // is pending.
         window.BioData.addUser({ name: name, email: email, role: role, institution_name: institution });
         closeAddUserModal();
         renderTable();
@@ -310,13 +290,10 @@ function handleSaveAddUser() {
     }
 }
 
-// Persist edits to an existing user through the admin-users Edge Function,
-// then refresh the table from the cloud. Falls back to the local cache if
-// the function is not deployed yet.
+// Persists through the admin-users function, falling back to the local cache.
 function handleSaveEditUser() {
     if (!window.BioData) return;
-    // Preserve the id as a string — cloud-backed profiles use UUIDs, while
-    // legacy seeded users use numeric ids.
+    // Keep the id a string: cloud profiles use UUIDs, legacy seeded users numeric ids.
     var id = document.getElementById('editUserId').value;
     var name = document.getElementById('editUserName').value.trim();
     var role = document.getElementById('editUserRole').value;
@@ -353,8 +330,7 @@ function handleSaveEditUser() {
     }
 }
 
-// Edit/delete handler — delegates to BioData CRUD methods
-// so user deletions immediately affect the data layer and notification system.
+// Delegates to the BioData CRUD methods so a deletion reaches the data layer too.
 document.addEventListener('click', function(e) {
     if (!window.BioData) return;
 
@@ -363,8 +339,7 @@ document.addEventListener('click', function(e) {
         openEditUserModal(id);
     }
 
-    // Deactivate / reactivate (#53). Reversible, so it is a labelled button
-    // rather than a third ambiguous icon in the actions column.
+    // Reversible, so it is a labelled button rather than a third ambiguous icon.
     if (e.target.closest('.toggle-user-active')) {
         var toggleBtn = e.target.closest('.toggle-user-active');
         var toggleId = toggleBtn.getAttribute('data-id');
@@ -381,14 +356,11 @@ document.addEventListener('click', function(e) {
     }
 });
 
-/* ───── ACCESS REQUESTS ───── */
+/* Access requests */
 
 /**
- * Read-only list of people who used "Request Access" on the sign-in page.
- *
- * Approval is automatic, so this is not a queue — it exists so an admin can see
- * who joined and when. Loaded on first expand rather than at page load, because
- * it is reference material, not the page's purpose.
+ * Read-only, not a queue: approval is automatic, so this only shows who joined
+ * and when. Loaded on first expand because it is reference material.
  */
 function renderAccessRequests() {
     var list = document.getElementById('accessRequestList');
@@ -434,17 +406,14 @@ function renderAccessRequests() {
     });
 }
 
-/* ───── DEACTIVATION / DELETION CONFIRMATION (#53) ───── */
+/* Status and deletion confirmation */
 
 var pendingStatusChange = null;
 var pendingDelete = null;
 
 /**
- * Ask before changing an account's status.
- *
- * Replaces window.confirm(), which blocks the page, cannot be styled, and can
- * only say a sentence — it has no room to explain that deactivation is
- * reversible, which is the whole reason it exists over delete.
+ * Replaces window.confirm(), which blocks the page and has no room to explain
+ * that deactivation, unlike delete, is reversible.
  */
 function openStatusConfirm(id, name, isActive) {
     pendingStatusChange = { id: id, name: name, isActive: isActive };
@@ -470,14 +439,12 @@ function openStatusConfirm(id, name, isActive) {
     }
     if (accept) {
         accept.textContent = isActive ? 'Yes, deactivate' : 'Yes, reactivate';
-        // Reactivating restores access, so it should not be dressed as a
-        // destructive action.
+        // Reactivating restores access, so it is not dressed as destructive.
         accept.className = 'btn ' + (isActive ? 'btn--danger' : 'btn--primary');
     }
 
-    // Opposite actions, opposite glyphs and tones. The delete dialog's warning
-    // triangle means "this destroys something" — reusing it here would overstate
-    // what either of these does.
+    // The delete dialog's warning triangle means "this destroys something";
+    // reusing it here would overstate what either of these does.
     if (icon) icon.setAttribute('href', isActive ? '#i-person_off' : '#i-how_to_reg');
     if (card) card.classList.toggle('is-positive', !isActive);
 
@@ -489,7 +456,6 @@ function closeStatusConfirm() {
     ModalManager.closeById('confirmStatusModal');
 }
 
-/** Run the change the modal was asking about, then confirm it with a toast. */
 function applyStatusChange() {
     var pending = pendingStatusChange;
     if (!pending) return;
@@ -514,15 +480,11 @@ function applyStatusChange() {
         });
 }
 
-/* ───── DELETE CONFIRMATION ───── */
+/* Delete confirmation */
 
 /**
- * Ask before deleting an account.
- *
- * Deactivation moved to a dialog but this stayed on window.confirm(), which was
- * both inconsistent and actively unhelpful: it printed the raw UUID (meaningless
- * to an admin) and had no room to warn that deletion is irreversible — the exact
- * distinction that makes it different from Deactivate.
+ * window.confirm() printed the raw UUID and had no room to warn that deletion,
+ * unlike deactivation, cannot be undone.
  */
 function openDeleteConfirm(id, name) {
     pendingDelete = { id: id, name: name };
@@ -549,7 +511,6 @@ function closeDeleteConfirm() {
     ModalManager.closeById('confirmDeleteModal');
 }
 
-/** Run the delete the modal was asking about, then confirm it with a toast. */
 function applyDelete() {
     var pending = pendingDelete;
     if (!pending) return;
@@ -563,8 +524,8 @@ function applyDelete() {
 
     window.BioSync.adminUsers('delete', { id: pending.id })
         .then(function() {
-            // Drop it from the local cache too. loadFromCloud merges rather than
-            // replaces, so without this the deleted row lingers in the table.
+            // loadFromCloud merges rather than replaces, so without this the
+            // deleted row lingers in the table.
             window.BioData.deleteUser(String(pending.id));
             return window.BioSync.loadFromCloud();
         })
@@ -577,7 +538,7 @@ function applyDelete() {
         });
 }
 
-// Re-render the table after the Supabase sync layer seeds cloud data.
+// Re-render after the Supabase sync layer seeds cloud data.
 if (typeof window !== 'undefined') {
   window.addEventListener('biodata:synced', function() {
     renderTable();
@@ -593,15 +554,13 @@ if (typeof window !== 'undefined') {
       });
     }
 
-    // Deactivation confirmation modal. No close button: Cancel and Escape are
-    // the exits, matching the other confirmation dialogs.
+    // No close button: Cancel and Escape are the exits, as on the other dialogs.
     var acceptStatus = document.getElementById('acceptConfirmStatusBtn');
     if (acceptStatus) acceptStatus.addEventListener('click', applyStatusChange);
     var cancelStatus = document.getElementById('cancelConfirmStatusBtn');
     if (cancelStatus) cancelStatus.addEventListener('click', closeStatusConfirm);
 
-    // Deletion confirmation modal. No close button: the reference design and a
-    // destructive action both want Cancel or Escape as the only exits.
+    // No close button: a destructive action wants Cancel or Escape as the exits.
     var acceptDelete = document.getElementById('acceptConfirmDeleteBtn');
     if (acceptDelete) acceptDelete.addEventListener('click', applyDelete);
     var cancelDelete = document.getElementById('cancelConfirmDeleteBtn');
@@ -626,7 +585,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closeEditUserModalFooterBtn').addEventListener('click', closeEditUserModal);
     document.getElementById('saveEditUserBtn').addEventListener('click', handleSaveEditUser);
 
-    // Close modals on overlay click
     var addModal = document.getElementById('addUserModal');
     if (addModal) {
         addModal.addEventListener('click', function(e) {
@@ -640,7 +598,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Close modals on Escape
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeAddUserModal();

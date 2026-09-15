@@ -1,31 +1,15 @@
-/**
- * ZitBio — Field Officer Page Logic
- * Handles the biodiversity observation submission form.
- *
- * Design decisions:
- *   - Reads from the unified BioData layer (CentralDataStore) so all
- *     observations are immediately available to admin dashboards after
- *     submission — no sync or import step required.
- *   - Species auto-detect reduces taxonomic misidentification by field
- *     officers with varying levels of expertise.
- *   - GPS reverse-geocode auto-fills province/city to minimise manual
- *     data entry errors when officers are working in the field.
- */
+/* Field officer observation form: session auto-fill, species auto-detect, GPS
+   capture and submission into the unified BioData layer (CentralDataStore). */
 
-// Format numbers to at least 2 digits (e.g. 5 -> "05").
-// Dependency-free replacement for String.prototype.padStart, which
-// throws on older engines/webviews and can take the page down.
+// Dependency-free replacement for String.prototype.padStart, which throws on
+// older engines/webviews and can take the page down.
 function pad2(num) {
   var s = String(num);
   return s.length < 2 ? '0' + s : s;
 }
 
-/* ============================================
-   TOAST UTILITY
-   Displays transient notifications without blocking the user's workflow.
-   Designed to work alongside (but independently of) the BioData notification
-   system — toast is for ephemeral UX feedback, not persistent alerts.
-   ============================================ */
+/* TOAST UTILITY: ephemeral UX feedback, kept separate from BioData's persistent
+   notification system. */
 function showToast(message, type) {
   var container = document.getElementById('toastContainer');
   if (!container) return;
@@ -37,12 +21,8 @@ function showToast(message, type) {
   setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
 }
 
-/* ============================================
-   FORM VALIDATION
-   Checks all required fields before submission so incomplete records
-   never enter the data layer. Error messages appear inline next to
-   each field rather than as a single blocking alert.
-   ============================================ */
+/* FORM VALIDATION: required fields are checked before submission so incomplete
+   records never enter the data layer; errors render inline, not as one alert. */
 function validateForm() {
   var isValid = true;
   var requiredFields = [
@@ -64,7 +44,6 @@ function validateForm() {
     var error = document.getElementById(field.errorId);
     if (!input) return;
 
-    // Ensure error element exists
     if (!error) {
       error = document.createElement('span');
       error.id = field.errorId;
@@ -86,30 +65,23 @@ function validateForm() {
   return isValid;
 }
 
-/* ============================================
-   FIELD OFFICER INITIALIZATION
-   Wires up session auto-fill, species auto-detect, GPS capture,
-   count stepper, and form submission to the unified data layer.
-   ============================================ */
+/* FIELD OFFICER INITIALIZATION */
 function initFieldOfficer() {
   var page = document.querySelector('.page-fieldofficer-v2');
   if (!page) return;
 
-  // Reads from unified BioData layer so submissions appear instantly
-  // in admin dashboards — no sync step required.
+  // Unified BioData layer, so submissions reach the admin dashboards instantly.
   var CentralDataStore = (window.BioData) ? window.BioData : null;
   var observationForm = document.getElementById('observationForm');
   if (!observationForm) return;
 
   /**
    * Paint the signed-in officer's identity into the read-only observer fields.
-   *
-   * Re-run whenever the identity settles, because this page's scripts run before
-   * the route guard has resolved: the first call can find no session at all and
-   * then leaves the markup's placeholder name in a field that is **submitted as
-   * the observation's attribution** (#86 — the same timing defect that labelled an
-   * admin "Field Officer" in the header dropdown). The fields are `readonly`, so
-   * repainting them can never discard anything the officer typed.
+   * Must be re-run whenever the identity settles: this page's scripts run before
+   * the route guard resolves, so the first call can find no session at all and
+   * leave the markup's placeholder name in a field that is **submitted as the
+   * observation's attribution**. The fields are `readonly`, so repainting them
+   * can never discard anything the officer typed.
    */
   function applySessionIdentity() {
     var session = CentralDataStore ? CentralDataStore.getSession() : null;
@@ -125,23 +97,19 @@ function initFieldOfficer() {
     if (instEl) instEl.value = session.institution_name || '';
   }
 
-  // --- Pre-populate session data to reduce field entry errors ---
   applySessionIdentity();
   if (CentralDataStore && typeof CentralDataStore.subscribe === 'function') {
     CentralDataStore.subscribe('session:changed', applySessionIdentity);
   }
 
   // Province and Country are locked to Copperbelt/Zambia for current scope.
-  // See [[futureupdates#10-Province Expansion|futureupdates.md]] for expansion plans.
 
-  // --- Default date/time to now ---
   var dateEl = document.getElementById('obsDate');
   var timeEl = document.getElementById('obsTime');
   setDateTimeToNow();
 
-  // --- Shared date/time + validation-error helpers ---
-  // "Reset to now" is reused by initial load, Cancel, and Submit so the
-  // field-officer form always behaves identically.
+  // "Reset to now" is shared by initial load, Cancel and Submit so the form
+  // always behaves identically.
   function setDateTimeToNow() {
     if (dateEl) {
       var n = new Date();
@@ -159,9 +127,8 @@ function initFieldOfficer() {
     document.querySelectorAll('.fo-error.show').forEach(function(el) { el.classList.remove('show'); });
   }
 
-  // --- Species auto-detect from common name ---
-  // Maps typed common names to scientific names to reduce taxonomic
-  // misidentification by field officers with varying expertise.
+  // Species auto-detect from the typed common name, to reduce taxonomic
+  // misidentification.
   var commonNameEl = document.getElementById('commonName');
   var scientificNameEl = document.getElementById('scientificName');
   if (commonNameEl && scientificNameEl) {
@@ -184,12 +151,10 @@ function initFieldOfficer() {
     });
   }
 
-  // --- Species suggestions (#47) ---
-  // A datalist, not a closed picker. The officer stays free to record a species
-  // that is not in the registry — a correctly-entered new species is still a
-  // valid record — while the known names are one keystroke away, which is what
-  // keeps `common_name` matching the registry instead of drifting.
-  //
+  // A datalist, not a closed picker: the officer stays free to record a species
+  // that is not in the registry (a correctly-entered new species is still a
+  // valid record), while the known names are one keystroke away, which keeps
+  // `common_name` matching the registry instead of drifting.
   // The registry is hydrated from the cloud, so this also runs on
   // `biodata:synced`; on a cold load it would otherwise be empty.
   function populateSpeciesOptions() {
@@ -233,20 +198,17 @@ function initFieldOfficer() {
 
   populateSpeciesOptions();
 
-  // --- Habitat auto-select from focus area ---
+  // Habitat auto-select from focus area
   // Habitat is derived from the selected focus area (app-wide 2-option
   // system): the Nature Park → park habitat; campus → urban. Officers
   // never need to pick a habitat manually.
   var focusAreaEl = document.getElementById('focusArea');
   var habitatTypeEl = document.getElementById('habitatType');
 
-  // --- Focus area options come from the site registry (Layer 1) ---
-  // The dropdown used to be hardcoded in the HTML and offered
-  // 'The Copperbelt University Campus', which matches no row in `sites` and no
-  // value in `observations.focus_area` — so anything submitted with it would
-  // resolve to no site at all. Options are now built from the registry, which
-  // is the single source of truth for site names. The HTML keeps a corrected
-  // copy purely as a no-JS fallback.
+  // Focus area options are built from the site registry, the single source of
+  // truth for site names: a name in `observations.focus_area` that matches no
+  // `sites` row resolves to no site at all. The HTML copy is only a no-JS
+  // fallback.
   function populateFocusAreaOptions() {
     if (!focusAreaEl || !CentralDataStore || typeof CentralDataStore.getSiteRegistry !== 'function') return;
     var siteRegistry = CentralDataStore.getSiteRegistry() || [];
@@ -277,7 +239,7 @@ function initFieldOfficer() {
 
   populateFocusAreaOptions();
   // The registry is seeded locally, then replaced by the cloud copy during
-  // hydration — re-populate so newly added sites appear without a reload.
+  // hydration, so re-populate rather than requiring a reload.
   window.addEventListener('biodata:synced', populateFocusAreaOptions);
   window.addEventListener('biodata:synced', populateSpeciesOptions);
 
@@ -292,9 +254,9 @@ function initFieldOfficer() {
     syncHabitatFromFocus();
   }
 
-  // --- GPS capture with reverse-geocode ---
-  // Captures device GPS, then reverse-geocodes via Nominatim to auto-fill
-  // province and city — reducing manual data entry in the field.
+  // GPS capture with reverse-geocode
+  // Captures device GPS, then reverse-geocodes via Nominatim to auto-fill the
+  // city, reducing manual data entry in the field.
   var gpsBtn = document.getElementById('gpsCaptureBtn');
   var gpsIcon = document.getElementById('gpsIcon');
   if (gpsBtn) {
@@ -318,9 +280,8 @@ function initFieldOfficer() {
           if (gpsIcon) { gpsIcon.querySelector('use').setAttribute('href', '#i-explore'); gpsIcon.classList.remove('fo-spin'); }
           showToast('GPS coordinates captured successfully!', 'success');
 
-          // Reverse-geocode to auto-fill Province and City —
-          // simplifies workflow for officers who may not know the
-          // administrative boundaries of remote areas.
+          // Reverse-geocode to auto-fill the city, for officers who may not know
+          // the administrative boundaries of remote areas.
           var url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng;
           fetch(url, { headers: { 'User-Agent': 'BioSystem/1.0' } })
             .then(function(resp) { return resp.json(); })
@@ -328,27 +289,22 @@ function initFieldOfficer() {
               if (!data || !data.address) return;
               var addr = data.address;
 
-              // City — try city, town, village, county
+              // City falls back through town, village, county.
               var cityVal = addr.city || addr.town || addr.village || addr.county || '';
               var cityEl = document.getElementById('city');
               if (cityEl && cityVal) {
                 cityEl.value = cityVal;
               }
 
-              // Province/State — deliberately NOT auto-filled here.
-              //
-              // The Province field is a `readonly` input pinned to "Copperbelt
-              // Province" for current scope (see the note at the top of this
-              // file); the 10-province expansion is tracked in futureupdates.md.
-              //
+              // Province/State is deliberately NOT auto-filled: the field is a
+              // `readonly` input pinned to "Copperbelt Province" for current scope.
               // This block used to iterate `provEl.options` as though the field
-              // were a <select>. On an <input>, `.options` is undefined, so
-              // `options.length` threw a TypeError on EVERY successful reverse
-              // geocode — swallowed by the .catch() below, which is why nobody
-              // noticed. There is no option list to select from and the field is
-              // locked, so there is genuinely nothing to do.
+              // were a <select>; on an <input> `.options` is undefined, so
+              // `.length` threw a TypeError on every successful reverse geocode,
+              // swallowed by the .catch() below. There is no option list to select
+              // from and the field is locked, so there is nothing to do.
             })
-            .catch(function() { /* silently fail — coordinates already captured */ });
+            .catch(function() { /* best-effort: coordinates are already captured */ });
         },
         function(err) {
           if (gpsIcon) { gpsIcon.querySelector('use').setAttribute('href', '#i-explore'); gpsIcon.classList.remove('fo-spin'); }
@@ -358,7 +314,7 @@ function initFieldOfficer() {
     });
   }
 
-  // --- Count stepper ---
+  // Count stepper
   var countMinus = document.getElementById('countMinus');
   var countPlus = document.getElementById('countPlus');
   var countInput = document.getElementById('populationCount');
@@ -374,7 +330,7 @@ function initFieldOfficer() {
     });
   }
 
-  // --- Cancel button — reset form ---
+  // Cancel button: reset form
   var btnCancel = document.getElementById('btnCancel');
   if (btnCancel) {
     btnCancel.addEventListener('click', function() {
@@ -384,7 +340,7 @@ function initFieldOfficer() {
     });
   }
 
-  // --- Form Submit — persists to data layer and resets for next entry ---
+  // Form Submit: persists to the data layer and resets for the next entry.
   observationForm.addEventListener('submit', function(e) {
     e.preventDefault();
     if (!validateForm()) {
@@ -407,7 +363,6 @@ function initFieldOfficer() {
     var lat = latEl && latEl.value ? parseFloat(latEl.value) : null;
     var lng = lngEl && lngEl.value ? parseFloat(lngEl.value) : null;
 
-    // Build the observation object per spec
     var observation = {
       observation_id: 'obs_' + Date.now(),
       taxon: {
@@ -431,8 +386,6 @@ function initFieldOfficer() {
       field_notes: document.getElementById('fieldNotes').value || ''
     };
 
-    // Persist to the unified data layer so the observation appears in
-    // admin dashboards immediately — no separate import step needed.
     if (CentralDataStore) {
       CentralDataStore.addObservation({
         count: parseInt(document.getElementById('populationCount').value, 10),
@@ -449,11 +402,8 @@ function initFieldOfficer() {
 
     showToast('Observation recorded successfully!', 'success');
 
-    // Reset form but preserve the session identity so the officer can
-    // immediately submit the next observation without re-entering
-    // their personal details. Read live from the session rather than from the
-    // snapshot taken on submit, so the attribution fields always match the
-    // person who is actually signed in.
+    // Re-apply the session identity after the reset, so the next record is
+    // attributed to the officer actually signed in.
     observationForm.reset();
     applySessionIdentity();
 
@@ -461,7 +411,7 @@ function initFieldOfficer() {
     resetDateTimeAndErrors();
   });
 
-  // --- Live error clearing as user types ---
+  // Live error clearing as user types
   document.querySelectorAll('.fo-input').forEach(function(input) {
     input.addEventListener('input', function() {
       this.classList.remove('error');
@@ -471,11 +421,7 @@ function initFieldOfficer() {
   });
 }
 
-/* ============================================
-   PAGE INITIALIZATION
-   Guarded: only runs on the field-officer page
-   (detected by .page-fieldofficer-v2 class).
-   ============================================ */
+/* PAGE INITIALIZATION: only runs when .page-fieldofficer-v2 is present. */
 document.addEventListener('DOMContentLoaded', function() {
   initFieldOfficer();
 });

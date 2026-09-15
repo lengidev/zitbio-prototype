@@ -1,20 +1,13 @@
 /**
- * ZitBio — Observations Page Logic
- * Reads from unified BioData layer via shared observationsRenderer.
- * Handles table rendering, pagination, search, and modal interactions.
- * Uses the same renderer as the Analytics tab to ensure visual consistency
- * between the two views.
+ * Observations admin page: review queue, record modal, decisions, archive.
  */
 
-// View-model state for the observations page — tracks pagination,
-// the currently filtered dataset, and the observation being viewed/edited.
 var obsCurrentPage = 1;
 var obsFilteredData = [];
 var obsRecordsPerPage = 8;
-var currentObsId = null; // Tracks the currently viewed observation ID
-var obsStatusFilter = ''; // '' = all; otherwise a verification_status value (#70)
+var currentObsId = null;
+var obsStatusFilter = ''; // '' = all, otherwise a verification_status value
 
-// Get filtered data from unified data layer using shared search
 function getObsFilteredData() {
     if (!window.BioData) return [];
     var searchInput = document.getElementById('searchInput');
@@ -28,9 +21,8 @@ function getObsFilteredData() {
         rows = window.BioData.searchObservations(searchInput.value, field || undefined);
     }
 
-    // Status filter (#70). Applied after search so the two compose: the queue's
-    // primary question is "what is awaiting review?". A record with no status is
-    // treated as Pending, matching how its badge renders.
+    // Applied after search so the two compose. A record with no status counts as
+    // Pending, matching how its badge renders.
     if (obsStatusFilter) {
         rows = rows.filter(function(o) {
             return (o.verification_status || 'Pending') === obsStatusFilter;
@@ -40,16 +32,14 @@ function getObsFilteredData() {
     return rows;
 }
 
-/* ───── REVIEW-QUEUE STATUS FILTER (#70) ───── */
+/* REVIEW-QUEUE STATUS FILTER */
 
 /**
- * Set the queue's status filter, then sync the URL and the table. The URL
- * matters: "the records awaiting review" becomes a shareable link, and the
- * Dashboard's Pending KPI can point straight at it.
- *
- * The filter control lives in the column header and its active state is part of
- * the header markup, so re-rendering is what refreshes the control — there is no
- * separate chip list to keep in step.
+ * Set the queue's status filter, then sync the URL and the table. The URL is part
+ * of the feature: "the records awaiting review" becomes a shareable link the
+ * Dashboard's Pending KPI can point at. The control lives in the column header
+ * markup, so re-rendering is what refreshes it; there is no separate chip list to
+ * keep in step.
  */
 function applyStatusFilter(status) {
     obsStatusFilter = status || '';
@@ -69,7 +59,7 @@ function syncStatusFilterToUrl() {
         (params.length ? '?' + params.join('&') : ''));
 }
 
-/** Read ?status= with a manual fallback (URLSearchParams is ES2017). */
+/** The manual branch is for engines without URLSearchParams (ES2017). */
 function readStatusFilterFromUrl() {
     var found = '';
     if (typeof URLSearchParams === 'function') {
@@ -85,11 +75,8 @@ function readStatusFilterFromUrl() {
 }
 
 /**
- * Wire the status filter mounted on the "Verification Status" column header.
- *
  * Clicks are delegated from the table because the <thead> is rebuilt on every
- * render (search, filter, paging) — binding the buttons directly would lose the
- * handlers on the first interaction.
+ * render, so directly-bound handlers would be lost on the first interaction.
  */
 function initStatusFilter() {
     var table = document.querySelector('.page-observations .data-table');
@@ -112,7 +99,6 @@ function initStatusFilter() {
         });
     }
 
-    // Dismiss the menu on Escape or on a click anywhere outside it.
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeStatusFilterMenus();
     });
@@ -124,7 +110,7 @@ function initStatusFilter() {
     window.addEventListener('scroll', closeStatusFilterMenus, true);
     window.addEventListener('resize', closeStatusFilterMenus);
 
-    // Honour a deep link (?status=Pending) on load.
+    // Honour a deep link (?status=Pending); otherwise normalise the URL on load.
     var initial = readStatusFilterFromUrl();
     if (initial) {
         applyStatusFilter(initial);
@@ -133,7 +119,6 @@ function initStatusFilter() {
     }
 }
 
-/** Open the filter menu on `btn`, or close it if it is already open. */
 function toggleStatusFilterMenu(btn) {
     var menu = btn.parentNode ? btn.parentNode.querySelector('.th-filter-menu') : null;
     if (!menu) return;
@@ -148,12 +133,8 @@ function toggleStatusFilterMenu(btn) {
 
 /**
  * Anchor the open menu under its trigger.
- *
- * The menu is position:fixed because the table's container scrolls
- * horizontally, which clips vertically as well — an absolutely positioned menu
- * would be cut off by it. Fixed positioning is measured against the viewport, so
- * it also has to be recomputed on scroll; closeStatusFilterMenus() is bound to
- * scroll/resize for exactly that reason.
+ * position:fixed because the table's container scrolls horizontally and clips
+ * vertically too, so an absolutely positioned menu would be cut off by it.
  */
 function positionStatusFilterMenu(btn, menu) {
     var r = btn.getBoundingClientRect();
@@ -168,7 +149,7 @@ function closeStatusFilterMenus() {
     Array.prototype.forEach.call(btns, function(b) { b.setAttribute('aria-expanded', 'false'); });
 }
 
-/** Walk up from a node looking for the filter wrapper (avoids closest(), ES5 style). */
+/** Avoids closest(), ES5 style. */
 function isInsideStatusFilter(node) {
     while (node && node.classList) {
         if (node.classList.contains('th-filter')) return true;
@@ -177,12 +158,12 @@ function isInsideStatusFilter(node) {
     return false;
 }
 
-/* ───── EXPORT THE FILTERED DATASET (#69) ───── */
+/* EXPORT THE FILTERED DATASET */
 
 /**
- * Export exactly what the admin is looking at — the filtered and searched queue,
- * not the whole table. Uses the shared CSV module (lib/csv.js) so escaping and
- * download behaviour match the analytics report export.
+ * Export exactly what the admin is looking at: the filtered and searched queue,
+ * not the whole table. Uses the shared CSV module so escaping and download
+ * behaviour match the analytics report export.
  */
 function handleExportObservations() {
     if (!(window.BioCsv && window.BioCsv.buildCsv)) {
@@ -224,9 +205,8 @@ function handleExportObservations() {
 }
 
 /**
- * Brief confirmation beside the queue. A download gives no other feedback, so a
- * silent success is indistinguishable from a dead button — which is exactly how
- * #69 went unnoticed.
+ * Brief confirmation beside the queue: a download gives no other feedback, so a
+ * silent success is indistinguishable from a dead button.
  */
 function setExportFeedback(message) {
     var el = document.getElementById('exportFeedback');
@@ -244,8 +224,6 @@ function setExportFeedback(message) {
     window.setTimeout(function() { el.textContent = ''; }, 4000);
 }
 
-// Render the table using shared renderer
-// Column definitions for the Admin Observations table (7 columns + Actions)
 function getObsColumns() {
     return [
         {
@@ -283,9 +261,8 @@ function getObsColumns() {
             label: 'Date',
             cellClass: 'date-cell',
             render: function(obs) {
-                // LOCAL calendar date. Slicing the ISO string took the raw UTC
-                // day, so a record submitted at 00:06 local (UTC+2) was listed
-                // under the previous day (#46).
+                // LOCAL calendar date: slicing the ISO string returns the raw UTC
+                // day, which is the previous day for a local evening timestamp.
                 return formatObsDate(window.BioDate.localDateInput(obs.timestamp));
             }
         },
@@ -298,9 +275,9 @@ function getObsColumns() {
         },
         {
             label: 'Verification Status',
-            // The queue's primary question is "what is awaiting review?", so the
-            // filter sits on the column it filters rather than in a separate bar
-            // (#70). "Rejected" was retired — see the note on submitReview.
+            // The filter sits on the column it filters, because the queue's primary
+            // question is "what is awaiting review?". "Rejected" was retired; see the
+            // note on submitReview.
             filter: {
                 ariaLabel: 'Filter the review queue by verification status',
                 active: obsStatusFilter,
@@ -350,7 +327,6 @@ function renderObsTable() {
         }
     });
 
-    // Attach event listeners to View buttons
     var viewButtons = document.querySelectorAll('.page-observations .btnViewRecord');
     viewButtons.forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -360,7 +336,6 @@ function renderObsTable() {
     });
 }
 
-// Handle search input
 function handleObsSearch() {
     obsCurrentPage = 1;
     renderObsTable();
@@ -370,7 +345,6 @@ function formatTimeStr(timestamp) {
     return window.BioDate.shortTime(timestamp);
 }
 
-// Format coordinates
 function formatCoords(lat, lng) {
     if (lat == null || lng == null) return '—';
     var latDir = lat >= 0 ? '°N' : '°S';
@@ -378,7 +352,6 @@ function formatCoords(lat, lng) {
     return Math.abs(lat).toFixed(4) + latDir + ', ' + Math.abs(lng).toFixed(4) + lngDir;
 }
 
-// Set badge class based on status
 function setBadge(status) {
     var badge = document.getElementById('modalStatusBadge');
     if (!badge) return;
@@ -398,36 +371,30 @@ function setBadge(status) {
     }
 }
 
-// View record details by ID (v2 schema)
 function viewRecordById(id) {
     if (!window.BioData) return;
     var obs = window.BioData.getObservationById(id);
     if (!obs) return;
 
     currentObsId = id;
-    // Load the append-only decision log for this record (issue #73). Done here
-    // rather than at the call sites, so every path that opens the modal — row
-    // click, ?obs= deep link, notification — shows the history.
+    // Load the decision log here rather than at each call site, so every path that
+    // opens the modal (row click, ?obs= deep link, notification) shows the history.
     renderReviewHistory(id);
     var speciesDet = obs.species_details || {};
     var loc = obs.location || {};
 
-    // Title & subtitle
     var speciesTitle = speciesDet.common_name || speciesDet.scientific_name || 'Unknown';
     document.getElementById('modalSpeciesTitle').textContent = speciesTitle;
     document.getElementById('modalSubtitle').textContent = speciesDet.scientific_name || '—';
 
-    // Badge
     setBadge(obs.verification_status || 'Pending');
 
-    // Observation fields
     document.getElementById('fldPopulation').textContent = obs.count || 0;
     document.getElementById('fldActivity').textContent = obs.activity || 'Not recorded';
     
     document.getElementById('fldDate').textContent = formatObsDate(window.BioDate.localDateInput(obs.timestamp));
     document.getElementById('fldTime').textContent = window.BioDate.shortTime(obs.timestamp);
 
-    // Location fields
     document.getElementById('fldCountry').textContent = loc.country || '—';
     document.getElementById('fldProvince').textContent = loc.administrative_area || '—';
     document.getElementById('fldCity').textContent = loc.city || '—';
@@ -435,16 +402,13 @@ function viewRecordById(id) {
     document.getElementById('fldProtectedArea').textContent = loc.focus_area || 'None';
     document.getElementById('fldGps').textContent = formatCoords(loc.latitude, loc.longitude);
 
-    // Record Details (collapsible)
     document.getElementById('fldLocality').textContent = loc.locality_description || 'Not recorded';
     document.getElementById('fldFieldNotes').textContent = obs.field_notes || 'Not recorded';
     document.getElementById('fldRecordedBy').textContent = obs.recorded_by || '—';
     document.getElementById('fldInstitution').textContent = obs.institution_name || '—';
     
-    // Format observation ID nicely
     var displayId = obs.observation_id ? obs.observation_id.replace('obs_', 'OBS-') : '—';
     document.getElementById('fldRecordId').textContent = displayId;
-    // GBIF-imported records show "Imported" rather than "Active".
     document.getElementById('fldRecordStatus').textContent = (obs.source === 'gbif') ? 'Imported' : 'Active';
 
     // Cancel any active edit mode, and any half-made decision, so reopening a
@@ -452,12 +416,10 @@ function viewRecordById(id) {
     cancelEdit();
     cancelReviewDecision();
 
-    // Store current observation ID for actions
     document.getElementById('viewModal').setAttribute('data-obs-id', obs.observation_id);
     ModalManager.open('viewModal');
 }
 
-// Close view modal
 function closeViewModal() {
     cancelEdit();
     cancelReviewDecision();
@@ -465,16 +427,13 @@ function closeViewModal() {
     currentObsId = null;
 }
 
-// Toggle collapsible section
 function toggleSection(id) {
     var el = document.getElementById(id);
     if (el) el.classList.toggle('open');
 }
 
-// ───── APPROVE / FLAG ACTIONS ─────
-// These update the verification_status in the data layer, which immediately
-// refreshes the table and sends a notification to the admin sidebar.
-// Approve = verified as accurate; Flag = suspected issue (e.g., wrong species ID).
+// APPROVE / FLAG ACTIONS
+// Approve = verified as accurate; Flag = suspected problem with the record.
 
 function handleApprove() {
     // Approving needs no reason, so any half-started flag is abandoned rather
@@ -484,21 +443,14 @@ function handleApprove() {
 }
 
 /**
- * Send a review decision through the audited path (issue #73).
- *
- * This goes through the `review_observation` RPC rather than patching
- * `verification_status` directly: an AFTER trigger writes the decision to
- * `observation_reviews`, and it can only record the reason if the reason is in
+ * Send a review decision through the `review_observation` RPC rather than
+ * patching `verification_status` directly: the AFTER trigger writes the decision
+ * to `observation_reviews`, and it can only record the reason if the reason is in
  * the same transaction as the status change. A direct column update would change
- * the status and leave the audit trail empty.
- *
- * The local store is updated first so the UI responds immediately, and the cloud
- * write stays non-fatal — matching the previous behaviour.
- *
- * "Rejected" was retired on review: it duplicated "Flagged" as a second negative
- * state, had zero rows in production, and "Flagged" is the incumbent — it predates
- * this work, carries the existing data, and is already the status the Analytics
- * map filters by. One negative state, not two.
+ * the status and leave the audit trail empty. The local store is updated first so
+ * the UI responds immediately; the cloud write stays non-fatal.
+ * "Rejected" was retired: it duplicated "Flagged", the incumbent negative state
+ * that already carries the existing data and is what the Analytics map filters by.
  */
 function submitReview(toStatus, reason) {
     if (!window.BioData || !currentObsId) return;
@@ -507,7 +459,7 @@ function submitReview(toStatus, reason) {
 
     // Capture the pre-decision status so a failed write can be undone. Without
     // this, the optimistic update below would leave the table asserting a
-    // decision the server never accepted — the frontend and the database
+    // decision the server never accepted, the frontend and the database
     // disagreeing while the admin is told nothing.
     var badgeEl = document.getElementById('modalStatusBadge');
     var previousStatus = badgeEl && badgeEl.textContent ? badgeEl.textContent.trim() : 'Pending';
@@ -528,9 +480,7 @@ function submitReview(toStatus, reason) {
 
     window.BioSync.reviewObservation(obsId, toStatus, reason).then(function(res) {
         if (res && res.error) throw res.error;
-        // Refresh before closing so the count is correct if the record is
-        // reopened (renderReviewHistory guards on currentObsId, so it is also
-        // safe to call just before the modal goes away).
+        // Refresh before closing so the count is correct if the record is reopened.
         renderReviewHistory(obsId);
         closeViewModal();
         reviewToast(reviewSavedMessage(toStatus, species, reason), 'success');
@@ -546,19 +496,13 @@ function submitReview(toStatus, reason) {
     });
 }
 
-/* ───── REVIEW OUTCOME REPORTING ───── */
+/* REVIEW OUTCOME REPORTING */
 
 /**
- * Report the outcome of a decision as a colour-coded toast rather than as a line
- * of text inside the modal.
- *
- * The confirmation has to outlive the modal it describes, and small grey text
- * inside a dialog is easy to miss — which is how "Saved and logged.", "Saved
- * locally only" and "NOT saved" ended up as three differently-worded messages
- * buried in the same slot.
- *
- * Falls back to the console if the toast module did not load, so an outcome is
- * never silently swallowed.
+ * Report a decision's outcome as a colour-coded toast rather than as a line of
+ * text inside the modal: the confirmation has to outlive the modal it describes,
+ * and small grey text inside a dialog is easy to miss. Falls back to the console
+ * so an outcome is never silently swallowed if the toast module did not load.
  */
 function reviewToast(message, type) {
     if (window.BioToast && typeof window.BioToast.show === 'function') {
@@ -569,11 +513,9 @@ function reviewToast(message, type) {
 }
 
 /**
- * Confirmation wording for a decision that reached the server.
- *   Approved -> "Impala has been Approved and saved."
- *   Flagged  -> "Impala Flagged, wrong species identification."
- * The reason is part of the flagged message on purpose: the decision is only
- * meaningful with it, and it is the one thing the admin typed.
+ * Confirmation wording for a decision that reached the server. The reason is part
+ * of the flagged message on purpose: the decision is only meaningful with it, and
+ * it is the one thing the admin typed.
  */
 function reviewSavedMessage(toStatus, species, reason) {
     if (toStatus === 'Flagged') {
@@ -583,8 +525,8 @@ function reviewSavedMessage(toStatus, species, reason) {
 }
 
 /**
- * Same information for the local-only path, but honest about persistence — the
- * word "saved" on its own would imply it reached the server.
+ * Same information for the local-only path, but honest about persistence: the word
+ * "saved" on its own would imply it reached the server.
  */
 function reviewOfflineMessage(toStatus, species, reason) {
     if (toStatus === 'Flagged') {
@@ -595,7 +537,7 @@ function reviewOfflineMessage(toStatus, species, reason) {
         ' on this device only — the server was not reached.';
 }
 /**
- * Infinitive verb, for the failure message. "Could not approve Zebra" reads
+ * Infinitive verb for the failure message: "Could not approve Zebra" reads
  * correctly where the past tense used for confirmations would not.
  */
 function reviewVerbInfinitive(toStatus) {
@@ -604,14 +546,12 @@ function reviewVerbInfinitive(toStatus) {
     return 'save';
 }
 
-/** The species name shown in the modal title, for use in messages. */
 function reviewSpeciesLabel() {
     var el = document.getElementById('modalSpeciesTitle');
     var name = el && el.textContent ? el.textContent.trim() : '';
     return name || 'The record';
 }
 
-/** The reason typed into the modal's review note field, trimmed. */
 function reviewNoteValue() {
     var input = document.getElementById('reviewNoteInput');
     return input && input.value ? input.value.trim() : '';
@@ -626,9 +566,9 @@ function clearReviewNote() {
 }
 
 /**
- * Flag is a decision *about* the record, so it needs a reason. Rather than a
- * native dialog (already logged as debt under #52), the field is marked invalid
- * and focused so the correction is obvious in place.
+ * Flag is a decision *about* the record, so it needs a reason. The field is marked
+ * invalid and focused in place so the correction is obvious, rather than announced
+ * through a native dialog.
  */
 function requireReviewNote() {
     var reason = reviewNoteValue();
@@ -645,17 +585,14 @@ function requireReviewNote() {
     return null;
 }
 
-/* ───── REVIEW DECISION PANEL (#80) ───── */
+/* REVIEW DECISION PANEL */
 
-/** Status awaiting a reason while the decision panel is open. */
 var pendingReviewStatus = null;
 
 /**
- * Flag opens the reason panel instead of demanding a reason up front.
- *
- * The old flow had it backwards: the note field was always on screen, so the
- * admin had to type a reason *before* finding the button, and an editable input
- * sat permanently inside what is otherwise a read-only record view.
+ * Flag opens the reason panel instead of demanding a reason up front: the note
+ * field used to sit permanently on screen, putting an editable input inside what
+ * is otherwise a read-only record view.
  */
 function handleFlag() {
     openReviewDecision('Flagged');
@@ -685,7 +622,6 @@ function openReviewDecision(toStatus) {
     if (input) input.focus();
 }
 
-/** Abandon an in-progress decision and return the modal to its read state. */
 function cancelReviewDecision() {
     var panel = document.getElementById('reviewDecision');
     if (panel) panel.setAttribute('hidden', '');
@@ -699,7 +635,6 @@ function cancelReviewDecision() {
     }
 }
 
-/** Commit the pending decision. The reason is required, validated here. */
 function confirmReviewDecision() {
     var reason = requireReviewNote();
     if (!reason) return;
@@ -712,7 +647,6 @@ function confirmReviewDecision() {
     submitReview(status, reason);
 }
 
-/** Decision count shown beside the collapsed Review history heading. */
 function setReviewHistoryCount(count) {
     var el = document.getElementById('reviewHistoryCount');
     if (!el) return;
@@ -721,7 +655,7 @@ function setReviewHistoryCount(count) {
         : '';
 }
 
-// ───── EDIT MODE ─────
+// EDIT MODE
 
 var isEditing = false;
 
@@ -729,7 +663,6 @@ function enableEditMode() {
     if (isEditing) return;
     isEditing = true;
 
-    // Replace Edit button with Save + Cancel
     var editBtn = document.getElementById('btnEditRecord');
     editBtn.innerHTML = '<svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-check"/></svg>';
     editBtn.className = 'icon-btn icon-btn-save';
@@ -737,7 +670,6 @@ function enableEditMode() {
     editBtn.removeEventListener('click', enableEditMode);
     editBtn.addEventListener('click', saveChanges);
 
-    // Add Cancel button next to Save
     var actionsDiv = document.querySelector('.page-observations .header-actions');
     if (actionsDiv) {
         var cancelBtn = document.createElement('button');
@@ -747,7 +679,6 @@ function enableEditMode() {
         cancelBtn.setAttribute('aria-label', 'Cancel Edit');
         cancelBtn.innerHTML = '<svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-close"/></svg>';
         cancelBtn.addEventListener('click', cancelEdit);
-        // Insert after the edit/save button (before approve)
         var approveBtn = document.getElementById('btnApproveRecord');
         if (approveBtn) {
             actionsDiv.insertBefore(cancelBtn, approveBtn);
@@ -756,13 +687,11 @@ function enableEditMode() {
         }
     }
 
-    // Disable approve/flag during edit
     var approveBtn = document.getElementById('btnApproveRecord');
     var flagBtn = document.getElementById('btnFlagRecord');
     if (approveBtn) { approveBtn.disabled = true; approveBtn.style.opacity = '0.4'; approveBtn.style.pointerEvents = 'none'; }
     if (flagBtn) { flagBtn.disabled = true; flagBtn.style.opacity = '0.4'; flagBtn.style.pointerEvents = 'none'; }
 
-    // Make fields editable
     makeFieldsEditable(true);
 }
 
@@ -770,7 +699,6 @@ function cancelEdit() {
     if (!isEditing) return;
     isEditing = false;
 
-    // Restore Edit button
     var editBtn = document.getElementById('btnEditRecord');
     editBtn.innerHTML = '<svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-edit"/></svg>';
     editBtn.className = 'icon-btn icon-btn-edit';
@@ -778,17 +706,14 @@ function cancelEdit() {
     editBtn.removeEventListener('click', saveChanges);
     editBtn.addEventListener('click', enableEditMode);
 
-    // Remove Cancel button
     var cancelBtn = document.getElementById('btnCancelEdit');
     if (cancelBtn) cancelBtn.remove();
 
-    // Re-enable approve/flag
     var approveBtn = document.getElementById('btnApproveRecord');
     var flagBtn = document.getElementById('btnFlagRecord');
     if (approveBtn) { approveBtn.disabled = false; approveBtn.style.opacity = ''; approveBtn.style.pointerEvents = ''; }
     if (flagBtn) { flagBtn.disabled = false; flagBtn.style.opacity = ''; flagBtn.style.pointerEvents = ''; }
 
-    // Remove edit inputs
     makeFieldsEditable(false);
 }
 
@@ -797,7 +722,6 @@ function makeFieldsEditable(enable) {
     if (!obs) return;
     var loc = obs.location || {};
 
-    // Editable field IDs and their current values
     var editableFields = [
         { id: 'fldPopulation', type: 'number', value: obs.count },
         { id: 'fldActivity', type: 'select', value: obs.activity || '', options: ['', 'Feeding', 'Resting', 'Moving', 'Breeding', 'Foraging', 'Vocalizing', 'Other'] },
@@ -854,7 +778,6 @@ function makeFieldsEditable(enable) {
                 parentRow.classList.add('editing');
             }
         } else {
-            // Remove edit controls
             var editEl = document.getElementById(field.id + '-edit');
             if (editEl) editEl.remove();
             el.style.display = '';
@@ -862,8 +785,7 @@ function makeFieldsEditable(enable) {
         }
     });
 
-    // Habitat auto-select: keep habitat in sync with the focus area while
-    // editing (2-option app-wide system). Only runs when enabling edit mode.
+    // Keep habitat in sync with the focus area while editing; only when enabling.
     if (enable) {
         var focusEditEl = document.getElementById('fldProtectedArea-edit');
         var habitatEditEl = document.getElementById('fldHabitat-edit');
@@ -891,8 +813,8 @@ function getProvinceOptions() {
     return ['', 'Copperbelt Province'];
 }
 
-// Habitat options — the two canonical app-wide habitats (leading '' is the
-// placeholder for the select). Falls back to literals if BioData is missing.
+// Habitat options: the leading '' is the select's placeholder. Falls back to
+// literals if BioData is missing.
 function getHabitatOptions() {
     var types = (window.BioData && window.BioData.HABITAT_TYPES) ||
         ['Miombo Woodland', 'Urban'];
@@ -916,9 +838,9 @@ function saveChanges() {
     var dateVal = getEditValue('fldDate');
     var timeVal = getEditValue('fldTime');
     // The typed wall-clock is LOCAL, so it must be resolved against the viewer's
-    // zone. Appending 'Z' stored the local reading as though it were already UTC,
-    // shifting the saved instant by the offset (#46). The field-officer form
-    // already did this correctly with `new Date(date + 'T' + time)`.
+    // zone: appending 'Z' stored the local reading as though it were already UTC,
+    // shifting the saved instant by the offset. The field-officer form already does
+    // this with `new Date(date + 'T' + time)`.
     var timestamp = dateVal ? (window.BioDate.toUtcIso(dateVal, timeVal) || obs.timestamp) : obs.timestamp;
     var country = getEditValue('fldCountry');
     var province = getEditValue('fldProvince');
@@ -929,7 +851,6 @@ function saveChanges() {
     var locality = getEditValue('fldLocality');
     var fieldNotes = getEditValue('fldFieldNotes');
 
-    // Parse GPS
     var lat = null, lng = null;
     if (gpsStr && gpsStr !== '—') {
         var coords = parseCoords(gpsStr);
@@ -955,27 +876,24 @@ function saveChanges() {
 
     window.BioData.updateObservation(obsId, updates);
 
-    // Write-through edit to Supabase (non-fatal on failure — local cache updated).
+    // Write-through edit to Supabase (non-fatal on failure; the local cache is updated).
     if (window.BioSync && window.BioSync.updateObservation) {
       window.BioSync.updateObservation(obsId, updates).catch(function(err) {
         console.warn('BioSync: failed to save observation edit in Supabase:', err && err.message);
       });
     }
 
-    // Exit edit mode and refresh the view
     cancelEdit();
     viewRecordById(obsId);
     renderObsTable();
 }
 
 function parseCoords(str) {
-    // Support both human-readable (DMS-like) and decimal formats to accommodate
-    // data imported from legacy GPS handhelds vs. modern browser APIs.
-    // Handles formats: "15.6000°S, 29.4000°E", "-15.6, 29.4", "15.6°S, 29.4°E"
+    // Handles both legacy handset formats ("15.6000°S, 29.4000°E") and modern
+    // decimal ones ("-15.6, 29.4").
     var regex = /([\-0-9.]+)\s*(?:°)?([NSEWnsew])?[, ]+\s*([\-0-9.]+)\s*(?:°)?([NSEWnsew])?/;
     var match = str.match(regex);
     if (!match) {
-        // Try simple "lat, lng"
         var parts = str.split(',');
         if (parts.length === 2) {
             var lat = parseFloat(parts[0].trim());
@@ -992,17 +910,14 @@ function parseCoords(str) {
     return { lat: lat, lng: lng };
 }
 
-/* ───── ARCHIVE CONFIRMATION ───── */
+/* ARCHIVE CONFIRMATION */
 
 var pendingArchive = null;
 
 /**
- * Ask before archiving, through the shared confirmation dialog.
- *
- * window.confirm() was part of why this looked broken: it blocks the page, and
- * on success nothing else on screen changed — the table refills from the next
- * page of results, so the row count barely moves and the archive appears to have
- * done nothing at all. The toast below is the missing signal.
+ * Ask before archiving, through the shared confirmation dialog: window.confirm()
+ * blocks the page, and a successful archive barely changes the table, so without
+ * the toast below the action reads as broken.
  */
 function openArchiveConfirm(id, speciesName) {
     pendingArchive = { id: id, species: speciesName };
@@ -1024,7 +939,6 @@ function closeArchiveConfirm() {
     ModalManager.closeById('archiveConfirmModal');
 }
 
-/** Archive the record the dialog was asking about, then report the outcome. */
 function applyArchive() {
     var pending = pendingArchive;
     if (!pending) return;
@@ -1055,9 +969,8 @@ function applyArchive() {
 }
 
 /**
- * Archive (not destroy) an observation. It is soft-deleted via `deleted_at` so
- * it can be restored from the Archived view — a mis-click used to be
- * unrecoverable (issue #74). The wording now matches what actually happens.
+ * Archive, not destroy: the record is soft-deleted via `deleted_at` so it can be
+ * restored from the Archived view, where a mis-click used to be unrecoverable.
  */
 function handleDelete() {
     if (!window.BioData) return;
@@ -1068,11 +981,9 @@ function handleDelete() {
 }
 
 /**
- * Render the append-only review log for a record (issue #73).
- *
- * Read-only by design: `observation_reviews` has no INSERT/UPDATE/DELETE policy,
- * so the UI cannot fabricate or rewrite history. Field officers can read the
- * decisions on their own submissions through the RLS policy on that table.
+ * Render the append-only review log for a record. Read-only by design:
+ * `observation_reviews` has no INSERT/UPDATE/DELETE policy, so the UI cannot
+ * fabricate or rewrite history; officers read their own via the table's RLS policy.
  */
 function renderReviewHistory(obsId) {
     var list = document.getElementById('reviewHistoryList');
@@ -1119,7 +1030,7 @@ function renderReviewHistory(obsId) {
     });
 }
 
-/* ───── ARCHIVED RECORDS (issue #74) ───── */
+/* ARCHIVED RECORDS */
 
 function openArchivedModal() {
     var modal = document.getElementById('archivedModal');
@@ -1137,9 +1048,7 @@ function openArchivedModal() {
         if (res && res.error) throw res.error;
         var rows = (res && res.data) || [];
         if (rows.length === 0) {
-            // Say what archiving is, not just that the list is empty — "Nothing
-            // archived." alone reads as a dead end with no explanation of why
-            // the button exists.
+            // Explain what archiving is: "Nothing archived." alone reads as a dead end.
             list.innerHTML = '<p class="archived-empty">Nothing archived yet.</p>' +
                 '<p class="archived-hint">Archiving a record removes it from the ' +
                 'observations list without destroying it. Archived records are kept ' +
@@ -1174,7 +1083,7 @@ function restoreArchivedRecord(obsId) {
     if (!(window.BioSync && window.BioSync.restoreObservation)) return;
     window.BioSync.restoreObservation(obsId).then(function(res) {
         if (res && res.error) throw res.error;
-        openArchivedModal();   // refresh the archived list
+        openArchivedModal();
         // Re-hydrate so the restored row reappears in the main list.
         if (typeof window.BioSync.loadFromCloud === 'function') {
             window.BioSync.loadFromCloud();
@@ -1186,8 +1095,8 @@ function restoreArchivedRecord(obsId) {
     });
 }
 
-// Parse the ?obs= query param with a manual fallback (URLSearchParams is
-// ES2017 — absent on some older engines).
+// Parse ?obs= with a manual fallback (URLSearchParams is ES2017, absent on
+// older engines).
 function getObsParam() {
     var obsParam = null;
     if (typeof URLSearchParams === 'function') {
@@ -1208,7 +1117,6 @@ function getObsParam() {
     return obsParam;
 }
 
-// Open the observation record modal for the given id, if it exists.
 function openObservationById(obsId) {
     if (!obsId || !window.BioData) return;
     var deepObs = window.BioData.getObservationById(obsId);
@@ -1217,27 +1125,22 @@ function openObservationById(obsId) {
     }
 }
 
-// Open the record modal implied by the current URL's ?obs= param.
-// Exposed globally so the notification handler can call it even when the
-// page is already loaded (Issue: notification clicks on the active
-// observations page must still open the modal, not just change the URL).
+// Exposed globally so the notification handler can call it while the page is
+// already loaded: a notification click must open the modal, not just change the URL.
 function openObservationDeepLink() {
     openObservationById(getObsParam());
 }
 window.openObservationDeepLink = openObservationDeepLink;
 
-// Open add modal
 function openAddModal() {
     if (!window.BioData) return;
     ModalManager.open('addModal');
 }
 
-// Close add modal
 function closeAddModal() {
     ModalManager.closeById('addModal');
 }
 
-// Initialize page when DOM is ready
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', function() {
         if (!window.BioData) {
@@ -1247,20 +1150,15 @@ if (typeof document !== 'undefined') {
 
         renderObsTable();
 
-        // Deep-link: if the URL carries ?obs=..., open that observation's
-        // record modal directly (Issue #25 — notifications navigate here
-        // with the observation id). Runs on first page load; the same
-        // function is called by the notification handler when the page is
-        // already active.
+        // Deep-link: open the ?obs= record modal on load. The notification handler
+        // calls the same function when the page is already active.
         openObservationDeepLink();
 
-        // Search input
         var searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.addEventListener('input', handleObsSearch);
         }
 
-        // Search field filter dropdown
         var filterBtn = document.getElementById('obsFilterBtn');
         var searchDropdown = document.getElementById('obsSearchDropdown');
         if (filterBtn && searchDropdown) {
@@ -1270,7 +1168,6 @@ if (typeof document !== 'undefined') {
                 filterBtn.classList.toggle('active');
             });
 
-            // Radio change triggers re-search
             var radios = searchDropdown.querySelectorAll('input[type="radio"]');
             radios.forEach(function(radio) {
                 radio.addEventListener('change', function() {
@@ -1280,7 +1177,6 @@ if (typeof document !== 'undefined') {
                 });
             });
 
-            // Close dropdown on outside click
             document.addEventListener('click', function(e) {
                 if (!searchDropdown.contains(e.target) && e.target !== filterBtn && !filterBtn.contains(e.target)) {
                     searchDropdown.classList.remove('open');
@@ -1289,11 +1185,9 @@ if (typeof document !== 'undefined') {
             });
         }
 
-        // Add record button
         var btnAdd = document.getElementById('btnAddRecord');
         if (btnAdd) btnAdd.addEventListener('click', openAddModal);
 
-        // Previous/Next buttons
         var prevBtn = document.getElementById('prevBtn');
         var nextBtn = document.getElementById('nextBtn');
         if (prevBtn) {
@@ -1314,23 +1208,18 @@ if (typeof document !== 'undefined') {
             });
         }
 
-        // View Modal buttons
         var closeViewBtn = document.getElementById('closeViewModalBtn');
         if (closeViewBtn) closeViewBtn.addEventListener('click', closeViewModal);
 
-        // Edit button
         var btnEdit = document.getElementById('btnEditRecord');
         if (btnEdit) btnEdit.addEventListener('click', enableEditMode);
 
-        // Approve button
         var btnApprove = document.getElementById('btnApproveRecord');
         if (btnApprove) btnApprove.addEventListener('click', handleApprove);
 
-        // Flag button
         var btnFlag = document.getElementById('btnFlagRecord');
         if (btnFlag) btnFlag.addEventListener('click', handleFlag);
 
-        // Review decision panel (#80)
         var btnConfirmReview = document.getElementById('btnConfirmReview');
         if (btnConfirmReview) btnConfirmReview.addEventListener('click', confirmReviewDecision);
 
@@ -1353,8 +1242,7 @@ if (typeof document !== 'undefined') {
             });
         }
 
-        // Review history disclosure (#80). Bound here rather than with an inline
-        // onclick, keeping JS out of the markup.
+        // Review history disclosure, bound here rather than inline in the markup.
         var historyToggle = document.getElementById('reviewHistoryToggle');
         if (historyToggle) {
             historyToggle.addEventListener('click', function() {
@@ -1365,15 +1253,13 @@ if (typeof document !== 'undefined') {
             });
         }
 
-        // Archived records (issue #74). Restore buttons are rendered
-        // dynamically, so their clicks are delegated from the list container.
+        // Restore buttons are rendered dynamically, so their clicks are delegated
+        // from the list container.
         var btnArchived = document.getElementById('btnArchivedRecords');
         if (btnArchived) btnArchived.addEventListener('click', openArchivedModal);
 
-        // Review-queue status filter (#70)
         initStatusFilter();
 
-        // Export the filtered queue (#69)
         var btnExportObs = document.getElementById('btnExportObs');
         if (btnExportObs) btnExportObs.addEventListener('click', handleExportObservations);
 
@@ -1394,23 +1280,19 @@ if (typeof document !== 'undefined') {
             });
         }
 
-        // Delete button
         var btnDelete = document.getElementById('btnDeleteRecord');
         if (btnDelete) btnDelete.addEventListener('click', handleDelete);
 
-        // Archive confirmation dialog
         var acceptArchive = document.getElementById('acceptArchiveConfirmBtn');
         if (acceptArchive) acceptArchive.addEventListener('click', applyArchive);
         var cancelArchive = document.getElementById('cancelArchiveConfirmBtn');
         if (cancelArchive) cancelArchive.addEventListener('click', closeArchiveConfirm);
 
-        // Close add modal buttons
         var closeAddBtn = document.getElementById('closeAddModalBtn');
         var closeAddFooterBtn = document.getElementById('closeAddModalFooterBtn');
         if (closeAddBtn) closeAddBtn.addEventListener('click', closeAddModal);
         if (closeAddFooterBtn) closeAddFooterBtn.addEventListener('click', closeAddModal);
 
-        // Close modals on overlay click
         var viewModal = document.getElementById('viewModal');
         var addModal = document.getElementById('addModal');
         if (viewModal) {
@@ -1424,9 +1306,8 @@ if (typeof document !== 'undefined') {
             });
         }
 
-        // Escape is owned by ModalManager now, bound per-dialog rather than to
-        // the document (#51). The old handler here closed BOTH modals on any
-        // Escape and would race the helper's own handling.
+        // Escape is owned by ModalManager, bound per-dialog. Do not add a document
+        // Escape handler here: it would close both modals and race the helper.
     });
 }
 
@@ -1437,7 +1318,6 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Export functions for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { renderObsTable, handleObsSearch, viewRecordById, closeViewModal, handleDelete, openAddModal, closeAddModal, toggleSection };
 }

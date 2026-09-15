@@ -105,13 +105,11 @@
     display: none;
 }
 
-/* ============================================
-   Add / Edit User Modals (mirrors Observation view modal)
-   ============================================ */
+/* Add / Edit User Modals (mirrors Observation view modal) */
 
 /* Overlay. Scoped to the class, NOT a list of ids: naming ids meant any newly
    added dialog silently inherited opacity:0 from modals.css and stayed
-   invisible — the #53 confirmation modal did exactly that. */
+   invisible; the confirmation modal did exactly that. */
 .page-users .modal-overlay {
     z-index: var(--z-modal-backdrop);
 }
@@ -120,7 +118,7 @@
     display: flex;
 }
 
-/* Modal Card Base — shared with observations modal (see modals.css).
+/* Modal Card Base: shared with observations modal (see modals.css).
    This rule is what actually reveals a card: the base sets opacity:0.
    Matched on `.modal-card` so every dialog variant is covered. */
 .page-users .modal-overlay.active .modal-card {
@@ -234,8 +232,8 @@
     color: var(--color-text-muted);
 }
 
-/* Account status. Deliberately identical to the role pill beside it — same
-   padding, radius, font-size and weight — so the two read as the same kind of
+/* Account status. Deliberately identical to the role pill beside it (same
+   padding, radius, font-size and weight), so the two read as the same kind of
    information. It previously used a small radius and heavier weight, and sat in
    a <td> carrying a global `.status-cell { display: inline-flex }` rule, which
    broke the table cell and floated the pill out of line with the row. */
@@ -263,7 +261,7 @@
 
 /* Row actions. Text for all three: two icons beside one label read as an
    oversight rather than a choice, and this page has no suitable deactivate
-   glyph — inventing one is how the observations export icon ended up invisible.
+   glyph: inventing one is how the observations export icon ended up invisible.
    Square rather than pill-shaped, so they read as controls and not as a second
    badge column sitting under the status pills. */
 .page-users .action-text-btn {
@@ -319,7 +317,7 @@
    `.confirm-status-note` is no longer needed here. */
 
 /* The confirmation dialog styles moved to components/modals.css, where the
-   observations page can reuse them — both pages now run the same critical-action
+   observations page can reuse them, so both pages now run the same critical-action
    dialog rather than two drifting copies. */
 
 /* Access requests. Self-contained rather than reusing the collapsible classes
@@ -465,9 +463,7 @@
     }
 }
 
-/* ============================================
-   Responsive - Users Page
-   ============================================ */
+/* Responsive - Users Page */
 
 /* Tablet: 768px - 1023px */
 @media (max-width: 1023px) and (min-width: 768px) {

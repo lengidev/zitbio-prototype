@@ -1,29 +1,6 @@
-/**
- * ZitBio - Button Component Styles
- * Unified design system — one base .btn class with BEM-style modifiers.
- *
- * Class patterns:
- *   .btn                   — base button (inline-flex, gap, padding, border-radius, etc.)
- *   .btn--primary          — filled primary green
- *   .btn--secondary        — white bg + border outline
- *   .btn--success          — filled green success
- *   .btn--danger           — filled red danger
- *   .btn--ghost            — transparent with hover
- *   .btn--link             — text-only link
- *   .btn--sm / .btn--lg    — small / large sizes
- *   .btn--icon             — square 36x36 icon-only
- *   .btn--block            — full-width
- *
- * Legacy aliases (still work, keep for backward compat):
- *   .btn-primary  = .btn--primary
- *   .btn-secondary = .btn--secondary
- *   .btn-add      = .btn.btn--primary (legacy)
- *   .btn-export   = .btn.btn--secondary (legacy)
- */
+/* One base .btn plus BEM modifiers; the legacy aliases (.btn-primary, .btn-add, .btn-export) stay for old call sites. */
 
-/* ============================================
-   Base Button
-   ============================================ */
+/* Base Button */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -64,11 +41,9 @@
   flex-shrink: 0;
 }
 
-/* ============================================
-   Button Variants (Modifiers)
-   ============================================ */
+/* Button Variants (Modifiers) */
 
-/* Primary — filled */
+/* Primary: filled */
 .btn--primary,
 .btn-primary {
   background-color: var(--color-primary);
@@ -90,7 +65,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* Secondary — outline / white bg */
+/* Secondary: outline / white bg */
 .btn--secondary,
 .btn-secondary {
   background-color: var(--color-bg-white);
@@ -133,7 +108,7 @@
   border-color: var(--color-danger-hover);
 }
 
-/* Ghost — transparent */
+/* Ghost: transparent */
 .btn--ghost,
 .btn-ghost {
   background-color: transparent;
@@ -147,7 +122,7 @@
   color: var(--color-text-main);
 }
 
-/* Link — text-only */
+/* Link: text-only */
 .btn--link,
 .btn-link {
   background-color: transparent;
@@ -164,11 +139,9 @@
   background-color: transparent;
 }
 
-/* ============================================
-   Button Sizes
-   ============================================ */
+/* Button Sizes */
 
-/* Icon button — square 36x36 */
+/* Icon button: square 36x36 */
 .btn--icon,
 .btn-icon {
   padding: 8px;
@@ -224,11 +197,9 @@
   width: 100%;
 }
 
-/* ============================================
-   Legacy Aliases — backward compatible
-   ============================================ */
+/* Legacy Aliases (backward compatible) */
 
-/* Same button geometry, different emphasis — one block, so the two aliases
+/* Same button geometry, different emphasis, in one block so the two aliases
    cannot drift apart. Only the surface (transition/background/border/color)
    differs and lives in the rules below. */
 .btn-export,
@@ -285,9 +256,7 @@
   font-size: 16px;
 }
 
-/* ============================================
-   Action Buttons (Sidebar / Quick Actions)
-   ============================================ */
+/* Action Buttons (Sidebar / Quick Actions) */
 .action-btn {
     display: flex;
     align-items: center;
@@ -348,16 +317,13 @@
   color: var(--color-text-secondary);
 }
 
-/* Vertical spacing between action buttons */
 .action-buttons {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-/* ============================================
-   Navigation Item Buttons
-   ============================================ */
+/* Navigation Item Buttons */
 .nav-item {
   display: flex;
   align-items: center;
@@ -386,7 +352,7 @@
 
 .nav-item.active {
   background: var(--color-primary-lighter);
-  /* Theme-aware: see --color-nav-active-fg in theme.css (issue #60). */
+  /* Theme-aware: see --color-nav-active-fg in theme.css. */
   color: var(--color-nav-active-fg, var(--color-primary));
   font-weight: 500;
 }
@@ -414,9 +380,7 @@
     color: var(--color-nav-active-fg, var(--color-primary));
 }
 
-/* ============================================
-   Icon-only Navigation
-   ============================================ */
+/* Icon-only Navigation */
 .nav-item-icon {
   display: flex;
   align-items: center;
@@ -448,9 +412,7 @@
   font-size: 20px;
 }
 
-/* ============================================
-   Close Buttons & Sidebar Toggles (unified)
-   ============================================ */
+/* Close Buttons & Sidebar Toggles (unified) */
 .btn-close,
 .sidebar-close,
 .sidebar-toggle {
@@ -487,9 +449,7 @@
   font-size: 18px;
 }
 
-/* ============================================
-   Pagination Buttons
-   ============================================ */
+/* Pagination Buttons */
 .controls-row {
     display: flex;
     justify-content: space-between;
@@ -540,9 +500,7 @@
     font-size: 18px;
 }
 
-/* ============================================
-   Controls Row — Search + Filter + Buttons
-   ============================================ */
+/* Controls Row: Search + Filter + Buttons */
 .controls-left {
     display: flex;
     align-items: center;
@@ -682,9 +640,7 @@
     box-shadow: var(--focus-ring);
 }
 
-/* ============================================
-   Responsive
-   ============================================ */
+/* Responsive */
 @media (max-width: 767px) {
     .search-container > svg,
     .search-container > span.material-symbols-outlined {

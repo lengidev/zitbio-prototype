@@ -1,18 +1,12 @@
 /**
- * ZitBio - Global Styles
- * Typography, base resets, and global element styling
+ * ZitBio global styles: typography, base resets, global element styling.
  */
 
-/* ============================================
-   Typography
-   System font stack only — the app loads NO web fonts.
-   The stack is defined once as --font-sans in styles/theme.css;
-   never hardcode a font-family in a page or component stylesheet.
-   ============================================ */
+/* Typography. System font stack only: the app loads NO web fonts. The stack is
+   defined once as --font-sans in styles/theme.css; never hardcode a font-family
+   in a page or component stylesheet. */
 
-/* ============================================
-   CSS Reset & Base Styles
-   ============================================ */
+/* CSS Reset & Base Styles */
 *,
 *::before,
 *::after {
@@ -38,16 +32,12 @@ body {
   min-height: 100vh;
 }
 
-/* ============================================
-   Auth-pending hold (#76)
-   Protected pages carry `auth-pending` in their STATIC markup. The route
-   guard that authorises them is asynchronous, while the sidebar and header
-   are static HTML — so without this hold a signed-in field officer opening
-   an admin URL sees the admin chrome for the entire decision window. That
-   window is not one frame: when Supabase is unreachable the guard's /profiles
-   retry budget is ~10s, and `mountUI()` was the only thing ever deferred.
-   admin-layout.js removes the class on every terminal guard path.
-   ============================================ */
+/* Auth-pending hold. Protected pages carry `auth-pending` in their STATIC markup.
+   The route guard that authorises them is asynchronous, while the sidebar and
+   header are static HTML, so without this hold a signed-in field officer opening
+   an admin URL sees the admin chrome for the whole decision window. That window is
+   not one frame: when Supabase is unreachable the guard's /profiles retry budget
+   is ~10s. admin-layout.js removes the class on every terminal guard path. */
 body.auth-pending {
   visibility: hidden;
   /* Safety net that needs no script at all: if every JS file fails to load or
@@ -60,21 +50,16 @@ body.auth-pending {
   to { visibility: visible; }
 }
 
-/* ============================================
-   Boot layer
-   ============================================
-   The hold above means a protected page paints NOTHING until the route guard
-   has verified the session, and that needs at least one Supabase round trip.
-   Measured window: 1.6-6s, and up to the 12s safety net when Supabase is
-   unreachable. It used to be a flat rectangle of --color-bg — #F5F7FA in
-   light, #17211b in dark — which reads as a broken page rather than a loading
-   one. This layer is STATIC MARKUP, so it paints with no JS and no data.
+/* Boot layer. The hold above means a protected page paints NOTHING until the route
+   guard has verified the session, which needs at least one Supabase round trip.
+   Measured window: 1.6-6s, up to the 12s safety net when Supabase is unreachable.
+   It used to be a flat rectangle of --color-bg (#F5F7FA light, #17211b dark), which
+   reads as a broken page rather than a loading one. This layer is STATIC MARKUP, so
+   it paints with no JS and no data.
 
-   It is allowed to show itself inside a hidden body because `visibility` is
-   inherited and a descendant may switch it back on. Nothing privileged lives
-   inside it (a ring and a sentence), so it cannot leak the chrome the #76 hold
-   exists to conceal.
-   ============================================ */
+   It may show itself inside a hidden body because `visibility` is inherited and a
+   descendant can switch it back on. Nothing privileged lives inside it (a ring and
+   a sentence), so it cannot leak the chrome the hold exists to conceal. */
 .app-boot {
   position: fixed;
   inset: 0;
@@ -88,10 +73,10 @@ body.auth-pending {
   background-color: var(--color-bg);
   /* Resolved state. `visibility` is NOT transitioned, on purpose: this layer is
      opaque and covers the viewport, and a transition only advances while the
-     document is ticking. A page revealed in a background tab (or by a browser
-     that throttles it) would otherwise leave the spinner sitting on top of the
-     finished app — verified happening, `elementFromPoint` was the boot layer.
-     Instant and unconditional is the only safe end state. */
+     document is ticking. A page revealed in a background tab would otherwise
+     leave the spinner sitting on top of the finished app; verified happening,
+     `elementFromPoint` was the boot layer. Instant and unconditional is the only
+     safe end state. */
   opacity: 0;
   visibility: hidden;
 }
@@ -101,12 +86,12 @@ body.auth-pending .app-boot {
   opacity: 1;
   /* Entry fade only, and only for opacity: 120ms of delay so a guard that
      resolves immediately does not flash a spinner. If this transition never
-     advances, the layer is simply never shown — the pre-fix behaviour, still
-     no worse — because it cannot affect the hidden/resolved state above. */
+     advances, the layer is simply never shown (the pre-fix behaviour, still
+     no worse) because it cannot affect the hidden/resolved state above. */
   transition: opacity var(--transition-normal) 120ms;
   /* Mirrors the 12s CSS safety net on `body.auth-pending`. Without it, a page
      whose scripts never load would be revealed by the keyframe above while
-     this opaque layer stayed on top of it — the net would hide the very page
+     this opaque layer stayed on top of it; the net would hide the very page
      it exists to rescue. Deliberately 12s and forwards in both places. */
   animation: app-boot-hide 0s linear 12s forwards;
 }
@@ -135,30 +120,25 @@ body.auth-pending .app-boot {
 }
 
 /* A spinner frozen mid-rotation reads as a broken spinner, so under
-   `prefers-reduced-motion` the moving part is dropped and the sentence — the
-   part that actually carries the information — stays. */
+   `prefers-reduced-motion` the moving part is dropped and the sentence (the
+   part that actually carries the information) stays. */
 @media (prefers-reduced-motion: reduce) {
   .app-boot-mark {
     display: none;
   }
 }
 
-/* ============================================
-   Reduced motion (#68)
-   ============================================
-   `prefers-reduced-motion: reduce` is a request to be spared MOVEMENT, not a
-   request for a static page. So this block collapses durations instead of
-   removing the transitions — which also keeps every `transitionend` /
-   `animationend` listener firing, so no code path is left waiting for an event
-   that never arrives.
+/* Reduced motion. `prefers-reduced-motion: reduce` is a request to be spared
+   MOVEMENT, not a request for a static page, so this block collapses durations
+   rather than removing the transitions; that also keeps every `transitionend` /
+   `animationend` listener firing, so no code path waits for an event that never
+   arrives.
 
-   DELIBERATELY NOT SET HERE: `animation-delay` and `transition-delay`.
-   The `body.auth-pending` rule above reveals the page with a 0s animation at a
-   12s DELAY and a `forwards` fill. Zeroing that delay would reveal protected
-   chrome instantly and silently undo the #76 guard; setting `animation: none`
-   would be worse still, stranding the page permanently invisible. Both were
-   live hazards when this block did not exist — the Inspector called the absence
-   of a reduced-motion block the thing that kept the hold safe. */
+   NOT SET HERE: `animation-delay` and `transition-delay`. The `body.auth-pending`
+   rule above reveals the page with a 0s animation at a 12s DELAY and a `forwards`
+   fill. Zeroing that delay would reveal protected chrome instantly and silently
+   undo the guard; `animation: none` would be worse, stranding the page permanently
+   invisible. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -177,9 +157,7 @@ body.auth-pending .app-boot {
   }
 }
 
-/* ============================================
-   Typography Configuration
-   ============================================ */
+/* Typography Configuration */
 
 /* Page Titles (h1/main headers) */
 h1,
@@ -252,9 +230,7 @@ small, .text-small, .text-xs{
   font-size: 12px;
 }
 
-/* ============================================
-   Link Styles
-   ============================================ */
+/* Link Styles */
 a {
     color: var(--color-primary);
     text-decoration: none;
@@ -266,9 +242,7 @@ a:hover {
     text-decoration: none;  /* ensure no underline */
 }
 
-/* ============================================
-   Button Base Styles
-   ============================================ */
+/* Button Base Styles */
 button {
   font-family: inherit;
   font-size: 14px;
@@ -288,9 +262,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* ============================================
-   Form Element Base Styles
-   ============================================ */
+/* Form Element Base Styles */
 input,
 textarea,
 select {
@@ -323,18 +295,14 @@ input[type='radio'] {
   cursor: pointer;
 }
 
-/* Mobile field-text floor (#68)
-   iOS Safari zooms the whole page when a FOCUSED field's font-size is under
-   16px, and does not zoom back out — one tap on an email field leaves the user
-   on a page that no longer fits the screen. Every field here sits at 12-14px
-   and each page sets its own, so the floor belongs in one place above them all.
+/* Mobile field-text floor. iOS Safari zooms the whole page when a FOCUSED field's
+   font-size is under 16px, and does not zoom back out, so one tap leaves the user on
+   a page that no longer fits the screen. Every field here sits at 12-14px and each
+   page sets its own, so the floor belongs in one place above them.
 
-   `!important` is deliberate: this is a platform constraint (a fixed 16px
-   threshold in WebKit), not a typographic preference, and it has to beat the
-   page-level `font-size` declarations that would otherwise win. A bare `input`
-   selector loses to every class selector, so no non-`important` form of this
-   rule can work without duplicating knowledge into eight stylesheets. Scoped to
-   the mobile breakpoint, desktop typography is untouched. */
+   `!important` is deliberate: a fixed 16px threshold in WebKit is a platform
+   constraint, not a typographic preference, and a bare `input` selector loses to
+   every class selector, so no non-`important` version can win. */
 @media (max-width: 767px) {
   input,
   select,
@@ -343,9 +311,7 @@ input[type='radio'] {
   }
 }
 
-/* ============================================
-   Table Base Styles
-   ============================================ */
+/* Table Base Styles */
 table {
   border-collapse: collapse;
   width: 100%;
@@ -370,11 +336,9 @@ th {
 td {
   font-size: 13px;
   color: var(--color-text-main);
-  /* Tabular figures (#62). Proportional digits give each number a different
-     width, so a column of counts or dates visibly fails to line up and the eye
-     cannot scan it. This is set on the cell rather than per-column because every
-     table here is data: no cell's alignment improves from proportional figures,
-     and none is harmed. */
+  /* Tabular figures. Proportional digits give each number a different width, so a
+     column of counts or dates visibly fails to line up. Set on the cell rather than
+     per-column because every table here is data. */
   font-variant-numeric: tabular-nums;
 }
 
@@ -394,9 +358,7 @@ td {
   box-shadow: 0 0 0 2px var(--color-danger-light) !important;
 }
 
-/* ============================================
-   Utility Classes
-   ============================================ */
+/* Utility Classes */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -429,9 +391,7 @@ td {
   font-weight: 700;
 }
 
-/* ============================================
-   Scrollbar Styling
-   ============================================ */
+/* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -458,11 +418,8 @@ td {
   font-weight: 500;
 }
 
-/* ============================================
-   SVG icon base — replaces the Google Fonts icon font.
-   Icons are now inline <svg><use> elements; width/height
-   drive sizing and fill: currentColor powers theming.
-   ============================================ */
+/* SVG icon base: replaced the Google Fonts icon font. Icons are inline
+   <svg><use> elements; width/height drive sizing and fill: currentColor theming. */
 .material-symbols-outlined,
 .material-icons {
   display: inline-flex;
@@ -475,31 +432,21 @@ td {
   vertical-align: middle;
 }
 
-/* ============================================
-   Focus visibility — site-wide
-   ============================================ */
+/* Focus visibility: site-wide */
 /* One indicator for the whole product.
 
-   `:focus-visible` rather than `:focus`, so clicking a control with a mouse does
-   not leave a ring behind — the reason `:focus` rings are usually suppressed and
-   then forgotten about.
-
-   An `outline` rather than a box-shadow, so an ancestor's `overflow: hidden`
-   cannot clip it away.
-
-   Controls that set `outline: none` and draw their own ring are expected to keep
-   that ring at least as visible as this — see `--focus-ring`. */
+   `:focus-visible`, not `:focus`, so a mouse click does not leave a ring behind.
+   An `outline`, not a box-shadow, so an ancestor's `overflow: hidden` cannot clip
+   it away. Controls that set `outline: none` must draw a ring at least as visible
+   as this; see `--focus-ring`. */
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-/* ============================================
-   Responsive Icon Scaling (consolidated)
-   Tier sizes (large/medium/small) are set per breakpoint via CSS
-   custom properties; a single rule applies them, avoiding duplicated
-   selector lists across media queries.
-   ============================================ */
+/* Responsive icon scaling: tier sizes (large/medium/small) are set per breakpoint
+   via custom properties and a single rule applies them, avoiding duplicated
+   selector lists across media queries. */
 
 /* Tier values at each breakpoint (desktop keeps each component's own base) */
 @media (max-width: 1023px) {

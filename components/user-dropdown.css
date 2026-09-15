@@ -1,11 +1,8 @@
 /**
- * ZitBio - User Profile Dropdown Styles
- * Dropdown menu in the top header bar for user profile, help, and logout
+ * User profile dropdown menu in the top header bar.
  */
 
-/* ============================================
-   User Dropdown Container
-   ============================================ */
+/* User Dropdown Container */
 .user-dropdown {
     position: absolute;
     top: calc(100% + 8px);
@@ -32,9 +29,7 @@
     transform: scale(1);
 }
 
-/* ============================================
-   Dropdown Header
-   ============================================ */
+/* Dropdown Header */
 .user-dropdown-header {
     border-bottom: 1px solid var(--border-color-light);
     padding: 6px 8px 8px;
@@ -54,16 +49,12 @@
     margin-top: 2px;
 }
 
-/* ============================================
-   Separator
-   ============================================ */
+/* Separator */
 .user-dropdown-separator {
     display: none;
 }
 
-/* ============================================
-   Menu Items
-   ============================================ */
+/* Menu Items */
 .user-dropdown-items {
     display: flex;
     flex-direction: column;
@@ -104,9 +95,7 @@
     flex-shrink: 0;
 }
 
-/* ============================================
-   Destructive Item (Logout)
-   ============================================ */
+/* Destructive Item (Logout) */
 .user-dropdown-item--destructive {
     color: var(--color-danger);
 }
@@ -120,9 +109,7 @@
     background: var(--color-danger-light);
 }
 
-/* ============================================
-   Dropdown Footer
-   ============================================ */
+/* Dropdown Footer */
 .user-dropdown-footer {
     border-top: 1px solid var(--border-color-light);
     margin-top: 4px;
@@ -144,9 +131,7 @@
     margin-left: auto;
 }
 
-/* ============================================
-   Mobile Responsive
-   ============================================ */
+/* Mobile Responsive */
 @media (max-width: 767px) {
     .user-dropdown {
         position: absolute;

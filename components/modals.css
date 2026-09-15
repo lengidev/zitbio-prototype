@@ -109,9 +109,9 @@
     margin-bottom: 16px;
 }
 
-/* ---- Shared modal header: action buttons + icon-button tooltips ----
-   Used by the observations view modal and the users add/edit modals.
-   Consolidated here — was duplicated in observations.css and users.css. */
+/* Shared modal header: action buttons + icon-button tooltips, used by the
+   observations view modal and the users add/edit modals. Consolidated here from
+   observations.css and users.css, which both duplicated it. */
 .page-observations .header-actions,
 .page-users .user-modal-header .header-actions {
     display: flex;
@@ -175,11 +175,10 @@
     opacity: 1;
 }
 
-/* ---- Shared modal-card base. Only max-width differs — handled by the
-   per-page overrides below. Matched on `.modal-card`, not `.user-modal-card`:
-   naming one variant meant any new dialog variant silently got no base styling
-   at all (no positioning, no background, no opacity:0) — the same trap that
-   hid the confirmation modals. ---- */
+/* Shared modal-card base: only max-width differs, handled by the per-page
+   overrides below. Matched on `.modal-card`, not `.user-modal-card`, because
+   naming one variant left any other dialog with no base styling at all, which is
+   how the confirmation modals stayed hidden. */
 .page-observations .modal-card,
 .page-users .modal-card {
     position: fixed;
@@ -203,23 +202,16 @@
 .page-observations .modal-card { max-width: 620px; }
 .page-users .modal-card { max-width: 460px; }
 
-/* ──────────────────────────────────────────────────────────────
-   Confirmation dialog — shared by every critical, hard-to-undo action.
+/* Confirmation dialog: shared by every critical, hard-to-undo action, so a new one
+   gets the same treatment by reusing the markup. Centred and icon-led, so it cannot
+   be mistaken at a glance for one of the ordinary form dialogs.
 
-   Centred and icon-led, so it cannot be mistaken at a glance for one of the
-   ordinary form dialogs. Lives here rather than in a page stylesheet so a new
-   critical action gets the same treatment by reusing the markup.
-
-   Selectors carry `.modal-overlay.active` (three classes) so they beat the
-   per-page `.page-users .modal-card` / `.page-observations .modal-card`
-   max-width rules regardless of stylesheet order — a two-class selector would
-   tie and lose on source order.
-   ────────────────────────────────────────────────────────────── */
+   Selectors carry `.modal-overlay.active` (three classes) so they beat the per-page
+   max-width rules regardless of stylesheet order; a two-class selector would tie and
+   lose on source order. */
 .modal-overlay.active .confirm-dialog-card {
-    /* Tone for the icon and the warning line. Danger by default, because most
-       critical actions destroy something. A dialog whose action is serious but
-       not destructive overrides it with `.is-positive` rather than restating
-       every rule. */
+    /* Danger by default, because most critical actions destroy something; a
+       serious-but-safe one overrides the tone with `.is-positive`. */
     --confirm-accent: var(--color-danger);
     max-width: 400px;
     padding: 26px 24px 20px;

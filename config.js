@@ -1,7 +1,5 @@
-// config.js
-// The publishable (anon) key is PUBLIC by design: it ships to every browser and
-// static hosting needs it. Security is Row Level Security in the database, not
-// hiding this key.
+// config.js: the publishable (anon) key is PUBLIC by design, shipping to every
+// browser; security is Row Level Security in the database, not hiding the key.
 // NEVER add the service_role key or SUPABASE_ACCESS_TOKEN here.
 
 window.SUPABASE_CONFIG = {

@@ -1,11 +1,8 @@
 /**
- * ZitBio - Notification Dropdown Styles
- * Notification bell + dropdown menu in the top header bar
+ * Notification bell and dropdown menu in the top header bar.
  */
 
-/* ============================================
-   Notification Bell Button
-   ============================================ */
+/* Notification Bell Button */
 .notification-btn {
   position: relative;
   display: flex;
@@ -62,9 +59,7 @@
   }
 }
 
-/* ============================================
-   Notification Dropdown Panel
-   ============================================ */
+/* Notification Dropdown Panel */
 .notification-dropdown {
   position: absolute;
   top: calc(100% + 8px);
@@ -240,13 +235,13 @@
   color: var(--color-text-muted);
 }
 
-/* Retention notice — the visible face of the server-side policy enforced by
-   the notifications_enforce_retention trigger (#77). Sits below the list so it
-   frames the whole dropdown rather than competing with the items.
-   Colour: --color-text-main, not --color-text-muted. In light theme muted and
-   secondary are both #7F8C8D, which is only 3.24:1 on --color-bg — below the
-   4.5:1 AA floor for text this small. Main is the only text token that clears
-   it in both themes (measured 10.5:1 light, 14.3:1 dark). */
+/* Retention notice: the visible face of the server-side policy enforced by the
+   notifications_enforce_retention trigger. Sits below the list so it frames the
+   whole dropdown rather than competing with the items.
+   Colour is --color-text-main, not --color-text-muted: in light theme muted and
+   secondary are both #7F8C8D, only 3.24:1 on --color-bg, below the 4.5:1 AA floor
+   for text this small. Main is the only token that clears it in both themes
+   (measured 10.5:1 light, 14.3:1 dark). */
 .notification-retention-note {
   flex-shrink: 0;
   padding: 10px 20px;
@@ -258,16 +253,12 @@
   text-align: center;
 }
 
-/* ============================================
-   Notification Container (wraps bell + dropdown)
-   ============================================ */
+/* Notification Container (wraps bell + dropdown) */
 .notification-container {
   position: relative;
 }
 
-/* ============================================
-   Mobile Responsive: Full-width notification dropdown
-   ============================================ */
+/* Mobile Responsive: Full-width notification dropdown */
 @media (max-width: 767px) {
   .notification-dropdown {
     /* Position relative to the viewport (not the tiny bell container)
@@ -284,9 +275,7 @@
   }
 }
 
-/* ============================================
-   Status Badge Colors
-   ============================================ */
+/* Status Badge Colors */
 .notification-badge.pending-badge {
   background-color: var(--color-warning);
 }

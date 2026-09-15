@@ -1,25 +1,11 @@
-/**
- * ZitBio — Analytics Page
- * Tab switching, dynamic table rendering, pagination, search, and column toggling.
- * Uses the shared observationsRenderer for table rendering (same as the admin
- * Observations page), ensuring visual consistency.
- *
- * Design decisions:
- *   - Column toggles let analysts customise the table for different reporting
- *     contexts (e.g., hide coordinates when sharing publicly).
- *   - Filters are preserved across tab switches so analysts don't lose context.
- *   - The map tab uses Leaflet with OSM + Satellite basemaps and shows
- *     observations with colour-coded status markers.
- */
+/* ZitBio analytics page: tab switching, table rendering, pagination, search and
+   column toggling. Tables render through the shared observationsRenderer, so the
+   Dataset tab matches the admin Observations page. */
 
-// View-model state for the analytics page — tracks pagination position,
-// filtered dataset, and UI preferences (filters + column visibility).
 var analyticsCurrentPage = 1;
 var analyticsFilteredData = [];
 var analyticsRecordsPerPage = 10;
 
-// Active filter values — when set, they're passed to BioData.filterObservations()
-// to narrow the dataset before rendering.
 var analyticsFilters = {
     dateFrom: '',
     dateTo: '',
@@ -28,8 +14,8 @@ var analyticsFilters = {
     species: ''
 };
 
-// Column visibility toggles — stored here rather than in the DOM so they
-// survive table re-renders (which would otherwise reset checkbox states).
+// Stored here rather than in the DOM so they survive table re-renders, which
+// would otherwise reset the checkbox states.
 var analyticsVisibleColumns = {
     coords: false,
     'focus-area': false,
@@ -39,22 +25,18 @@ var analyticsVisibleColumns = {
     'obs-id': false
 };
 
-// Get filtered data — applies BioData filters first, then scoped search on top.
-// This two-phase approach means the filter count badge shows active filters
-// even when no search term is entered.
+// Two phases: BioData filters first, then a scoped search on top, so the filter
+// badge can count active filters even when no search term is entered.
 function getAnalyticsFilteredData() {
     if (!window.BioData) return [];
     
-    // Apply filters first
     var data = window.BioData.filterObservations(analyticsFilters);
     
-    // Apply search on top of filtered data
     var searchInput = document.querySelector('.page-analytics .search-input');
     if (searchInput && searchInput.value.trim()) {
         var selectedField = document.querySelector('input[name="searchField"]:checked');
         var field = selectedField ? selectedField.value : '';
         var query = searchInput.value;
-        // Search within already-filtered data
         var q = query.toLowerCase().trim();
         data = data.filter(function(obs) {
             var sd = obs.species_details || {};
@@ -77,8 +59,6 @@ function getAnalyticsFilteredData() {
     return data;
 }
 
-// Count active filters — used to show a badge on the filter toggle button
-// so users know at a glance that filtering is applied.
 function countActiveFilters() {
     var count = 0;
     if (analyticsFilters.dateFrom) count++;
@@ -89,7 +69,6 @@ function countActiveFilters() {
     return count;
 }
 
-// Update the filter-count badge on the toggle button
 function updateFilterCount() {
     var badge = document.getElementById('filterCountBadge');
     if (!badge) return;
@@ -97,7 +76,6 @@ function updateFilterCount() {
     badge.textContent = count;
 }
 
-// Re-render the table when any filter changes, resetting to page 1
 function applyFilters() {
     analyticsCurrentPage = 1;
     updateFilterCount();
@@ -116,7 +94,6 @@ function applyFilters() {
     }
 }
 
-// Column definitions for the Analytics Observations table (12 columns)
 function getAnalyticsColumns() {
     return [
         {
@@ -214,8 +191,6 @@ function getAnalyticsColumns() {
     ];
 }
 
-// Render the analytics table using the shared renderer
-// (same as the admin Observations page, ensuring visual consistency).
 function renderAnalyticsTable() {
     if (!window.BioData) return;
 
@@ -238,20 +213,15 @@ function renderAnalyticsTable() {
         }
     });
 
-    // Apply current column visibility state
     applyColumnVisibility();
 }
 
-// Handle search input
 function handleAnalyticsSearch() {
     analyticsCurrentPage = 1;
     renderAnalyticsTable();
 }
 
-// ============================================================
-//  Filter Bar Toggle — opens/closes the filter panel
-//  Auto-opens if any filters are already active.
-// ============================================================
+//  FILTER BAR TOGGLE
 
 function initFilterToggle() {
     var toggleBtn = document.getElementById('analyticsFilterToggle');
@@ -263,26 +233,20 @@ function initFilterToggle() {
         this.classList.toggle('active');
     });
 
-    // Open by default if filters are active
     if (countActiveFilters() > 0) {
         filterBar.classList.add('open');
         toggleBtn.classList.add('active');
     }
 }
 
-// ============================================================
-//  Populate Filter Dropdowns — fills focus area and species
-//  selects from BioData reference data so they stay in sync
-//  with the rest of the application.
-// ============================================================
+//  FILTER DROPDOWNS
 
 function populateFilterDropdowns() {
     if (!window.BioData) return;
 
-    // Focus Areas — the two canonical CBU areas (campus / nature park).
-    // These display names lenient-match every stored variant via the
-    // filterObservations focusArea rule (e.g. 'CBU Campus',
-    // 'The CBU Nature Park', GBIF 'Copperbelt University').
+    // The two canonical CBU areas. These display names lenient-match every
+    // stored variant through the focusArea rule in filterObservations
+    // ('CBU Campus', 'The CBU Nature Park', GBIF 'Copperbelt University').
     var focusAreaSelect = document.getElementById('filterFocusArea');
     if (focusAreaSelect) {
         var focusAreaOptions = [
@@ -297,7 +261,6 @@ function populateFilterDropdowns() {
         });
     }
 
-    // Species — extract unique common names from observations
     var speciesSelect = document.getElementById('filterSpecies');
     if (speciesSelect) {
         var obs = window.BioData.getObservations();
@@ -317,12 +280,7 @@ function populateFilterDropdowns() {
     }
 }
 
-// ============================================================
-//  Column Visibility Toggle
-//  Analytics exposes 12 columns by default; 6 are hidden via CSS
-//  until the user toggles them on. This lets analysts customise
-//  the table for different reporting contexts.
-// ============================================================
+//  COLUMN VISIBILITY
 
 function applyColumnVisibility() {
     var table = document.querySelector('.page-analytics .observations-table');
@@ -335,9 +293,7 @@ function applyColumnVisibility() {
     }
 }
 
-// ============================================================
-//  Column Toggle Buttons — in the filter bar for easy access
-// ============================================================
+//  COLUMN TOGGLE BUTTONS
 
 function initColumnToggleButtons() {
     var buttons = document.querySelectorAll('.page-analytics .col-toggle-btn');
@@ -346,7 +302,6 @@ function initColumnToggleButtons() {
             var col = this.getAttribute('data-col');
             if (!col) return;
             
-            // Toggle state
             analyticsVisibleColumns[col] = !analyticsVisibleColumns[col];
             this.classList.toggle('active');
             
@@ -355,10 +310,8 @@ function initColumnToggleButtons() {
     });
 }
 
-// ============================================================
-//  Filter Event Listeners — each filter dropdown triggers a
-//  re-render on change (not on every keystroke, to avoid churn).
-// ============================================================
+//  FILTER LISTENERS
+//  Re-render on change, not on every keystroke, to avoid churn.
 
 function initFilterListeners() {
     var dateFrom = document.getElementById('filterDateFrom');
@@ -383,7 +336,6 @@ function initFilterListeners() {
     if (status) status.addEventListener('change', onFilterChange);
     if (species) species.addEventListener('change', onFilterChange);
 
-    // Clear all
     if (clearBtn) {
         clearBtn.addEventListener('click', function() {
             if (dateFrom) dateFrom.value = '';
@@ -398,9 +350,7 @@ function initFilterListeners() {
     }
 }
 
-// Initialize page when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Tab switching logic
     var tabs = document.querySelectorAll('.analytics-tab');
     var panels = document.querySelectorAll('.analytics-tab-content');
     var searchWrapper = document.getElementById('tabSearchWrapper');
@@ -432,8 +382,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tabsContainer) {
                 tabsContainer.classList.toggle('with-search', isDataset);
             }
-            // Column toggles only apply to the Dataset table — flag the filter
-            // bar so the Toggle Columns row is hidden on Map/Graphs/Report.
+            // Column toggles apply to the Dataset table only: flagging the filter
+            // bar hides the Toggle Columns row on Map/Graphs/Report.
             if (filterBar) {
                 filterBar.classList.toggle('with-column-toggles', isDataset);
             }
@@ -443,8 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
     tabs.forEach(function(tab) {
         tab.addEventListener('click', function(e) {
             activateTab(this);
-            // Persist the active tab so switching pages and coming back
-            // restores where the user left off (Issue #23).
+            // Persist the active tab so returning to the page restores it.
             var tabName = this.getAttribute('data-tab');
             if (tabName) {
                 try { localStorage.setItem('biodata_analytics_tab', tabName); } catch (err) { /* storage unavailable */ }
@@ -469,10 +418,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('hashchange', handleHashChange);
     handleHashChange();
 
-    // Restore the previously active tab when returning to the page,
-    // unless an explicit hash deep-link already selected one — the
-    // hash takes precedence. Using .click() also triggers tab-specific
-    // init (e.g. lazy Leaflet map) and re-persists the restored tab.
+    // Restore the saved tab unless an explicit hash deep-link already chose one.
+    // .click() also runs tab-specific init (e.g. the lazy Leaflet map).
     if (!hashTabMatched) {
         var savedTab = null;
         try { savedTab = localStorage.getItem('biodata_analytics_tab'); } catch (err) { /* storage unavailable */ }
@@ -484,8 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Sync the container tag with the initially-active tab so the responsive
-    // per-tab alignment applies on first load (not only after a tab click).
+    // Apply the same class on first load, not only after a tab click.
     var initialTab = document.querySelector('.analytics-tab.active');
     var initialIsDataset = !!(initialTab && initialTab.getAttribute('data-tab') === 'observations');
     if (tabsContainer) {
@@ -495,23 +441,19 @@ document.addEventListener('DOMContentLoaded', function() {
         filterBar.classList.toggle('with-column-toggles', initialIsDataset);
     }
 
-    // --- Dynamic table rendering ---
     if (!window.BioData) {
         console.warn('BioData not loaded. Analytics page cannot render table.');
         return;
     }
 
-    // Initialize filters
     populateFilterDropdowns();
     initFilterToggle();
     initFilterListeners();
     initColumnToggleButtons();
     updateFilterCount();
 
-    // Render the table
     renderAnalyticsTable();
 
-    // Search input handler
     var searchInput = document.querySelector('.page-analytics .search-input');
     if (searchInput) {
         searchInput.addEventListener('input', handleAnalyticsSearch);
@@ -527,13 +469,9 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// ============================================================
-//  CBU Area Map — Leaflet Interactive Map
-//  Lazy-initialized when the Map tab is first activated to avoid
-//  loading Leaflet resources on pages that don't need them.
-//  Shows observation markers colour-coded by verification status,
-//  with polygon overlays for CBU Nature Park and CBU Campus.
-// ============================================================
+//  CBU AREA MAP
+//  Leaflet, created lazily on first Map-tab activation so pages that never open
+//  the map do not load Leaflet resources at all.
 
 (function() {
     'use strict';
@@ -547,7 +485,7 @@ if (typeof window !== 'undefined') {
     var mapActiveArea = 'park';
     var mapMode = 'map';
 
-    // Polygon definitions ([lat, lng] format for Leaflet)
+    // [lat, lng] order, as Leaflet expects.
     var CBU_NATURE_PARK_COORDS = [
         [-12.80030, 28.24032],
         [-12.80126, 28.23867],
@@ -594,20 +532,13 @@ if (typeof window !== 'undefined') {
         Flagged: true
     };
 
-    // =====================================================
     // MAP STATE PERSISTENCE
-    // Persists the map view to localStorage so navigating away
-    // from Analytics and back restores the exact same view:
-    // active area, map/satellite mode, zoom/center, and status
-    // filters (Issue #33). The focused observation is NOT
-    // persisted — auto-flying to an observation the admin never
-    // clicked was confusing (see bug fix: map no longer
-    // force-jumps to a record on load).
-    // =====================================================
+    // Area, map/satellite mode, zoom/center and the status filters survive
+    // navigating away and back. The focused observation is NOT persisted:
+    // auto-flying to a record the admin never clicked confused people.
     var MAP_STATE_KEY = 'biodata_analytics_map';
 
-    // Kept in memory ONLY for the explicit table-row→map fly;
-    // never persisted, never auto-restored on load.
+    // In memory only, for the explicit table-row→map fly. Never restored on load.
     var focusedObsId = null;
 
     function saveMapState() {
@@ -622,7 +553,7 @@ if (typeof window !== 'undefined') {
         }
         try {
             localStorage.setItem(MAP_STATE_KEY, JSON.stringify(state));
-        } catch (err) { /* storage unavailable — ignore */ }
+        } catch (err) { /* storage unavailable, ignore */ }
     }
 
     function loadMapState() {
@@ -630,7 +561,6 @@ if (typeof window !== 'undefined') {
             var raw = localStorage.getItem(MAP_STATE_KEY);
             if (!raw) return null;
             var state = JSON.parse(raw);
-            // Validate + coerce to safe values
             if (state.area !== 'park' && state.area !== 'campus') state.area = 'park';
             if (state.mode !== 'map' && state.mode !== 'satellite') state.mode = 'map';
             if (typeof state.zoom !== 'number' || isNaN(state.zoom)) state.zoom = 16;
@@ -682,7 +612,6 @@ if (typeof window !== 'undefined') {
     }
 
     function plotObservations() {
-        // Clear existing markers
         obsMarkers.forEach(function(m) { mapInstance.removeLayer(m); });
         obsMarkers = [];
 
@@ -700,7 +629,6 @@ if (typeof window !== 'undefined') {
             if (lat == null || lng == null) return;
 
             var status = obs.verification_status || 'Approved';
-            // Check status filter
             if (!statusFilterState[status]) return;
 
             var color = getStatusColor(status);
@@ -764,7 +692,6 @@ if (typeof window !== 'undefined') {
             campusPolygon.setStyle(campusStyle);
         }
 
-        // Add vertex dots for both polygons (once only)
         if (!parkPolygon._vertexDotsAdded) {
             CBU_NATURE_PARK_COORDS.forEach(function(c) {
                 L.circleMarker(c, {
@@ -835,11 +762,10 @@ if (typeof window !== 'undefined') {
             attribution: attribution
         }).addTo(mapInstance);
 
-        // If the requested tile server fails (offline / tile refusal), fall
-        // back to OSM and surface a toast — the switch must never silently
-        // appear broken.
+        // If the requested tile server fails (offline / tile refusal), fall back
+        // to OSM and surface a toast. The switch must never silently look broken.
         tileLayer.on('tileerror', function() {
-            if (mapMode === 'map') return; // OSM itself failed — nothing to fall back to
+            if (mapMode === 'map') return; // OSM itself failed, nothing to fall back to
             switchMapMode('map');
             showMapToast('Satellite unavailable — showing map');
         });
@@ -849,8 +775,6 @@ if (typeof window !== 'undefined') {
         var mapEl = document.getElementById('map');
         if (!mapEl || mapInitialized) return;
 
-        // Restore previously saved map state (area/mode/zoom/center/filters/
-        // focused observation) so returning to the page shows the same view.
         var savedState = loadMapState();
 
         mapInstance = L.map('map', {
@@ -863,7 +787,6 @@ if (typeof window !== 'undefined') {
             attributionControl: true
         });
 
-        // Apply saved mode (defaults to OSM if none)
         var restoredMode = savedState ? savedState.mode : 'map';
         switchMapMode(restoredMode);
         var restoredModeToggle = document.getElementById('map-mode-toggle');
@@ -873,7 +796,6 @@ if (typeof window !== 'undefined') {
             });
         }
 
-        // Render polygons with the saved (or default) active area
         mapActiveArea = savedState ? savedState.area : 'park';
         renderPolygons(mapActiveArea);
 
@@ -884,7 +806,6 @@ if (typeof window !== 'undefined') {
             });
         }
 
-        // Apply saved status filters
         if (savedState && savedState.statusFilters) {
             statusFilterState = savedState.statusFilters;
             document.querySelectorAll('.map-filter-label').forEach(function(label) {
@@ -897,7 +818,6 @@ if (typeof window !== 'undefined') {
             });
         }
 
-        // Plot observations (respects the restored status filters)
         plotObservations();
 
         // Update zoom display + persist on move
@@ -908,7 +828,6 @@ if (typeof window !== 'undefined') {
 
         mapInitialized = true;
 
-        // Initial status bar update
         updateZoomDisplay();
         updateMarkerCount();
         var areaLabel = document.getElementById('map-status-area');
@@ -917,9 +836,8 @@ if (typeof window !== 'undefined') {
         }
     }
 
-    // ---- Bind UI Controls ----
+    //  MAP UI CONTROLS
 
-    // Area toggle
     var areaToggle = document.getElementById('map-area-toggle');
     if (areaToggle) {
         areaToggle.addEventListener('click', function(e) {
@@ -930,22 +848,19 @@ if (typeof window !== 'undefined') {
             if (area === mapActiveArea) return;
             mapActiveArea = area;
 
-            // Update button states
             areaToggle.querySelectorAll('.map-btn').forEach(function(b) {
                 b.classList.toggle('active', b.getAttribute('data-area') === area);
             });
 
-            // Update polygon styles
             renderPolygons(area);
 
-            // Update status bar
             var areaLabel = document.getElementById('map-status-area');
             if (areaLabel) {
                 areaLabel.textContent = area === 'park' ? 'CBU Nature Park' : 'CBU Campus';
             }
 
-            // Pan/zoom to the selected area — switching focus must visibly move
-            // the camera, not just re-style the polygons.
+            // Switching focus must visibly move the camera, not just restyle
+            // the polygons.
             fitActiveArea();
 
             // Persist the new active area (fitBounds also triggers moveend → save)
@@ -953,7 +868,6 @@ if (typeof window !== 'undefined') {
         });
     }
 
-    // Mode toggle
     var modeToggle = document.getElementById('map-mode-toggle');
     if (modeToggle) {
         modeToggle.addEventListener('click', function(e) {
@@ -969,12 +883,10 @@ if (typeof window !== 'undefined') {
 
             switchMapMode(mode);
 
-            // Persist the new map mode
             saveMapState();
         });
     }
 
-    // Fit area button
     var fitBtn = document.getElementById('map-fit-btn');
     if (fitBtn) {
         fitBtn.addEventListener('click', function() {
@@ -984,7 +896,6 @@ if (typeof window !== 'undefined') {
         });
     }
 
-    // Zoom buttons with 0.1 step, clamped 16.0–18.0
     function stepZoom(delta) {
         if (!mapInstance) return;
         var current = mapInstance.getZoom();
@@ -1002,7 +913,6 @@ if (typeof window !== 'undefined') {
         zoomOut.addEventListener('click', function() { stepZoom(-0.1); });
     }
 
-    // Status filter labels
     document.querySelectorAll('.map-filter-label').forEach(function(label) {
         label.addEventListener('click', function() {
             var status = this.getAttribute('data-status');
@@ -1011,17 +921,13 @@ if (typeof window !== 'undefined') {
             statusFilterState[status] = !statusFilterState[status];
             this.classList.toggle('disabled', !statusFilterState[status]);
 
-            // Re-plot markers with current filters
             if (mapInstance) plotObservations();
 
-            // Persist the new filter state
             saveMapState();
         });
     });
 
-    // Initialize map when Map tab is activated
     var origActivateTab = null;
-    // Find the activateTab function (it's in a closure, so we hook via mutation observer)
     var mapTabBtn = document.querySelector('.analytics-tab[data-tab="map"]');
     if (mapTabBtn) {
         mapTabBtn.addEventListener('click', function() {
@@ -1040,17 +946,13 @@ if (typeof window !== 'undefined') {
         });
     }
 
-    // Expose function for table-to-map sync
     window.flyToObservation = function(obsId) {
-        // Always switch to Map tab first
         var mapTab = document.querySelector('.analytics-tab[data-tab="map"]');
         if (mapTab) {
-            // Trigger click on the Map tab button
             mapTab.click();
         }
 
         if (!mapInitialized) {
-            // Wait for init, then fly
             var checkInterval = setInterval(function() {
                 if (mapInitialized && mapInstance) {
                     clearInterval(checkInterval);
@@ -1059,31 +961,26 @@ if (typeof window !== 'undefined') {
             }, 100);
             setTimeout(function() { clearInterval(checkInterval); }, 5000);
         } else {
-            // Small delay to let tab panel become visible
+            // Let the tab panel become visible before flying.
             setTimeout(function() {
                 doFly(obsId);
             }, 200);
         }
     };
 
-    // Expose marker re-plot so the shared filter bar can refresh the map
-    // when the analytics filters change while the Map tab is active.
+    // The shared filter bar re-plots markers through this hook.
     window.refreshMapMarkers = function() {
         if (mapInstance) plotObservations();
     };
 
     function doFly(obsId) {
         if (!mapInstance || !obsId) return;
-        // Find marker
         for (var i = 0; i < obsMarkers.length; i++) {
             var m = obsMarkers[i];
             if (m._obsId === obsId) {
                 mapInstance.flyTo(m.getLatLng(), 17, { duration: 1 });
-                // Track the focused observation so the map view can be
-                // restored after navigating away and back (Issue #33)
                 focusedObsId = obsId;
                 saveMapState();
-                // Highlight marker
                 var iconEl = m.getElement();
                 if (iconEl) {
                     var dot = iconEl.querySelector('.map-obs-marker');
@@ -1100,12 +997,10 @@ if (typeof window !== 'undefined') {
         }
     }
 
-    // Hook into table row clicks to sync with map
     document.addEventListener('click', function(e) {
         var row = e.target.closest('.page-analytics .observation-row');
         if (!row) return;
 
-        // Extract observation ID from the <code> element in the col-obs-id cell
         var codeEl = row.querySelector('.col-obs-id code');
         if (!codeEl) return;
         var obsId = codeEl.textContent.trim();
@@ -1115,22 +1010,18 @@ if (typeof window !== 'undefined') {
     });
 })();
 
-// ============================================================
-//  Toolbar UI — Consolidated controls
-//  Proxies clicks to hidden legacy controls so the new toolbar
-//  works without refactoring the existing Leaflet controller logic.
-// ============================================================
+//  TOOLBAR UI
+//  Proxies clicks to the hidden legacy controls, so the toolbar works without
+//  refactoring the Leaflet controller above.
 
 (function() {
     'use strict';
 
-    // Zoom in
     var zoomInBtn = document.getElementById('toolbar-zoom-in');
     var zoomOutBtn = document.getElementById('toolbar-zoom-out');
     var focusBtn = document.getElementById('toolbar-focus-toggle');
     var fitBtn = document.getElementById('toolbar-fit');
     var modeBtn = document.getElementById('toolbar-mode-toggle');
-    // Hidden proxy targets
     var hiddenZoomIn = document.getElementById('map-zoom-in');
     var hiddenZoomOut = document.getElementById('map-zoom-out');
     var hiddenFitBtn = document.getElementById('map-fit-btn');
@@ -1145,7 +1036,6 @@ if (typeof window !== 'undefined') {
         fitBtn.addEventListener('click', function() { hiddenFitBtn.click(); });
     }
 
-    // Focus toggle — cycles between park and campus
     if (focusBtn) {
         focusBtn.addEventListener('click', function() {
             var areaToggle = document.getElementById('map-area-toggle');
@@ -1159,7 +1049,6 @@ if (typeof window !== 'undefined') {
         });
     }
 
-    // Mode toggle — cycles between map and satellite
     if (modeBtn) {
         modeBtn.addEventListener('click', function() {
             var modeToggle = document.getElementById('map-mode-toggle');
@@ -1173,7 +1062,6 @@ if (typeof window !== 'undefined') {
         });
     }
 
-    // Update toolbar tooltips when area changes
     var areaToggle = document.getElementById('map-area-toggle');
     if (areaToggle && focusBtn) {
         areaToggle.addEventListener('click', function(e) {
@@ -1188,7 +1076,6 @@ if (typeof window !== 'undefined') {
         });
     }
 
-    // Update toolbar tooltips when mode changes
     var modeToggleParent = document.getElementById('map-mode-toggle');
     if (modeToggleParent && modeBtn) {
         modeToggleParent.addEventListener('click', function(e) {
@@ -1205,15 +1092,10 @@ if (typeof window !== 'undefined') {
 
 })();
 
-// ============================================================
-//  ANALYTICS-LEVEL REPORT TAB + GRAPHS TAB
-//  ------------------------------------------------------------
-//  For Phase 4/5. Pure analytics core lives in lib/analytics.js
-//  (BioAnalytics) — reusing getAnalyticsFilteredData() so reports
-//  and graphs respect the same date/focus-area/status/species filters
-//  as the table. Pending/Flagged are EXCLUDED by default (verified-
-//  data rule) with a Report-tab toggle ("Include pending/flagged").
-// ============================================================
+//  REPORT TAB + GRAPHS TAB
+//  Reuses getAnalyticsFilteredData() so reports and graphs honour the same
+//  date/focus-area/status/species filters as the table. Pending and Flagged
+//  records are excluded: the verified-data rule.
 
 // Lazily-built chart instances (destroy & rebuild on re-render).
 var reportTrendChartInstance = null;
@@ -1222,24 +1104,24 @@ var graphRichnessChartInstance = null;
 var graphShannonChartInstance = null;
 var graphTrendChartInstance = null;
 
-// Escaping/short-date helpers (escapeHtmlObs comes from the renderer).
+// escapeHtmlObs is a global provided by the shared renderer.
 function analyticsEscape(v) {
   return typeof escapeHtmlObs === 'function' ? escapeHtmlObs(String(v == null ? '' : v)) : String(v == null ? '' : v);
 }
 function analyticsShortDate(s) {
   if (!s) return '—';
-  // ONE formatter for the whole app (#46 → #62). Delegate to BioDate instead of
-  // repeating the format string — that repetition is exactly how the Report
-  // drifted from the tables it summarises. Fails soft if lib/date.js is absent.
+  // One formatter for the whole app: repeating the format string here is how the
+  // Report drifted from the tables it summarises. Fails soft if lib/date.js has
+  // not loaded.
   if (!window.BioDate) return String(s);
   var formatted = window.BioDate.mediumDate(s);
-  // mediumDate returns an em dash for an unparseable value; showing the raw
-  // string is more useful than a dash when diagnosing a bad record.
+  // mediumDate returns a dash for an unparseable value; showing the raw string
+  // is more useful when diagnosing a bad record.
   return formatted === '\u2014' ? String(s) : formatted;
 }
 
-// Enrich observations with entity ids so BioAnalytics resolves them
-// consistently (species_id / site_id are optional on older records).
+// species_id / site_id are optional on older records; BioAnalytics needs both to
+// resolve entities consistently.
 function enrichWithRegistryIds(obsList) {
   if (!window.BioData || !window.BioData.resolveSpeciesId) return obsList;
   return obsList.map(function(o) {
@@ -1250,14 +1132,13 @@ function enrichWithRegistryIds(obsList) {
   });
 }
 
-// Default rolling window (months) applied to charts/report when no From/To
-// date filter is set — mirrors the dashboard's rolling "This Week" chart so
-// the default view stays focused on recent data instead of dumping every year.
+// Default rolling window (months) for charts and the report when no From/To
+// filter is set. Mirrors the dashboard's rolling "This Week" chart so the default
+// view shows recent data instead of every year on record.
 var DEFAULT_ROLLING_MONTHS = 36;
 
-// When a From/To date filter is set, respect it exactly (filterObservations
-// already applied it); otherwise clamp the dataset to the most recent
-// DEFAULT_ROLLING_MONTHS — a rolling window ending now.
+// An explicit From/To filter wins (filterObservations already applied it);
+// otherwise clamp to the most recent DEFAULT_ROLLING_MONTHS, ending now.
 function applyAnalyticsDateWindow(data) {
   if (analyticsFilters.dateFrom || analyticsFilters.dateTo) return data;
   var now = new Date();
@@ -1269,17 +1150,13 @@ function applyAnalyticsDateWindow(data) {
   });
 }
 
-// Current report dataset — respects filters, uses verified (Approved) data
-// only, and defaults to a recent rolling window when no date filter is set.
 function getReportData() {
   var data = applyAnalyticsDateWindow(getAnalyticsFilteredData());
   data = data.filter(function(o) { return o.verification_status === 'Approved'; });
   return enrichWithRegistryIds(data);
 }
 
-// ============================================================
 //  REPORT BUILDERS
-// ============================================================
 
 function buildReportConfidence() {
   var el = document.getElementById('reportConfidence');
@@ -1317,7 +1194,6 @@ function buildReportSummary(data) {
   shannonEl.textContent = window.BioAnalytics.shannonDiversityIndex(data).toFixed(3);
 }
 
-// Format a 'YYYY-MM' bucket into a readable month label, e.g. '2026-06' → 'Jun 2026'.
 function formatReportMonth(ym) {
   var parts = String(ym || '').split('-');
   if (parts.length < 2) return ym || '';
@@ -1341,9 +1217,8 @@ function buildReportDiversity(data) {
       if (series.length === 0) {
         html += '<div class="report-site-meta">No verified observations in the current filters</div>';
       } else {
-        // Show every month in the filtered period (newest first) so the card
-        // reads as a history, not a single locked date. The top row is the
-        // latest month and carries the month-over-month delta.
+        // Newest first, so the card reads as a history. The top row is the latest
+        // month and carries the month-over-month delta.
         var rows = series.slice().reverse();
         var latest = rows[0];
         var prior = rows.length > 1 ? rows[1] : null;
@@ -1426,7 +1301,6 @@ function buildReportHabitats(data) {
   // Destroy any previous chart so re-renders (filter changes) don't leak.
   if (reportHabitatChartInstance) { reportHabitatChartInstance.destroy(); reportHabitatChartInstance = null; }
 
-  // Aggregate counts by habitat → species.
   var map = {};
   data.forEach(function(o) {
     var h = ((o.location && o.location.habitat_type) || 'Unspecified');
@@ -1444,7 +1318,6 @@ function buildReportHabitats(data) {
     return;
   }
 
-  // Flatten to one row per species and rank by recorded count.
   var rows = [];
   var totalIndividuals = 0;
   habitats.forEach(function(h) {
@@ -1456,7 +1329,6 @@ function buildReportHabitats(data) {
   });
   rows.sort(function(a, b) { return b.count - a.count; });
 
-  // Top N + an "Other" bucket for the long tail.
   var TOP = 12;
   var top = rows.slice(0, TOP);
   var otherRows = rows.slice(TOP);
@@ -1475,10 +1347,8 @@ function buildReportHabitats(data) {
     colors.push(OTHER_COLOR);
   }
 
-  // Fit the chart height to the number of bars (no big empty space).
   var wrapHeight = Math.max(120, labels.length * 36 + 30);
 
-  // Header: summary + habitat legend.
   var html = '';
   html += '<p class="report-habitat-summary">' + rows.length + ' species across ' + habitats.length +
     ' habitat' + (habitats.length === 1 ? '' : 's') + ' · ' + totalIndividuals +
@@ -1579,9 +1449,8 @@ function buildReportHabitats(data) {
 }
 
 /**
- * Push a "Trend line" Chart.js dataset onto an array of datasets.
- * Shared by the Report and Graphs trend charts (deduplicated).
- * Returns nothing — mutates the datasets array in place.
+ * Push a "Trend line" dataset onto an array of datasets, in place.
+ * Shared by the Report and Graphs trend charts.
  */
 function pushTrendLineDataset(datasets, trend) {
   if (trend.fitted && trend.fitted.length > 1) {
@@ -1598,9 +1467,8 @@ function pushTrendLineDataset(datasets, trend) {
   }
 }
 
-// When the most recent verified record is older than the staleness window,
-// the trend reflects earlier survey periods only — it must not be read as a
-// current decline.
+// When the newest record is older than the staleness window, the trend covers
+// earlier survey periods only and must not be read as a current decline.
 function trendRecencyNote(data) {
   var staleDays = (window.BioAnalytics && window.BioAnalytics.thresholds && window.BioAnalytics.thresholds.STALE_DAYS) || 30;
   var maxTs = 0;
@@ -1669,15 +1537,10 @@ function buildReportTrendChart(data) {
   });
 }
 
-// ============================================================
 //  ECOSYSTEM INSIGHTS & MANAGEMENT (report card)
-// ============================================================
 /**
  * Inputs shared by the two ecosystem report surfaces (Report tab + PDF).
- *
- * Both used to gather the registry/site/ecology context and count
- * present-vs-tree species themselves, which is how the pair could drift apart.
- * Returns the insights, their summary, and the two overview counts.
+ * Gathered once, so the two cannot drift apart.
  */
 function ecosystemReportContext(data) {
   var BioData = window.BioData;
@@ -1717,15 +1580,13 @@ function buildReportEcosystem(data) {
     return;
   }
 
-  // 1. Overview
   html += '<p class="report-eco-overview">This section explains the ecological role and environmental impact of each ' +
     'monitored park species, what happens when a population rises or falls, and management recommendations. It covers ' +
     s.parkSpeciesCount + ' monitored park species \u2014 ' + ctx.presentCount + ' with live observation data and ' +
     ctx.treeCount + ' permanent woodland trees assumed present \u2014 across ' + s.observations +
     ' verified observation(s) (Shannon diversity H\u2032 = ' + s.shannonIndex.toFixed(3) + ').</p>';
 
-  // 2. Species roles & environmental impact (dynamic — the impact text follows
-  //    the species' actual population state: up / down / healthy / assumed)
+  // The impact text follows the species' actual state: up / down / healthy / assumed.
   if (insights.species.length) {
     html += '<h4 class="report-eco-section-title">Species roles &amp; environmental impact</h4>';
     html += '<div class="report-eco-table-wrap"><table class="report-eco-table"><thead><tr>' +
@@ -1761,9 +1622,8 @@ function buildReportEcosystem(data) {
       } else if (r.condition === 'stale') {
         status = '<span class="report-eco-no-data">No recent records</span>';
       } else if (r.estimate != null && r.baseline != null) {
-        // Trend-badge style (mirrors the Dashboard badge): the current
-        // estimate vs the expected baseline live inside the pill — no
-        // warning/critical labels.
+        // Mirrors the Dashboard badge: estimate vs baseline inside the pill,
+        // with no warning/critical labels.
         var pct = (r.pctOfBaseline != null) ? r.pctOfBaseline : Math.round((r.estimate / r.baseline) * 100);
         var tUp = pct >= 100;
         status = '<span class="report-eco-status-badge ' + (tUp ? 'up' : 'down') + '">' +
@@ -1779,7 +1639,6 @@ function buildReportEcosystem(data) {
     html += '</tbody></table></div>';
   }
 
-  // 3. Management recommendations
   html += '<h4 class="report-eco-section-title">Management recommendations</h4>';
   html += '<ul class="report-eco-recs">';
   insights.recommendations.forEach(function(r) {
@@ -1790,9 +1649,7 @@ function buildReportEcosystem(data) {
   container.innerHTML = html;
 }
 
-// ============================================================
-//  CSV EXPORT (raw numbers; respects include-pending toggle)
-// ============================================================
+//  CSV EXPORT
 
 function buildReportCsv(data) {
   var header = ['observation_id', 'count', 'verification_status', 'source', 'scientific_name', 'common_name',
@@ -1818,21 +1675,14 @@ function buildReportCsv(data) {
 }
 
 function downloadCsv(csv, filename) {
-  // One downloader for the whole app: lib/csv.js, which analytics.html loads
-  // with `defer` before this file. No local fallback — a second copy of the
-  // blob/anchor dance is exactly the duplication that drifts, and a missing
-  // lib/csv.js is a load-order bug worth seeing rather than masking.
+  // The app's one downloader (lib/csv.js, loaded before this file). No local
+  // fallback: a second copy of the blob/anchor dance is what drifts, and a
+  // missing lib/csv.js is a load-order bug worth seeing rather than masking.
   window.BioCsv.downloadCsv(csv, filename);
 }
 
-// ============================================================
-//  PDF EXPORT (custom written report generated from live data)
-//  ------------------------------------------------------------
-//  Uses jsPDF (loaded via CDN). Builds a narrative report from
-//  the currently filtered, verified observations: executive
-//  summary, key indicators, diversity by site, species by
-//  habitat, population trend (with the chart), and warnings.
-// ============================================================
+//  PDF EXPORT
+//  A hand-built jsPDF report (CDN) from the filtered, verified observations.
 
 function pdfEnsureSpace(doc, y, needed, bottomMargin) {
   var pageH = doc.internal.pageSize.getHeight();
@@ -1879,7 +1729,6 @@ function pdfTable(doc, headers, rows, startY, colWidths) {
   var totalW = colWidths.reduce(function(a, b) { return a + b; }, 0);
   var rowH = 24;
   var y = startY;
-  // Header row
   y = pdfEnsureSpace(doc, y, rowH);
   doc.setFillColor(249, 250, 251);
   doc.rect(x, y - 14, totalW, rowH, 'F');
@@ -1892,7 +1741,6 @@ function pdfTable(doc, headers, rows, startY, colWidths) {
     cx += colWidths[i];
   });
   y += rowH;
-  // Body rows
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(44, 62, 80);
@@ -2037,8 +1885,7 @@ function buildReportEcosystemPdf(data) {
 function exportReportPdf() {
   var PDFLib = window.jspdf;
   if (!PDFLib || !PDFLib.jsPDF) {
-    // A blocking alert() was the wrong surface for a failed optional dependency:
-    // it stops the whole page for something the person can retry.
+    // Toast, not alert(): a blocking dialog for a retryable failure stops the page.
     if (typeof showToast === 'function') {
       showToast('The PDF library did not load. Check your connection and reload.', 'error');
     } else {
@@ -2057,11 +1904,9 @@ function exportReportPdf() {
   var dateStr = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   var timeStr = today.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
-  // Header band
   doc.setFillColor(46, 125, 50);
   doc.rect(0, 0, pageW, 10, 'F');
 
-  // Title block
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
   doc.setTextColor(44, 62, 80);
@@ -2073,7 +1918,6 @@ function exportReportPdf() {
   doc.text('Prepared by ZitBio: Biodiversity Monitoring System \u00b7 ' + dateStr + ' at ' + timeStr, marginX, y);
   y += 16;
 
-  // Filters summary
   var filtersDesc = [];
   var f = analyticsFilters || {};
   if (f.dateFrom || f.dateTo) filtersDesc.push((f.dateFrom || '\u2026') + ' to ' + (f.dateTo || '\u2026'));
@@ -2083,17 +1927,15 @@ function exportReportPdf() {
   doc.text('Filters: ' + (filtersDesc.length ? filtersDesc.join(' \u00b7 ') : 'All data'), marginX, y);
   y += 26;
 
-  // Executive summary
   y = pdfSectionTitle(doc, 'Executive Summary', y);
   y = pdfWrapped(doc, buildReportExecutiveSummary(data), marginX, y, maxW, 15, { size: 11, color: [44, 62, 80] }) + 8;
 
-  // Key indicators
   y = pdfSectionTitle(doc, 'Key Indicators', y);
   y = pdfTable(doc, ['Species', 'Observations', 'Date Range', 'Shannon H\u2032'],
     [[window.BioAnalytics.speciesRichness(data), data.length, reportDateRange(data), window.BioAnalytics.shannonDiversityIndex(data).toFixed(3)]],
     y, [110, 130, 220, 100]) + 10;
 
-  // Shannon index explanation (keeps the metric legible for non-experts)
+  // Prose explanation so the metric stays legible to non-experts.
   var shannonVal = window.BioAnalytics.shannonDiversityIndex(data);
   y = pdfWrapped(doc,
     'Understanding Shannon H\u2032: the Shannon Diversity Index combines species richness (how many species) with evenness (how evenly individuals are spread across species). A value of 0 means a single species dominates completely; higher values (typically up to 3\u20134) indicate a more diverse, balanced community. With ' +
@@ -2101,7 +1943,6 @@ function exportReportPdf() {
     (shannonVal === 0 ? ' shows a single-species or heavily dominated community.' : ' reflects the overall balance of this community.'),
     marginX, y, maxW, 13, { size: 9.5, style: 'italic', color: [127, 140, 141] }) + 10;
 
-  // Diversity by site
   var siteRows = buildReportPdfSiteRows(data);
   if (siteRows.length) {
     y = pdfSectionTitle(doc, 'Diversity by Site', y);
@@ -2109,14 +1950,12 @@ function exportReportPdf() {
       siteRows, y, [160, 80, 110, 110, 100]) + 10;
   }
 
-  // Species by habitat
   var habitatRows = buildReportPdfHabitatRows(data);
   if (habitatRows.length) {
     y = pdfSectionTitle(doc, 'Species by Habitat', y);
     y = pdfTable(doc, ['Habitat', 'Species (count)'], habitatRows, y, [130, 330]) + 10;
   }
 
-  // Population trend (narrative + chart)
   var trend = window.BioAnalytics.populationTrend(data, null, null);
   y = pdfSectionTitle(doc, 'Population Trend', y);
   var trendRecency = trendRecencyNote(data);
@@ -2133,10 +1972,9 @@ function exportReportPdf() {
       y = pdfEnsureSpace(doc, y, imgH);
       doc.addImage(img, 'PNG', marginX, y, imgW, imgH);
       y += imgH + 10;
-    } catch (e) { /* chart image unavailable — skip */ }
+    } catch (e) { /* chart image unavailable, skip */ }
   }
 
-  // Low population warnings
   var warnRows = buildReportPdfWarningRows(data);
   y = pdfSectionTitle(doc, 'Low Population Warnings', y);
   if (!warnRows.length) {
@@ -2145,7 +1983,6 @@ function exportReportPdf() {
     y = pdfTable(doc, ['Species', 'Site', 'Estimate vs baseline', 'Severity'], warnRows, y, [140, 130, 150, 90]) + 10;
   }
 
-  // Ecological insights & management
   var eco = buildReportEcosystemPdf(data);
   y = pdfSectionTitle(doc, 'Ecological Insights & Management', y);
   y = pdfWrapped(doc, eco.paragraph, marginX, y, maxW, 15, { size: 11 }) + 6;
@@ -2160,7 +1997,6 @@ function exportReportPdf() {
     y = pdfWrapped(doc, recText, marginX, y, maxW, 15, { size: 11 }) + 6;
   }
 
-  // Footer / methodology
   y = pdfEnsureSpace(doc, y, 40);
   doc.setDrawColor(229, 231, 235);
   doc.setLineWidth(1);
@@ -2176,9 +2012,7 @@ function exportReportPdf() {
   doc.save('zitbio-report_' + today.toISOString().split('T')[0] + '.pdf');
 }
 
-// ============================================================
-//  GRAPHS TAB (Tier 1) — Chart.js
-// ============================================================
+//  GRAPHS TAB
 
 function buildGraphsCharts(data) {
   var richnessCanvas = document.getElementById('graphRichnessChart');
@@ -2276,8 +2110,7 @@ function buildGraphsCharts(data) {
   graphRichnessChartInstance = makeLineChart(richnessCanvas, richnessDatasets, 'Species', { integerY: true, tooltipUnit: 'species' });
   graphShannonChartInstance = makeLineChart(shannonCanvas, shannonDatasets, 'H\u2032');
 
-  // Species is controlled by the shared filter bar, so the population trend
-  // always aggregates the already-filtered dataset (no per-species select).
+  // No per-species select here: the shared filter bar already scopes this trend.
   var trend = window.BioAnalytics.populationTrend(data, null, null);
   var tLabels = trend.dataPoints.map(function(b) { return b.label; });
   var tDatasets = [{
@@ -2297,7 +2130,7 @@ function buildGraphsCharts(data) {
   pushTrendLineDataset(tDatasets, trend);
   graphTrendChartInstance = makeLineChart(trendCanvas, tDatasets, 'Count', { labels: tLabels, integerY: true, tooltipUnit: 'individuals' });
 
-  // Explain why no trend line is drawn yet (needs >= 2 survey buckets).
+  // The trend line needs at least two survey buckets.
   var trendNoteEl = document.getElementById('graphTrendNote');
   if (trendNoteEl) {
     var gRecencyNote = trendRecencyNote(data);
@@ -2311,8 +2144,8 @@ function getGraphData() {
     var d = typeof getAnalyticsFilteredData === 'function'
         ? getAnalyticsFilteredData()
         : (window.BioData ? window.BioData.getObservations() : []);
-  // Respect the From/To filter exactly; otherwise default to the recent
-  // rolling window (same rule as the report).
+  // Same window rule as the report: an explicit From/To wins, else the recent
+  // rolling window.
   d = applyAnalyticsDateWindow(d);
   d = enrichWithRegistryIds(d);
   // Reports/graphs always use verified (Approved) data only.
@@ -2354,12 +2187,12 @@ function initReportTab() {
     buildReportEcosystem(data);
   }
 
-  // Populate the species dropdown on first mount only; if empty (a race
-  // where the registry script hasn't hydrated yet), retry on each render.
+  // Populate on first mount, or retry while empty: the registry script may not
+  // have hydrated yet.
   if (!speciesSelect || speciesSelect.options.length <= 1) populateReportSpecies();
 
-  // Idempotency guard: re-render on every activation (filters/charts stay
-  // fresh), but attach event listeners only once (no stacked handlers).
+  // Re-render on every activation, but attach listeners only once: stacked
+  // handlers would fire twice.
   if (reportTabInitialized) {
     renderReport();
     return;
@@ -2376,8 +2209,8 @@ function initReportTab() {
   if (speciesSelect) speciesSelect.addEventListener('change', renderReport);
 }
 
-// Lazy init when Report/Graphs tabs are activated (persisted tab restore
-// uses .click(), so these fire even when the saved tab is Report/Graphs).
+// Restoring a saved tab goes through .click(), so these listeners fire for
+// Report/Graphs on load too.
 (function() {
   var tabs = document.querySelectorAll('.analytics-tab');
   tabs.forEach(function(tab) {

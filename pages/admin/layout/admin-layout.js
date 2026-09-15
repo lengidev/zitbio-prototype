@@ -1,36 +1,20 @@
 /**
- * ZitBio — Admin Layout Component
- * Unified sidebar collapse/expand engine with localStorage persistence.
- * Handles both desktop (collapsible) and mobile (overlay) sidebar behavior.
- *
- * Design decisions:
- *   - Sidebar state is persisted in localStorage so returning users
- *     find their preferred layout.
- *   - Uses CSS class switching rather than inline style manipulation
- *     for both performance and maintainability.
- *   - Connection status is polled every 30s so admins are immediately
- *     aware of network issues when entering data in the field.
+ * Admin shell: sidebar, user menu, notifications, connection status, theme toggle.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('adminSidebar');
     const mainContent = document.querySelector('.main-content');
 
-    /* ============================================
-       DESKTOP: Collapse/Expand sidebar
-       Persists the collapsed state so users returning to the app
-       find their preferred layout without re-toggling.
-       ============================================ */
+    /* DESKTOP: Collapse/Expand sidebar */
     const toggleBtn = document.getElementById('sidebarToggle');
 
-    // Restore persisted sidebar state from previous session
     const isCollapsed = localStorage.getItem('admin-sidebar-collapsed') === 'true';
     if (sidebar && isCollapsed) {
         sidebar.classList.add('collapsed');
         if (mainContent) mainContent.classList.add('expanded');
     }
 
-    // Toggle action
     if (toggleBtn && sidebar) {
         toggleBtn.addEventListener('click', () => {
             sidebar.classList.toggle('collapsed');
@@ -39,11 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /* ============================================
-       MOBILE: Open/Close sidebar as overlay
-       Hamburger opens; close button and overlay click both dismiss.
-       Designed to feel native on touch devices.
-       ============================================ */
+    /* MOBILE: Open/Close sidebar as overlay */
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     const sidebarClose = document.getElementById('sidebarClose');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -70,27 +50,20 @@ document.addEventListener('DOMContentLoaded', () => {
         sidebarOverlay.addEventListener('click', closeMobileSidebar);
     }
 
-    /* ============================================
-       NAV ITEMS: Active page highlighting + close mobile on navigate
-       Highlights the current page's nav item so admins always know
-       where they are in the hierarchy.
-       ============================================ */
+    /* NAV ITEMS: Active page highlighting + close mobile on navigate */
     const currentPath = window.location.pathname;
     const navItems = document.querySelectorAll('.sidebar-menu .nav-item');
 
     navItems.forEach(item => {
         const itemHref = item.getAttribute('href');
 
-        // Highlight active page
         if (itemHref && currentPath.includes(itemHref)) {
             item.classList.add('active');
         }
 
-        // On click: update active class and close mobile sidebar.
-        // Logout is an <a href> pointing at the login page, so it must be
-        // intercepted — otherwise the browser navigates before the session is
-        // ended and the next person on the machine inherits a live admin
-        // session (#39).
+        // Logout is an <a href>, so it must be intercepted: otherwise the browser
+        // navigates before the session ends and the next person on the machine
+        // inherits a live admin session.
         item.addEventListener('click', function (e) {
             if (item.id === 'navLogout' || item.getAttribute('data-action') === 'logout') {
                 e.preventDefault();
@@ -106,18 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-/* ============================================
-   USER MENU DROPDOWN
-   Populated from the *verified* identity handed over by the route guard, so
-   the displayed name/role/account always describes the person who is actually
-   signed in. Before #86 this painted from a session whose profile had not
-   arrived yet, and its `|| 'field_officer'` fallback is why an admin could read
-   "Role: Field Officer" next to a hardcoded "Account ID: ADM-001".
-   ============================================ */
+/* USER MENU DROPDOWN */
 
-// Repaint hook for the one `session:changed` subscription below. Kept at module
-// scope so a later initUserMenu() cannot leave the subscription pointing at a
-// dropdown that has been replaced.
+// Module-scoped repaint hook so the one `session:changed` subscription below
+// cannot be left pointing at a dropdown that has been replaced.
 var repaintUserMenu = null;
 var userMenuRepaintBound = false;
 
@@ -128,7 +93,6 @@ function initUserMenu(verifiedProfile) {
   const dropdown = userMenu.querySelector('.user-dropdown');
   if (!dropdown) return;
 
-  // Populate dropdown from the identity the guard verified
   repaintUserMenu = function() {
     if (window.BioData) {
       updateUserDropdownFromSession(dropdown, verifiedProfile);
@@ -136,10 +100,9 @@ function initUserMenu(verifiedProfile) {
   };
   repaintUserMenu();
 
-  // Repaint whenever the identity settles. The guard's verdict is already on the
-  // session by the time this runs, but two later events can still change what we
-  // should show — the session hydrating from the profile fetch, and a token
-  // refresh carrying a new role. Without this, the first paint was permanent.
+  // Repaint when the identity settles: the session can hydrate from the profile
+  // fetch and a token refresh can carry a new role, and without this the first
+  // paint was permanent.
   if (window.BioData && typeof BioData.subscribe === 'function' && !userMenuRepaintBound) {
     userMenuRepaintBound = true;
     BioData.subscribe('session:changed', function() {
@@ -147,35 +110,29 @@ function initUserMenu(verifiedProfile) {
     });
   }
 
-  // Toggle dropdown on user menu click
   userMenu.addEventListener('click', function(event) {
     event.stopPropagation();
     dropdown.classList.toggle('open');
   });
 
-  // Close dropdown on outside click
   document.addEventListener('click', function() {
     dropdown.classList.remove('open');
   });
 
-  // Close dropdown on Escape key
   document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
       dropdown.classList.remove('open');
     }
   });
 
-  // Keyboard and click handling for dropdown items
   const items = dropdown.querySelectorAll('.user-dropdown-item');
   items.forEach(function(item) {
-    // Click handler
     item.addEventListener('click', function(event) {
       event.stopPropagation();
       handleUserDropdownAction(item);
       dropdown.classList.remove('open');
     });
 
-    // Keyboard: Enter or Space to activate
     item.addEventListener('keydown', function(event) {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -188,14 +145,10 @@ function initUserMenu(verifiedProfile) {
 }
 
   /**
-   * Paint the user dropdown from the current identity.
-   *
-   * `verifiedProfile` is the route guard's verdict and always wins over the
-   * cached session, which is a cache that may not have hydrated yet: this is the
-   * difference between showing the role that was verified and showing a guess.
-   * Name, email, role and account code are all rewritten on every call, because
-   * the markup ships one person's details as a hardcoded placeholder — correct
-   * for exactly one of the accounts that can load these pages.
+   * `verifiedProfile` is the guard's verdict and always wins over the cached
+   * session, which may not have hydrated: the difference between the verified
+   * role and a guess. Every label is rewritten because the markup ships one
+   * person's details as a hardcoded placeholder.
    */
 function updateUserDropdownFromSession(dropdown, verifiedProfile) {
   var session = (window.BioData && BioData.getSession) ? BioData.getSession() : null;
@@ -208,19 +161,16 @@ function updateUserDropdownFromSession(dropdown, verifiedProfile) {
   var roleLabel = role === 'admin' ? 'Admin'
     : (role === 'field_officer' ? 'Field Officer' : '\u2014');
 
-  // Update header title
   var titleEl = dropdown.querySelector('.user-dropdown-title');
   if (titleEl && name) titleEl.textContent = name;
 
-  // Update header subtitle
   var subtitleEl = dropdown.querySelector('.user-dropdown-subtitle');
   if (subtitleEl && email) subtitleEl.textContent = email;
 
-  // Update user-menu name in the trigger
   var userNameEl = document.querySelector('.user-menu-name');
   if (userNameEl && name) userNameEl.textContent = name;
 
-  // Update footer — role, then the account code that belongs to that same person
+  // Role and account code must describe one identity, never two.
   var footerSpans = dropdown.querySelectorAll('.user-dropdown-footer span');
   if (footerSpans.length >= 2) {
     footerSpans[0].textContent = 'Role: ' + roleLabel;
@@ -228,10 +178,6 @@ function updateUserDropdownFromSession(dropdown, verifiedProfile) {
   }
 }
 
-  /**
-   * Handle user dropdown item actions.
-   * Currently supports Help (placeholder) and Logout (clears session + redirects).
-   */
 function handleUserDropdownAction(item) {
   var action = item.getAttribute('data-action');
   if (action === 'help') {
@@ -246,23 +192,16 @@ function handleUserDropdownAction(item) {
   }
 }
 
-/* ============================================
-   LOGOUT — the single path for every logout control
-   ============================================ */
+/* LOGOUT: the single path for every logout control */
 
-// Guards against a double invocation when both the dropdown item and the
-// sidebar link are reachable in the same click sequence.
+// Guards against a double invocation when both logout controls are clicked.
 var _loggingOut = false;
 
 /**
- * End the session, then return to the login page.
- *
- * Used by BOTH the avatar dropdown item (data-action="logout") and the sidebar
- * link (#navLogout) so the two controls cannot behave differently again (#39).
- *
- * Clears AUTHENTICATION state only. The cached observation/registry data is
- * deliberately preserved so offline field work survives a logout — see the
- * Security + Identity milestone, decision #2.
+ * Ends the session and returns to login. Both logout controls route through
+ * here so they cannot behave differently again. Clears AUTHENTICATION state
+ * only: cached observation/registry data is deliberately kept so offline field
+ * work survives a logout.
  */
 function endSessionAndRedirect() {
   if (_loggingOut) return;
@@ -277,23 +216,21 @@ function endSessionAndRedirect() {
     // removes the sb-*-auth-token key, which is what actually matters.)
     try { localStorage.removeItem('biodata_session'); } catch (err) { /* storage unavailable */ }
 
-    // Correct relative path depends on page depth.
+    // Only two depths can reach here: pages/admin/* and pages/field-officer/*.
     var isAdminPage = window.location.pathname.indexOf('/admin/') !== -1;
     window.location.href = isAdminPage ? '../../../index.html' : '../../index.html';
   }
 
   if (window.BioSupabase && window.BioSupabase.isConfigured()) {
-    // Redirect regardless of whether signOut resolves or rejects — a failed
-    // network call must not leave the user stuck on a protected page.
+    // Redirect whether signOut resolves or rejects: a failed network call must
+    // not leave the user stuck on a protected page.
     BioSupabase.signOut().then(finish).catch(finish);
   } else {
     finish();
   }
 }
 
-/* ============================================
-   DASHBOARD ACTIONS
-   ============================================ */
+/* DASHBOARD ACTIONS */
 function initDashboardActions() {
   const btnNewObservation = document.getElementById('btnNewObservation');
   if (!btnNewObservation) {
@@ -327,9 +264,7 @@ function initDashboardActions() {
   }
 }
 
-/* ============================================
-   HEADER ACTIONS
-   ============================================ */
+/* HEADER ACTIONS */
 function initHeaderActions() {
   const helpLink = document.querySelector('.help-link');
   if (helpLink) {
@@ -341,9 +276,8 @@ function initHeaderActions() {
 }
 
 /**
- * Help is still a stub. Reported as a toast rather than a blocking alert() — a
- * modal dialog for "this does nothing yet" interrupts the task for no reason
- * (#52).
+ * Reported as a toast, not a blocking alert(): a modal dialog for "this does
+ * nothing yet" interrupts the task for no reason.
  */
 function reportPlaceholder() {
   var message = 'Help documentation is not available yet.';
@@ -351,27 +285,19 @@ function reportPlaceholder() {
   else console.warn(message);
 }
 
-/* ============================================
-   NOTIFICATION SYSTEM
-   Creates and manages the bell-icon notification dropdown from
-   BioData's notification system. Used on all admin pages to surface
-   pending/flagged observations and new user registrations.
-   ============================================ */
+/* NOTIFICATION SYSTEM */
 function initNotifications() {
-  // Guard: only init on admin pages (BioData must be loaded)
   if (!window.BioData) return;
 
   // The bell mounts beside the user menu. Admin pages wrap that menu in
-  // .header-right; the field-officer top bar does not, so fall back to the
-  // menu's own parent. Without this the FO page had NO bell at all, which made
-  // routing verdicts to an officer pointless (#71).
+  // .header-right and the field-officer top bar does not, so fall back to the
+  // menu's own parent: without this the FO page had no bell at all, so routing
+  // verdicts to an officer was useless.
   var headerRight = document.querySelector('.header-right');
   if (!headerRight) {
-    // Pages with no header-right group (the field-officer top bar) previously got
-    // the bell inserted as a sibling of the logo. With the top bar laid out
-    // space-between, that stranded the bell in the MIDDLE of the header and left
-    // its dropdown floating away from the user menu. Group the bell WITH the
-    // user menu instead, so both sit at the right-hand edge.
+    // Group the bell WITH the user menu rather than as a sibling of the logo:
+    // this top bar is space-between, so the bell landed in the MIDDLE of the
+    // header with its dropdown floating away from the menu.
     var menuEl = document.querySelector('.user-menu');
     if (menuEl && menuEl.parentNode) {
       headerRight = document.createElement('div');
@@ -382,14 +308,11 @@ function initNotifications() {
   }
   if (!headerRight) return;
 
-  // Check if notification container already exists to avoid duplicates
   if (document.querySelector('.notification-container')) return;
 
-  // Create the notification container
   var container = document.createElement('div');
   container.className = 'notification-container';
 
-  // Bell button
   var bellBtn = document.createElement('a');
   bellBtn.href = '#';
   bellBtn.className = 'notification-btn';
@@ -398,12 +321,10 @@ function initNotifications() {
     '<svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-notifications"/></svg>' +
     '<span class="notification-badge" id="notificationBadge">0</span>';
 
-  // Dropdown panel
   var dropdown = document.createElement('div');
   dropdown.className = 'notification-dropdown';
   dropdown.id = 'notificationDropdown';
 
-  // Insert before the user menu (bell on left, username on right)
   var userMenu = headerRight.querySelector('.user-menu');
   if (userMenu) {
     headerRight.insertBefore(container, userMenu);
@@ -413,39 +334,31 @@ function initNotifications() {
   container.appendChild(bellBtn);
   container.appendChild(dropdown);
 
-  // Bell click — toggle dropdown
   bellBtn.addEventListener('click', function(e) {
     e.preventDefault();
     e.stopPropagation();
     toggleNotificationDropdown();
   });
 
-  // Close on outside click
   document.addEventListener('click', function(e) {
     if (!container.contains(e.target)) {
       dropdown.classList.remove('open');
     }
   });
 
-  // Escape key
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       dropdown.classList.remove('open');
     }
   });
 
-  // Initial render
   renderNotifications();
 
-  // Re-render live when cloud notifications change (realtime + explicit loads).
   window.addEventListener('biodata:notifications', function() {
     renderNotifications();
   });
 }
 
-/**
- * Toggle notification dropdown open/close
- */
 function toggleNotificationDropdown() {
   var dropdown = document.getElementById('notificationDropdown');
   if (!dropdown) return;
@@ -453,8 +366,7 @@ function toggleNotificationDropdown() {
 }
 
 /**
- * Extract the obs=<id> query parameter from a notification link, or null
- * if absent. Dependency-free (no URLSearchParams required).
+ * `obs=<id>` from a notification link, or null. Dependency-free, no URLSearchParams.
  */
 function getObsFromLink(link) {
   if (!link) return null;
@@ -471,13 +383,10 @@ function getObsFromLink(link) {
 }
 
 /**
- * Stable identity for a notification across BOTH stores.
- *
- * The same logical notification exists twice: locally with an id like
- * `notif_7` (BioData's counter) and in the cloud with a UUID. Their
- * `created_at` values also differ slightly (client clock vs the DB trigger),
- * and their ids never match, so neither field can be used to dedupe. What the
- * two copies DO share is the event they describe: `type` plus `related_id`.
+ * Stable identity for a notification across BOTH stores: local ids are
+ * `notif_7` and cloud ids are UUIDs, and the two `created_at` values differ
+ * (client clock vs the DB trigger), so neither field can dedupe them. What both
+ * copies share is the event they describe: `type` plus `related_id`.
  */
 function notificationKey(n) {
   var related = n.related_id || '';
@@ -486,25 +395,19 @@ function notificationKey(n) {
 }
 
 /**
- * Cloud ids are UUIDs from the notifications table; local ids are `notif_N`.
- * Routing on the shape avoids firing an UPDATE that Postgres rejects as
- * "invalid input syntax for type uuid" on every local notification click.
+ * Local ids are `notif_N`, cloud ids are UUIDs. Routing on the shape avoids an
+ * UPDATE Postgres rejects as "invalid input syntax for type uuid" on every click.
  */
 function isCloudNotificationId(id) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id || ''));
 }
 
 /**
- * Render notifications into the dropdown.
- *
- * Merges BOTH sources rather than preferring one (decision 2026-09-13, #45).
- * The previous either/or chose the cloud cache whenever BioSync was loaded —
- * which is always — so a notification created locally in this session stayed
- * invisible until the cloud round-trip returned it, and if the cloud fetch
- * failed the user saw "No notifications yet" while local ones existed.
- *
- * The cloud copy wins when an event exists in both, because it carries the
- * real id, the real read state, and rows the server wrote for other admins.
+ * Merges BOTH sources rather than preferring one: preferring the cloud cache
+ * (always loaded) hid a notification created locally in this session until the
+ * round trip returned it, and showed "No notifications yet" when the fetch
+ * failed while local ones existed. The cloud copy wins when both carry the same
+ * event: it has the real id, the real read state, and rows other admins wrote.
  */
 function renderNotifications() {
   var dropdown = document.getElementById('notificationDropdown');
@@ -533,14 +436,12 @@ function renderNotifications() {
     return new Date(b.created_at || 0) - new Date(a.created_at || 0);
   });
 
-  // Counted from the merged list. The old code read the unread count from a
-  // different store than the one it rendered, so the badge could disagree with
-  // the list directly beneath it.
+  // Counted from the merged list: reading the count from a different store than
+  // the one rendered let the badge disagree with the list beneath it.
   var unreadCount = notifications.filter(function(n) { return !n.read; }).length;
 
   var badge = document.getElementById('notificationBadge');
 
-  // Update badge
   if (badge) {
     if (unreadCount > 0) {
       badge.textContent = unreadCount;
@@ -553,14 +454,12 @@ function renderNotifications() {
   var html = '';
 
   if (notifications.length === 0) {
-    // Empty state
     html =
       '<div class="notification-empty">' +
         '<svg class="material-symbols-outlined" aria-hidden="true"><use href="#i-notifications_off"/></svg>' +
         '<p>No notifications yet</p>' +
       '</div>';
   } else {
-    // Header with "Mark all as read" + "Clear all"
     html +=
       '<div class="notification-dropdown-header">' +
         '<h3>Notifications</h3>' +
@@ -570,7 +469,6 @@ function renderNotifications() {
         '</div>' +
       '</div>';
 
-    // Notification list
     html += '<div class="notification-list">';
 
     notifications.forEach(function(n) {
@@ -594,8 +492,8 @@ function renderNotifications() {
         iconClass = 'new-user';
         iconName = 'verified';
       } else if (n.type === 'submission_verdict') {
-        // The officer's own record was reviewed (#71) — a distinct icon so it
-        // reads differently from an admin-side verdict in the same bell.
+        // The officer's own record was reviewed: a distinct icon so it reads
+        // differently from an admin-side verdict in the same bell.
         iconClass = 'new-user';
         iconName = 'verified';
       } else if (n.type === 'observation_edited') {
@@ -609,7 +507,6 @@ function renderNotifications() {
         iconName = 'notifications';
       }
 
-      // Format time
       var timeAgo = formatTimeAgo(n.created_at);
 
       html +=
@@ -627,11 +524,10 @@ function renderNotifications() {
 
     html += '</div>';
 
-    // Retention is enforced server-side by the notifications_enforce_retention
-    // trigger (#77): read rows older than 30 days are deleted on the next
-    // insert for that user. Say so here, otherwise a notification vanishing
-    // looks like a bug. The 30 matches p_read_days in migration
-    // 202609130014 — if that constant changes, change this string.
+    // Retention is enforced server-side (notifications_enforce_retention): read
+    // rows older than 30 days are deleted on the next insert for that user. Say
+    // so here, otherwise a notification vanishing looks like a bug. The 30 must
+    // match p_read_days in migration 202609130014.
     html +=
       '<div class="notification-retention-note">' +
         'Read notifications are cleared after 30 days' +
@@ -640,16 +536,13 @@ function renderNotifications() {
 
   dropdown.innerHTML = html;
 
-  // Attach click handlers to notification items
   var items = dropdown.querySelectorAll('.notification-item');
   items.forEach(function(item) {
     item.addEventListener('click', function(e) {
       var id = item.getAttribute('data-notif-id');
       var link = item.getAttribute('data-link');
 
-      // Mark as read. Routed by id shape (#45): cloud rows carry UUIDs, locally
-      // created rows carry `notif_N`, and sending `notif_N` to the cloud fails
-      // as an invalid uuid on every click.
+      // Routed by id shape: sending `notif_N` to the cloud fails as an invalid uuid.
       if (id) {
         if (isCloudNotificationId(id) && window.BioSync && window.BioSync.markNotificationRead) {
           window.BioSync.markNotificationRead(id).catch(function(err) {
@@ -662,35 +555,30 @@ function renderNotifications() {
         }
       }
 
-      // Same-page deep-link: if we're already on the observations page and
-      // the notification points there with an ?obs= param, open the modal
-      // directly — navigating would only change the URL and would NOT re-run
-      // the load-time deep-link handler, so the modal would never appear.
+      // On the observations page, open the modal directly: navigating would only
+      // change the URL and NOT re-run the load-time deep-link handler, so the
+      // modal would never appear.
       var isOnObservationsPage = document.body && document.body.classList.contains('page-observations');
       var linkObs = isOnObservationsPage ? getObsFromLink(link) : null;
       if (isOnObservationsPage && linkObs && typeof window.openObservationById === 'function') {
         window.openObservationById(linkObs);
       } else {
-        // Navigate if link exists (first-time load / other pages — the
-        // observations page opens the modal via its load-time deep-link).
+        // Any other page: navigate, and let its load-time deep-link open the modal.
         if (link) {
           window.location.href = link;
         }
       }
 
-      // Close dropdown
       dropdown.classList.remove('open');
     });
   });
 
-  // Attach "Mark all as read" handler
   var markAllBtn = document.getElementById('markAllReadBtn');
   if (markAllBtn) {
     markAllBtn.addEventListener('click', function(e) {
       e.stopPropagation();
-      // Local rows are not covered by the cloud UPDATE, so clear them too —
-      // otherwise the badge keeps counting notifications as unread that the
-      // cloud no longer has (#45 merge).
+      // Local rows are not covered by the cloud UPDATE, so mark them too:
+      // otherwise the badge keeps counting notifications the cloud no longer has.
       if (window.BioData) { BioData.markAllNotificationsRead(); }
       if (window.BioSync && window.BioSync.markAllNotificationsRead) {
         window.BioSync.markAllNotificationsRead().then(function() {
@@ -705,12 +593,11 @@ function renderNotifications() {
     });
   }
 
-  // Attach "Clear all" handler (removes notifications entirely).
   var clearAllBtn = document.getElementById('notificationClearBtn');
   if (clearAllBtn) {
     clearAllBtn.addEventListener('click', function(e) {
       e.stopPropagation();
-      // Clear BOTH stores (#45). Deleting only the cloud rows left local-only
+      // Clear BOTH stores: deleting only the cloud rows left local-only
       // notifications in the merged list, so "Clear all" looked broken.
       if (window.BioData) { BioData.clearNotifications(); }
       if (window.BioSync && window.BioSync.clearNotifications) {
@@ -727,9 +614,6 @@ function renderNotifications() {
   }
 }
 
-/**
- * Format a date string into a human-readable "time ago" string
- */
 function formatTimeAgo(dateStr) {
   if (!dateStr) return '';
   var now = new Date();
@@ -747,8 +631,7 @@ function formatTimeAgo(dateStr) {
 }
 
 /**
- * Simple HTML escaping.
- * Delegates to lib/escape.js so the app has one implementation; this was a
+ * Delegates to lib/escape.js so the app keeps one implementation: this was a
  * second copy that happened to be correct.
  */
 function escapeHtml(str) {
@@ -756,15 +639,10 @@ function escapeHtml(str) {
   return window.BioEscape.escapeHtml(str);
 }
 
-// ============================================================
 //  ANALYTICS WARNING EVALUATION (full-dataset re-evaluation)
-//  ------------------------------------------------------------
 //  Distinct from NotificationService's create-event handlers: this is the
-//  "re-evaluate everything and see what's now true" pass (Gap 3). Runs once
-//  on admin page load (after cloud hydration) to surface low-population
-//  warnings as `population_warning` notifications. Guarded so repeated
-//  appears on page re-navigation across tabs don't duplicate spam.
-// ============================================================
+//  re-evaluate-everything pass, guarded so re-navigating across tabs cannot
+//  duplicate the warnings.
 var analyticsEvaluationRan = false;
 
 function enrichAdminObservations(obsList) {
@@ -778,8 +656,6 @@ function enrichAdminObservations(obsList) {
 }
 
 function runAnalyticsEvaluation() {
-  // Only the pure analytics engine + data layer are needed; bail silently if
-  // they aren't loaded yet (they are on every admin page).
   if (!window.BioAnalytics || !window.BioData) return;
   if (analyticsEvaluationRan) return;
   analyticsEvaluationRan = true;
@@ -798,7 +674,7 @@ function runAnalyticsEvaluation() {
   var added = false;
   active.forEach(function(w) {
     var relatedId = 'pop:' + (w.speciesId || 'sp') + ':' + (w.siteId || 'site');
-    if (existingIds[relatedId]) return; // already notified (unread) — no spam
+    if (existingIds[relatedId]) return; // already notified while unread, so no spam
     var severityText = w.severity === 'critical' ? 'critically low' : 'below baseline';
     window.BioData.addNotification(
       'population_warning',
@@ -816,51 +692,31 @@ function runAnalyticsEvaluation() {
   }
 }
 
-/* ============================================
-   AUTH-PENDING HOLD (#76)
-   Protected pages ship `auth-pending` on <body> in their static markup so the
-   protected shell cannot paint before the route guard has decided. The guard
-   is asynchronous and its offline retry budget is ~10s, so without this hold a
-   signed-in field officer opening an admin URL saw the full admin chrome.
-   ============================================ */
+/* AUTH-PENDING HOLD */
 
-/**
- * Reveal the page. Idempotent, and safe to call before the guard runs.
- */
 function clearAuthPending() {
   if (document.body) document.body.classList.remove('auth-pending');
 }
 
-// Safety net: if a script fails to load or throws before a terminal guard path
-// runs, the page must not stay invisible forever. Unconditional, and
-// deliberately longer than the guard's worst-case decision window so it never
-// races the real result. (styles/global.css carries a CSS-only equivalent for
-// the case where this file itself never loads.)
+// Safety net: a script that fails to load must not leave the page invisible
+// forever. Unconditional, and deliberately longer than the guard's worst-case
+// decision window so it never races the real result. styles/global.css carries
+// a CSS-only equivalent for when this file itself never loads.
 window.setTimeout(clearAuthPending, 12000);
 
-// Back/forward cache: a page left while still held is restored with that
-// hidden state, but the timeout above does not re-run on restore — so the
-// class must be dropped on a persisted pageshow or the page stays invisible.
+// Back/forward cache: a held page is restored with that hidden state and the
+// timeout above does not re-run, so the class must be dropped on a persisted
+// pageshow or the page stays invisible.
 window.addEventListener('pageshow', function(event) {
   if (event.persisted) clearAuthPending();
 });
 
-// Initialize when DOM is ready.
-// Protected pages run through the AuthGuard first so unauthenticated or
-// wrong-role users are redirected before any privileged UI mounts.
-/* ============================================
-   CLOUD HYDRATION
-   ============================================
-   Started as soon as the document is ready — deliberately NOT inside the
-   guard's callback. `loadFromCloud()` is a read: RLS decides what comes back,
-   and it mounts nothing, so it has no business waiting for a role verdict.
-   Serialising it behind the guard is why the shell appeared first and the
-   numbers, tables and charts arrived a second or two later — a visible SECOND
-   wave of loading after the page had already revealed itself.
-   One shared promise, so the guard path still waits on exactly one fetch, and
-   a page that reveals before it lands renders what is already cached: the
-   `biodata:synced` event re-renders when the rest arrives.
-   ============================================ */
+// Protected pages run through the AuthGuard first, so a wrong role never mounts
+// privileged UI.
+/* CLOUD HYDRATION
+   Deliberately started before the guard has decided, not inside its callback:
+   loadFromCloud() is a read and RLS decides what comes back, so it mounts
+   nothing and has no business waiting for a role verdict. */
 var cloudSyncPromise = null;
 
 function startCloudSync() {
@@ -874,33 +730,24 @@ function startCloudSync() {
 
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', function() {
-    // Start the read now: it runs ALONGSIDE the guard rather than after it.
     startCloudSync();
 
     function mountUI(verifiedProfile) {
-      // Mount the shell chrome FIRST — the bell and the user menu read only
-      // local state (the session and the local notification cache), so they have
-      // nothing to wait for. They used to be mounted inside the
-      // `loadFromCloud()` callback, which meant the sidebar and header painted
-      // immediately but the top bar stayed half-empty for one further network
-      // round trip. Cloud notifications still refresh the list when they arrive,
-      // via the `biodata:notifications` event that loadNotifications() dispatches.
-      //
-      // `verifiedProfile` is the route guard's verdict — the one identity that is
-      // allowed to say which role the person in front of us holds (#86).
+      // Mount the shell chrome FIRST: the bell and the user menu read only local
+      // state, so they have nothing to wait for. Mounting them inside the
+      // `loadFromCloud()` callback left the top bar half-empty for one further
+      // network round trip. `verifiedProfile` is the guard's verdict, the one
+      // identity allowed to say which role the person in front of us holds.
       initUserMenu(verifiedProfile);
       initNotifications();
 
-      // Hydrate the in-memory BioData cache from Supabase on load, then let
-      // pages render cloud data. Non-fatal if offline/unconfigured. The read
-      // itself was already started above, alongside the guard — this waits on
-      // that same promise rather than issuing a second one.
+      // Waits on the read started above rather than issuing a second one, and is
+      // non-fatal when offline: the local cache is already mounted.
       var cloudSync = startCloudSync();
       if (cloudSync) {
         cloudSync
           .then(function() {
-            // Re-mount UI after cloud data is seeded so tables/charts reflect
-            // the authoritative dataset.
+            // Re-mount so tables and charts reflect the authoritative dataset.
             initHeaderActions();
             initDashboardActions();
             // Cloud notifications: initial load + live postgres_changes updates.
@@ -914,12 +761,11 @@ if (typeof document !== 'undefined') {
                 console.warn('BioSync: registry load failed:', err && err.message);
               });
             }
-            // Full-dataset re-evaluation (low-population warnings) after the
-            // authoritative cloud data is seeded — once per page session.
+            // Low-population re-evaluation, once the authoritative data is seeded.
             runAnalyticsEvaluation();
           })
           .catch(function() {
-            // Offline or not configured — the local cache is already mounted.
+            // Offline or unconfigured: the local cache is already mounted.
             initHeaderActions();
             initDashboardActions();
           });
@@ -943,21 +789,19 @@ if (typeof document !== 'undefined') {
         : AuthGuard.requireAuthenticated();
 
       guardPromise.then(function(result) {
-        // Deliberately still held when redirecting: the page is navigating
-        // away, and revealing it would repaint the exact chrome this hold
-        // exists to hide. If that navigation never lands, the 12s safety net
-        // above reveals the page anyway — a refused user is never stranded.
-        if (result && result.redirecting) return; // being redirected — don't mount UI
+        // Still held while redirecting: revealing it would repaint the exact
+        // chrome this hold exists to hide. If the navigation never lands, the 12s
+        // safety net above reveals the page, so a refused user is never stranded.
+        if (result && result.redirecting) return;
         clearAuthPending();
         mountUI(result && result.profile);
       }).catch(function() {
-        // Guard failed (network, config) — fall back to login to be safe.
-        // Held for the same reason as the redirect branch; the safety net
-        // covers a navigation that never completes.
+        // Guard failed (network, config), so fall back to login. Held for the
+        // same reason as the redirect branch; the safety net covers a hang.
         window.location.href = '../../../index.html';
       });
     } else {
-      // AuthGuard not loaded (legacy/mock path) — proceed as before.
+      // AuthGuard not loaded (legacy path), so proceed unguarded.
       clearAuthPending();
       mountUI();
     }
@@ -965,10 +809,8 @@ if (typeof document !== 'undefined') {
 }
 
 /**
- * Update connection status indicator in sidebar footer.
- * Network fallback states: Online, Slow network, Offline.
- * Polls every 30s and listens for browser online/offline events so
- * admins working in remote areas see network changes immediately.
+ * Sidebar footer status, polled every 30s plus the browser's online/offline
+ * events, so admins working in remote areas see network changes immediately.
  */
 var syncStatusKnown = false;
 
@@ -984,10 +826,9 @@ function updateConnectionStatus() {
     return;
   }
 
-  // Check connection type for slow detection (Chrome-based browsers)
+  // Vendor-prefixed: only Chrome-based browsers expose the connection type.
   var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (connection) {
-    // effectiveType: 'slow-2g', '2g', '3g', '4g'
     if (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g') {
       if (syncStatusKnown) return;
       dot.classList.remove('disconnected');
@@ -997,7 +838,6 @@ function updateConnectionStatus() {
     }
   }
 
-  // Default: connected
   if (syncStatusKnown) return;
   dot.classList.remove('disconnected', 'slow');
   text.textContent = 'Online';
@@ -1013,27 +853,21 @@ function setSyncStatus(label, state) {
 }
 
 function applySavedTheme() {
-  // Resolution lives in lib/theme-init.js, which runs in <head> BEFORE the
-  // stylesheets so the palette is already on <html> for the first paint. This
-  // call therefore only re-syncs what depends on chrome this script owns: the
-  // toggle's icon and the browser's own theme-color meta.
+  // Resolution lives in lib/theme-init.js, which runs in <head> before the
+  // stylesheets, so the palette is already on <html> at first paint. This call
+  // only re-syncs what this script owns: the toggle icon and the theme-color meta.
   var activeTheme = window.BioTheme ? window.BioTheme.apply() : 'light';
   syncThemeColorMeta(activeTheme);
   updateThemeToggleIcon(activeTheme);
 }
 
 /**
- * Keep the browser's own chrome in step with the theme (#68).
- *
- * `<meta name="theme-color">` is static in each page's HTML so it is already
- * correct on first paint, before any script has run. But the user can switch
- * theme at runtime, and without this the mobile address bar / status bar would
- * stay light green-grey over a dark page — the one part of the UI the theme
- * cannot reach from CSS. Values mirror --color-bg in styles/theme.css.
- *
- * One implementation, shared with the early bootstrap: lib/theme-init.js needs
- * the same two values before this script has loaded, and a second copy of them
- * is exactly how they drift apart.
+ * Keeps the browser's own chrome in step with the theme. `<meta name="theme-color">`
+ * is static in each page's HTML, so a runtime switch would otherwise leave the
+ * mobile address bar light green-grey over a dark page, the one part of the UI
+ * CSS cannot reach. Values mirror --color-bg in styles/theme.css, and
+ * lib/theme-init.js needs the same two values before this script loads: a second
+ * copy of them is how they drift apart.
  */
 function syncThemeColorMeta(activeTheme) {
   if (window.BioTheme && window.BioTheme.syncMeta) window.BioTheme.syncMeta(activeTheme);
@@ -1066,7 +900,6 @@ function initThemeToggle() {
   });
 }
 
-// Check connection status on load and poll every 30 seconds
 document.addEventListener('DOMContentLoaded', function() {
   applySavedTheme();
   initThemeToggle();
@@ -1074,7 +907,6 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(updateConnectionStatus, 30000);
 });
 
-// Also update when browser fires online/offline events
 window.addEventListener('online', updateConnectionStatus);
 window.addEventListener('offline', updateConnectionStatus);
 
@@ -1091,12 +923,12 @@ window.addEventListener('biodata:sync-error', function() {
   setSyncStatus(navigator.onLine ? 'Local only' : 'Offline', navigator.onLine ? 'slow' : 'disconnected');
 });
 
-// Listen for connection type changes (Chrome-based browsers)
 if (navigator.connection) {
   navigator.connection.addEventListener('change', updateConnectionStatus);
 }
 
-// Export for use in other modules
+// CommonJS export kept for tests; nothing requires it yet, and the guard above
+// means it never runs in a browser.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { initUserMenu, initHeaderActions };
 }

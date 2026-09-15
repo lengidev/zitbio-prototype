@@ -21,7 +21,7 @@
 }
 
 /* View button */
-/* Species cell — common name with scientific name subtitle */
+/* Species cell: common name with scientific name subtitle */
 /* Ensure table-cell integrity; use wrapper approach for internal layout */
 .page-observations .species-cell {
     display: table-cell !important;
@@ -64,7 +64,7 @@
 }
 
 /* This control sets `outline: none` above and only had a :hover rule, so the
-   per-row primary action had no focus indicator at all (#65). */
+   per-row primary action had no focus indicator at all. */
 .page-observations .btn-view:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
@@ -76,9 +76,7 @@
     padding-left: 12px;
 }
 
-/* ============================================
-   Review queue status filter (#70)
-   ============================================ */
+/* Review queue status filter */
 
 /* The filter lives on the "Verification Status" header, so the control sits on
    the column it filters instead of in a bar of its own. */
@@ -87,8 +85,8 @@
     display: inline-flex;
 }
 
-/* Matches the plain .data-table thead th styling — same size, weight, colour
-   and (no) letter-spacing — so the header reads as a header, not as a button.
+/* Matches the plain .data-table thead th styling: same size, weight, colour
+   and (no) letter-spacing, so the header reads as a header, not as a button.
    The negative margins cancel the padding so the label still lines up with the
    other column headings. */
 .th-filter-btn {
@@ -108,7 +106,7 @@
     transition: color 0.15s ease;
 }
 
-/* Text only — no background or border change on hover. */
+/* Text only: no background or border change on hover. */
 .th-filter-btn:hover {
     color: var(--color-text-main);
 }
@@ -134,7 +132,7 @@
 }
 
 /* Fixed, not absolute: the table sits in a horizontally scrollable container
-   (.table-container has overflow-x:auto), which clips vertically too — an
+   (.table-container has overflow-x:auto), which clips vertically too, so an
    absolutely positioned menu would be cut off. Positioned from the trigger's
    rect when opened, and dismissed on scroll. */
 .th-filter-menu {
@@ -186,7 +184,7 @@
     background: var(--color-bg-active);
 }
 
-/* Result of the last export (#69) — a silent download is indistinguishable
+/* Result of the last export: a silent download is indistinguishable
    from a dead button, which is how the original bug survived. */
 .export-feedback {
     display: block;
@@ -195,9 +193,7 @@
     color: var(--color-text-muted);
 }
 
-/* ============================================
-   Verification Status Badges
-   ============================================ */
+/* Verification Status Badges */
 .status-badge {
     display: inline-block;
     border-radius: 12px;
@@ -225,9 +221,7 @@
     border: 1px solid var(--color-danger-light);
 }
 
-/* ============================================
-   Review decision panel (#80)
-   ============================================ */
+/* Review decision panel */
 
 /* Only present while a decision needing a reason is in progress, so the modal
    reads as a record view until the admin actually decides something. Tinted so
@@ -279,9 +273,7 @@
     outline: 2px solid var(--color-danger-light);
 }
 
-/* ============================================
-   Review history (append-only decision log, #73)
-   ============================================ */
+/* Review history (append-only decision log) */
 .review-history-section { margin-top: 8px; }
 
 .review-history-list {
@@ -323,9 +315,7 @@
 .review-history-transition { font-size: 12px; color: var(--color-text-secondary); }
 .review-history-reason { font-size: 13px; color: var(--color-text-main); }
 
-/* ============================================
-   Archived records (#74)
-   ============================================ */
+/* Archived records */
 .archived-list {
     display: flex;
     flex-direction: column;
@@ -350,16 +340,14 @@
 .archived-item-title { font-size: 13px; font-weight: 600; color: var(--color-text-main); }
 .archived-item-sub { font-size: 12px; color: var(--color-text-muted); }
 
-/* ============================================
-   Admin Observation View Modal (Redesigned)
-   ============================================ */
+/* Admin Observation View Modal */
 
 /* Overlay */
 .page-observations .modal-overlay#viewModal {
     z-index: var(--z-modal-backdrop);
 }
 
-/* Modal Card Base — shared with users modals (see modals.css).
+/* Modal Card Base: shared with users modals (see modals.css).
    The base sets opacity:0, so this is what actually reveals a card. It used to
    name #viewModal only, which left EVERY other modal on this page permanently
    invisible: the overlay dimmed the screen while the card stayed at opacity 0,
@@ -375,7 +363,7 @@
     display: flex;
 }
 
-/* ---- Header ---- */
+/* Header */
 .page-observations .modal-header {
     flex-shrink: 0;
     display: flex;
@@ -416,7 +404,7 @@
     margin-top: 3px;
 }
 
-/* ---- Status Badge ---- */
+/* Status Badge */
 .page-observations .badge {
     display: inline-flex;
     align-items: center;
@@ -465,7 +453,7 @@
     background: var(--color-danger);
 }
 
-/* ---- Icon buttons (base + tooltip shared with users modals — see modals.css) ---- */
+/* Icon buttons (base + tooltip shared with users modals; see modals.css) */
 .page-observations .icon-btn-edit {
     color: var(--color-text-main);
 }
@@ -490,7 +478,7 @@
     color: var(--color-danger-hover);
 }
 
-/* ---- Body ---- */
+/* Body */
 .page-observations .modal-body {
     flex: 1;
     overflow-y: auto;
@@ -510,7 +498,7 @@
     border-radius: var(--radius-full);
 }
 
-/* ---- Static Sections (always visible) ---- */
+/* Static Sections (always visible) */
 .page-observations .section-static {
     padding: 16px 0;
     border-bottom: 1px solid var(--border-color);
@@ -536,7 +524,7 @@
     color: var(--color-text-muted);
 }
 
-/* ---- Field Grid (2 columns) ---- */
+/* Field Grid (2 columns) */
 .page-observations .field-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -574,7 +562,7 @@
     font-size: 12px;
 }
 
-/* ---- Collapsible Section ---- */
+/* Collapsible Section */
 .page-observations .section-collapsible {
     padding: 16px 0;
 }
@@ -645,7 +633,7 @@
     padding-top: 12px;
 }
 
-/* ---- Text Blocks ---- */
+/* Text Blocks */
 .page-observations .text-block {
     background: var(--color-bg-header);
     border-radius: var(--radius-md);
@@ -678,12 +666,12 @@
     line-height: 1.6;
 }
 
-/* ---- Sub Grid (below text blocks) ---- */
+/* Sub Grid (below text blocks) */
 .page-observations .sub-grid {
     margin-top: 12px;
 }
 
-/* ---- Edit Mode Styles ---- */
+/* Edit Mode Styles */
 .page-observations .field-row.editing .value {
     display: none;
 }
@@ -786,7 +774,7 @@
     color: var(--color-danger);
 }
 
-/* ---- Responsive ---- */
+/* Responsive */
 @media (max-width: 560px) {
     .page-observations .field-grid {
         grid-template-columns: 1fr;

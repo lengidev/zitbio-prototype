@@ -2,7 +2,7 @@
  * Analytics Page - Specific Styles
  */
 
-/* Layout uses shared .content-area from layout.css - no custom container override needed */
+/* Layout comes from the shared .content-area in layout.css. */
 
 /* Tabs & Search Row */
 .page-analytics .analytics-tabs {
@@ -153,7 +153,7 @@
     height: 16px;
 }
 
-/* Column Toggle Dropdown — base shared with .obs-search-dropdown (see buttons.css) */
+/* Column Toggle Dropdown: base shared with .obs-search-dropdown (see buttons.css) */
 
 .col-toggle-dropdown.open {
     display: block;
@@ -260,7 +260,7 @@
     white-space: nowrap;
 }
 
-/* Toggleable columns — hidden by default */
+/* Toggleable columns: hidden by default */
 .page-analytics .col-toggle {
     display: none;
 }
@@ -308,11 +308,9 @@
     display: block;
 }
 
-/* Pagination — shared with observations page (see styles/global.css) */
+/* Pagination: shared with observations page (see styles/global.css) */
 
-/* ============================================
-   CBU Area Map
-   ============================================ */
+/* CBU Area Map */
 
 #map-container {
     position: relative;
@@ -336,7 +334,7 @@
     padding: 2px 6px !important;
 }
 
-/* Legacy controls hidden — kept for JS proxy clicks */
+/* Legacy controls hidden: kept for JS proxy clicks */
 #map-controls,
 #map-zoom-controls,
 .map-controls-title,
@@ -351,14 +349,12 @@
     display: none !important;
 }
 
-/* Map status dot colors — mirror the JS marker colors in analytics.js */
+/* Map status dot colors: mirror the JS marker colors in analytics.js */
 .map-filter-dot--approved { background: #22c55e; }
 .map-filter-dot--pending { background: #eab308; }
 .map-filter-dot--flagged { background: #ef4444; }
 
-/* ============================================
-   Consolidated Map Toolbar (middle-right)
-   ============================================ */
+/* Consolidated Map Toolbar (middle-right) */
 
 .map-toolbar {
     position: absolute;
@@ -583,9 +579,7 @@
     }
 }
 
-/* ============================================
-   Analytics Filter Bar
-   ============================================ */
+/* Analytics Filter Bar */
 
 .page-analytics .tabs-right-group {
     display: flex;
@@ -717,7 +711,7 @@
     margin: 14px 0;
 }
 
-/* Column toggles only apply to the Dataset table — hide the Toggle Columns
+/* Column toggles only apply to the Dataset table: hide the Toggle Columns
    row (and its divider) on the Map / Graphs / Report tabs. */
 .page-analytics .analytics-filters:not(.with-column-toggles) .col-toggles-row,
 .page-analytics .analytics-filters:not(.with-column-toggles) .filter-divider {
@@ -797,7 +791,7 @@
         left: auto;
     }
 
-    /* Filter bar — expand fully on small screens (the desktop 400px cap
+    /* Filter bar: expand fully on small screens (the desktop 400px cap
        clipped the wrapped rows + column toggles). Chip wrappers fill their
        row (2 per line); the chip itself stays at its normal 34px height. */
     .page-analytics .analytics-filters.open {
@@ -821,7 +815,7 @@
    - Dataset (search visible): tabs on top; search + filter side by side below.
    - Map / Graphs / Report (no search): filter stays aligned right of the tabs. */
 @media (max-width: 1023px) {
-    /* Map/Graphs/Report (no search) — keep the filter on the tabs row, right-aligned */
+    /* Map/Graphs/Report (no search): keep the filter on the tabs row, right-aligned */
     .page-analytics .analytics-tabs:not(.with-search) {
         flex-wrap: nowrap;
         gap: 8px;
@@ -835,7 +829,7 @@
         margin-left: auto;
     }
 
-    /* Dataset (search visible) — stack the tabs, then search + filter side by side */
+    /* Dataset (search visible): stack the tabs, then search + filter side by side */
     .page-analytics .analytics-tabs.with-search {
         flex-direction: column;
         align-items: stretch;
@@ -862,9 +856,7 @@
     }
 }
 
-/* ============================================================
-   REPORT TAB
-   ============================================================ */
+/* REPORT TAB */
 .page-analytics .report-toolbar {
     display: flex;
     align-items: center;
@@ -886,14 +878,14 @@
 .page-analytics .report-card--wide {
     grid-column: 1 / -1;
 }
-/* The shared .analytics-card rule sets background:transparent; padding:0 —
+/* The shared .analytics-card rule sets background:transparent; padding:0;
    restore a proper card surface for report cards. */
 .page-analytics .report-card {
     background: var(--color-bg-white);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
-    overflow: visible; /* was hidden — that clipped Chart.js tooltips */
+    overflow: visible; /* was hidden; it clipped Chart.js tooltips */
 }
 .page-analytics .report-card .analytics-card-header {
     padding: 14px 18px;
@@ -919,7 +911,7 @@
     border-left: 1px solid var(--border-color-light);
 }
 
-/* Tablet + Mobile ≤1024px — Summary KPIs stay a clean 2×2 grid
+/* Tablet + Mobile ≤1024px: Summary KPIs stay a clean 2×2 grid
    (consolidated: was duplicated across the 768-1024 and ≤767 queries) */
 @media (max-width: 1024px) {
     .page-analytics .report-summary-grid {
@@ -1164,7 +1156,7 @@
     max-width: 260px;
 }
 
-/* Report "Population Trend" — designed like the Graphs tab card: title in the
+/* Report "Population Trend", designed like the Graphs tab card: title in the
    body (no header bar), chart, note below the chart. */
 .page-analytics .report-trend-card .analytics-card-body {
     padding: 20px;
@@ -1276,9 +1268,7 @@
 }
 .page-analytics .report-warning-badge.badge-ok { background: #2E7D32; color: #fff; }
 
-/* ============================================================
-   GRAPHS TAB (Tier 1)
-   ============================================================ */
+/* GRAPHS TAB (Tier 1) */
 .page-analytics .graphs-toolbar {
     display: flex;
     align-items: center;
@@ -1326,10 +1316,8 @@
     min-height: 16px;
 }
 
-/* ============================================================
-   PRINT (analysis report — no PDF library)
-   Hides chrome (sidebar/header/tabs) and formats report cards.
-   ============================================================ */
+/* PRINT (analysis report, no PDF library): hides chrome (sidebar/header/tabs)
+   and formats report cards. */
 @media print {
     body * {
         visibility: hidden;
@@ -1367,7 +1355,7 @@
     }
 }
 
-/* Mobile ≤767px — graphs & report cards stack full-width (appended after all
+/* Mobile ≤767px: graphs & report cards stack full-width (appended after all
    base styles so these overrides win over the desktop 2-column grids). */
 @media (max-width: 767px) {
     .page-analytics .graphs-grid,
@@ -1378,7 +1366,7 @@
     .page-analytics .report-card--wide {
         grid-column: auto;
     }
-    /* Report toolbar — mobile: export buttons fill the row side by side
+    /* Report toolbar on mobile: export buttons fill the row side by side
        (50/50), and the confidence line sits below them. */
     .page-analytics .report-toolbar .observation-export-btn {
         flex: 1 1 0;
@@ -1397,13 +1385,10 @@
     }
 }
 
-/* ============================================================
-   MOBILE RESPONSIVE — Analytics refinements
-   Let grid/flex children shrink below their content width so wide
-   report content (KPI grid, ecosystem table) cannot force the page
-   to scroll horizontally, and stack the ecosystem table as cards on
-   small screens (labels come from each cell's data-label).
-   ============================================================ */
+/* MOBILE RESPONSIVE: let grid/flex children shrink below their content width so
+   wide report content (KPI grid, ecosystem table) cannot force the page to
+   scroll horizontally; the ecosystem table stacks as cards (labels come from
+   each cell's data-label). */
 .page-analytics .report-card,
 .page-analytics .report-section,
 .page-analytics .report-kpi,
@@ -1420,7 +1405,7 @@
 }
 
 @media (max-width: 767px) {
-    /* Ecosystem table — stacked cards instead of a cramped 4-col table */
+    /* Ecosystem table: stacked cards instead of a cramped 4-col table */
     .page-analytics .report-eco-table-wrap {
         overflow: visible;
     }

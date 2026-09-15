@@ -1,13 +1,12 @@
 /**
- * ZitBio Design System - Theme Variables
- * Global color tokens and CSS custom properties
+ * ZitBio design system: global color tokens and CSS custom properties.
  */
 
 :root {
   /* Tells the browser which palette it is painting, so the things CSS does not
      own follow the theme too: native scrollbars, form controls, and the default
      canvas/field backgrounds. Without it the browser assumes light and draws a
-     light scrollbar down the side of a dark page (#68). */
+     light scrollbar down the side of a dark page. */
   color-scheme: light;
 
   /* Primary – Forest Green */
@@ -49,7 +48,7 @@
   --color-text-disabled: #b0bec5;
   --color-text-inverse: #ffffff;
 
-  /* Tooltips — always a dark bubble with light text, theme-aware */
+  /* Tooltips: always a dark bubble with light text, theme-aware */
   --tooltip-bg: #2C3E50;
   --tooltip-text: #ffffff;
 
@@ -61,15 +60,15 @@
   --color-success-hover: #66bb6a;
   --color-success-light: #e8f5e9;
   /* Active navigation surface. Previously undefined, so styles/layout.css fell
-     back to its light-only literal in BOTH themes (issue #60). */
+     back to its light-only literal in BOTH themes. */
   --color-bg-active: #e8f5e9;
   /* Foreground for the ACTIVE nav item. --color-primary is defined for the light
      theme only, so using it as active-nav text put dark-green on a dark surface
-     in dark mode — 2.49:1 (issue #60). This token is theme-aware. */
+     in dark mode, 2.49:1. This token is theme-aware. */
   --color-nav-active-fg: #1B5E20;
   /* Moving indicator of the pre-paint boot layer (styles/global.css). It is
      defined once, by reference, because --color-nav-active-fg is already the
-     green that passes contrast on --color-bg in BOTH themes — so there is no
+     green that passes contrast on --color-bg in BOTH themes, so there is no
      second pair of values to keep in step. */
   --color-spinner: var(--color-nav-active-fg);
   --color-warning: #ffb74d;
@@ -105,11 +104,10 @@
   --spacing-2xl: 32px;
   --spacing-3xl: 40px;
 
-  /* Typography — ONE system font stack for the whole app.
-     The app loads NO web fonts (see Agent/rules.md). The self-hosted Inter
-     webfont was removed on 2026-09-13: it was used by only 2 of 7 pages
-     while the rest already rendered in the OS stack, so it cost a request
-     and bought inconsistency. */
+  /* Typography: ONE system font stack for the whole app. The app loads NO web
+     fonts. The self-hosted Inter webfont was removed because it was used by only
+     2 of 7 pages while the rest already rendered in the OS stack, so it cost a
+     request and bought inconsistency. */
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'Fira Code', 'Consolas', monospace;
 
@@ -139,7 +137,7 @@
 }
 
 [data-theme="dark"] {
-  /* See the note on :root — this is the half that matters, because the dark
+  /* See the note on :root: this is the half that matters, because the dark
      page is the one where a light scrollbar and light native form controls are
      wrong. */
   color-scheme: dark;
@@ -169,9 +167,9 @@
   --color-accent-light: #4a3922;
   --color-danger-light: #4a2929;
   --color-success-light: #214a2a;
-  /* Dark counterpart of the active-nav surface (#60). */
+  /* Dark counterpart of the active-nav surface. */
   --color-bg-active: #24382c;
-  /* Light green: readable on the dark active-nav surface (issue #60). */
+  /* Light green: readable on the dark active-nav surface. */
   --color-nav-active-fg: #A5D6A7;
   --color-warning-light: #4a3922;
   --tooltip-bg: #3b4c41;

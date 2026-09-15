@@ -2,12 +2,9 @@
  * Dashboard Page - Specific Styles
  */
 
-/* Dashboard content area */
 /* Using shared .content-area from layout.css - no custom override needed */
 
-/* ============================================
-   Stats Grid
-   ============================================ */
+/* Stats Grid */
 .page-dashboard .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -15,7 +12,7 @@
     padding: 16px 0 16px 0;
 }
 
-/* Pending Reviews KPI links into the filtered review queue (#70). Rendered as an
+/* Pending Reviews KPI links into the filtered review queue. Rendered as an
    <a> so it is keyboard reachable; these rules keep the card's existing look. */
 .stat-card-link {
     text-decoration: none;
@@ -109,9 +106,7 @@
     }
 }
 
-/* ============================================
-   Middle Section (Quick Actions + Chart)
-   ============================================ */
+/* Middle Section (Quick Actions + Chart) */
 .page-dashboard .middle-section {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -252,9 +247,7 @@
     max-height: 220px;
 }
 
-/* ============================================
-   Dashboard Table (Recent Activity)
-   ============================================ */
+/* Dashboard Table (Recent Activity) */
 .page-dashboard .table-card {
     background: var(--color-bg-white);
     border: 1px solid var(--border-color);
@@ -318,9 +311,7 @@
     color: var(--color-text-secondary);
 }
 
-/* ============================================
-   Responsive
-   ============================================ */
+/* Responsive */
 
 /* Tablet: 768px - 1023px */
 @media (max-width: 1023px) and (min-width: 768px) {

@@ -1,16 +1,6 @@
-/**
- * ZitBio - Login Page Logic (Supabase Auth)
- * Handles real authentication via Supabase, password toggle, and forgot password flow.
- *
- * Changes from mock version:
- *   - Login now calls BioSupabase.signIn(email, password) — real password verification
- *   - Redirect is determined by the user's ROLE from the profiles table
- *   - Demo "any password works" behavior removed entirely
- */
+/* ZitBio login page (Supabase Auth): sign-in, password recovery and self-signup. */
 
-/* ============================================
-   PASSWORD TOGGLE
-   ============================================ */
+/* PASSWORD TOGGLE */
 function bindPasswordToggle(inputId, iconId, btnId) {
   var pwd = document.getElementById(inputId);
   var icon = document.getElementById(iconId);
@@ -28,11 +18,7 @@ function bindPasswordToggle(inputId, iconId, btnId) {
   });
 }
 
-/* ============================================
-   UI HELPERS
-   ============================================ */
-// Insert a message (error or success) into whichever view is currently active
-// (login form or reset-password form) so it's always visible to the user.
+/* UI HELPERS */
 function showMessage(message, isError) {
   var resetView = document.getElementById('resetView');
   var form = (resetView && !resetView.hidden)
@@ -73,10 +59,10 @@ function setLoginLoading(isLoading) {
 }
 
 /* One retry, 400 ms apart. The network case is ALREADY retried inside
-   supabase-js — a failed fetch there keeps retrying with backoff for ~20s
-   (measured) — so a hand-rolled loop adds little and mostly delays the honest
-   failure. One retry still covers the fast transient: an HTTP error response,
-   which supabase-js does not retry at all. */
+   supabase-js (a failed fetch keeps retrying with backoff for ~20s, measured),
+   so a hand-rolled loop adds little and mostly delays the honest failure. One
+   retry still covers the fast transient: an HTTP error response, which
+   supabase-js does not retry at all. */
 var ROLE_LOOKUP_ATTEMPTS = 2;
 
 /* Upper bound on the whole routing decision. supabase-js's internal retry can
@@ -85,15 +71,10 @@ var ROLE_LOOKUP_ATTEMPTS = 2;
 var ROLE_LOOKUP_TIMEOUT_MS = 12000;
 
 /**
- * Read the role for a user, with one retry.
- *
- * This exists because a single failed read used to decide the user's whole
- * destination: the old catch sent EVERYONE to the field-officer page as the
- * "most restricted and safest fallback". So an admin whose lookup hiccuped
- * right after sign-in — the moment the access token is least settled — was
- * deposited on the officer page with no explanation. Reported as "logging in as
- * an admin sometimes takes you to the field officer page". Reading one row is
- * idempotent, so retrying is free.
+ * One retry, because a single failed read used to decide the user's whole
+ * destination: every failure sent the user to the field-officer page, so an
+ * admin whose lookup hiccuped right after sign-in landed there with no
+ * explanation. Reading one row is idempotent, so retrying is free.
  */
 function fetchProfileForRouting(client, userId, attempt) {
   return client.from('profiles').select('role, password_changed_at').eq('id', userId).maybeSingle()
@@ -110,17 +91,10 @@ function fetchProfileForRouting(client, userId, attempt) {
 }
 
 /**
- * Route from the SIGNED access token's claims when they are usable.
- *
- * The fresh token issued by signIn already carries `user_role` (custom access
- * token hook) and — since migration 202609140003 — `password_changed_at`, the
- * two facts this redirect needs. Reading them from the verified token removes
- * the last `GET /rest/v1/profiles` round trip from sign-in, which was the whole
- * reason the button sat on "Signing in…" after the password had already been
- * accepted. Resolves null whenever the claims can't carry the decision (old
- * token without the stamp, hook disabled, verification failure) so the caller
- * falls back to the /profiles read — the gate cannot be skipped by holding an
- * outdated token.
+ * The token issued by signIn carries `user_role` and `password_changed_at`, so
+ * routing from it removes the last profiles round trip from sign-in. Resolves
+ * null whenever the claims cannot carry the decision, so the caller falls back
+ * to the /profiles read and an outdated token cannot skip the gate.
  */
 function routeFromVerifiedClaims(userId) {
   if (!window.BioSupabase || typeof BioSupabase.getVerifiedClaims !== 'function') {
@@ -137,16 +111,12 @@ function routeFromVerifiedClaims(userId) {
 }
 
 /**
- * Look up the user's role from the profiles table and redirect accordingly.
- *
- * On a failed lookup the user is NOT navigated anywhere — see the catch below
- * for why that matters.
+ * On a failed lookup the user is NOT navigated anywhere: see the catch below.
  */
 function redirectByRole(userId) {
   if (!window.BioSupabase) {
-    // Unreachable via handleLogin, which gates on isConfigured — but kept
-    // honest rather than kept convenient: guessing a destination is the bug
-    // this function was fixed for.
+    // Unreachable via handleLogin, which gates on isConfigured, but kept honest:
+    // guessing a destination is the bug this function was fixed for.
     showLoginError('Supabase is not configured. Please check config.js.');
     setLoginLoading(false);
     return;
@@ -181,9 +151,8 @@ function redirectByRole(userId) {
     })
     .then(function(profile) {
       settle(function() {
-        // Forced first-login change (#54). An admin creating an account sets a
-        // password by hand and passes it on out of band; without this gate that
-        // temporary password stays valid forever.
+        // Forced first-login change: an admin sets a temporary password by hand
+        // and passes it on out of band; without this gate it stays valid forever.
         if (!profile.password_changed_at) {
           enterForcedPasswordChange(userId);
           return;
@@ -196,11 +165,9 @@ function redirectByRole(userId) {
     .catch(function(error) {
       // Stay on the login page and say so. This deliberately does NOT fall back
       // to a guessed destination: signIn() already succeeded, so the network was
-      // up and a failure here is transient or a permissions problem — not "the
-      // user is offline". Navigating anyway turned a recoverable error into an
-      // admin silently landing on the officer page, which reads as a broken app
-      // rather than a failed lookup. Staying put keeps it visible and makes the
-      // retry one click away.
+      // up and a failure here is transient or a permissions problem. Navigating
+      // anyway put an admin silently on the officer page, which reads as a broken
+      // app rather than a failed lookup; staying put keeps the retry one click away.
       settle(function() {
         console.warn('Role lookup failed:', error && error.message);
         showLoginError('Signed in, but your account details could not be loaded. Please try again.');
@@ -221,9 +188,7 @@ function redirectByRole(userId) {
     });
 }
 
-/* ============================================
-   LOGIN HANDLER
-   ============================================ */
+/* LOGIN HANDLER */
 function handleLogin(e) {
   e.preventDefault();
 
@@ -243,13 +208,11 @@ function handleLogin(e) {
     return;
   }
 
-  // Real Supabase authentication — passwords are now actually enforced.
   if (window.BioSupabase && window.BioSupabase.isConfigured()) {
     setLoginLoading(true);
     BioSupabase.signIn(emailValue, passwordValue)
       .then(function(result) {
         if (result.error) {
-          // Map Supabase error messages to user-friendly text.
           var msg = result.error.message || 'Invalid login credentials';
           if (msg.toLowerCase().indexOf('invalid login credentials') !== -1) {
             msg = 'Incorrect email or password. Please try again.';
@@ -270,7 +233,6 @@ function handleLogin(e) {
           return;
         }
 
-        // Record last_login and route by role.
         redirectByRole(user.id);
       })
       .catch(function(err) {
@@ -278,19 +240,14 @@ function handleLogin(e) {
         setLoginLoading(false);
       });
   } else {
-    // No Supabase configuration — inform the user clearly.
     showLoginError('Supabase is not configured. Please check config.js.');
   }
 }
 
-/* ============================================
-   FORGOT PASSWORD
-   ============================================ */
+/* FORGOT PASSWORD */
 
-// Site base path, GitHub-Pages-subpath aware. Served at /Zitbio/ the pathname
-// is '/Zitbio/index.html' → base '/Zitbio/'; locally '/index.html' → '/'. Used
-// so the reset email link always points back to the REAL login page (the
-// dashboard Site URL alone pointed the link at localhost — the bug).
+// GitHub-Pages-subpath aware, so the reset email link points back at the REAL
+// login page: the dashboard Site URL alone pointed it at localhost.
 function getSiteBase() {
   var parts = window.location.pathname.split('/');
   parts.pop(); // drop 'index.html' / trailing ''
@@ -332,19 +289,14 @@ function handleForgot(e) {
   }
 }
 
-/* ============================================
-   PASSWORD RECOVERY (reset link clicked)
-   ============================================ */
+/* PASSWORD RECOVERY (reset link clicked) */
 var recoveryActive = false;
 
-// The reset email link lands on index.html with a recovery token (implicit
-// flow: #access_token=...&type=recovery). Swap the login form for the
-// "set a new password" form.
-/* ───── REQUEST ACCESS (self-signup) ───── */
+// The reset email link lands on index.html with a recovery token in the hash.
+/* Request access (self-signup) */
 
 /**
- * Swap between the sign-in form and the Request Access form, mirroring
- * setRecoveryView so each view's DOM toggling lives in one place.
+ * Mirrors setRecoveryView, so each view's DOM toggling lives in one place.
  */
 function setAccessView(active) {
   var loginForm = document.getElementById('loginForm');
@@ -399,7 +351,6 @@ function setAccessError(id, message) {
   }
 }
 
-/** Endpoint for the public signup function. */
 function getAccessRequestUrl() {
   var cfg = window.SUPABASE_CONFIG || {};
   if (cfg.accessRequestUrl) return cfg.accessRequestUrl;
@@ -485,8 +436,7 @@ function handleRequestAccess(e) {
       else showLoginError(message);
       return;
     }
-    // Success: return to sign-in with the email filled in, so the next step is
-    // obvious rather than making them retype what they just entered.
+    // Return to sign-in with the email filled in, so the next step is obvious.
     setAccessView(false);
     var loginEmail = document.getElementById('email');
     if (loginEmail) loginEmail.value = email;
@@ -506,8 +456,7 @@ function handleRequestAccess(e) {
   });
 }
 
-// Bound independently of initLogin: nothing is shared with the sign-in wiring,
-// and this keeps the feature working if that wiring changes.
+// Bound independently of initLogin: nothing is shared with the sign-in wiring.
 document.addEventListener('DOMContentLoaded', function () {
   var accessLink = document.getElementById('requestAccessLink');
   if (accessLink) {
@@ -536,8 +485,7 @@ function isRecoveryLink() {
   return window.location.hash.indexOf('type=recovery') !== -1;
 }
 
-// Swap between the login form and the "set a new password" form. Shared by
-// enterRecoveryMode / exitRecoveryMode so the DOM toggling lives in one place.
+// Shared by enter/exitRecoveryMode so the DOM toggling lives in one place.
 function setRecoveryView(active) {
   var loginForm = document.getElementById('loginForm');
   var forgotLink = document.getElementById('forgotPasswordLink');
@@ -565,18 +513,15 @@ function exitRecoveryMode(message) {
   if (message) showLoginSuccess(message);
 }
 
-/* ───── FORCED FIRST-LOGIN CHANGE (#54) ───── */
+/* Forced first-login change */
 
 var forcedPasswordChange = false;
 var forcedChangeUserId = null;
 
 /**
  * Sent here instead of into the app when the profile has no
- * `password_changed_at` — i.e. the password in use is still the temporary one an
- * admin set by hand.
- *
- * Reuses the reset view: same two fields, different framing. A third password
- * form would be more surface for no benefit.
+ * `password_changed_at`. Reuses the reset view, since a third password form
+ * would be more surface for no benefit.
  */
 function enterForcedPasswordChange(userId) {
   forcedPasswordChange = true;
@@ -590,11 +535,9 @@ function enterForcedPasswordChange(userId) {
 }
 
 /**
- * Record that the password is no longer the temporary one.
- *
- * Without this the gate would fire again on the next sign-in and the person
- * would be stuck in it. Non-fatal on failure, but logged loudly: a silent failure
- * here is a repeated prompt nobody can explain.
+ * Without this the gate would fire again on the next sign-in. Failure is
+ * non-fatal but logged loudly: a silent failure is a repeated prompt nobody can
+ * explain.
  */
 function stampPasswordChanged(userId) {
   return BioSupabase.ready().then(function(client) {
@@ -649,8 +592,7 @@ function handleUpdatePassword(e) {
         showLoginError(result.error.message || 'Unable to update password. Try again.');
         return false;
       }
-      // Forced first-login change (#54): stamp the profile BEFORE signing out,
-      // or the gate fires again on the next sign-in.
+      // Stamp the profile BEFORE signing out, or the gate fires again next time.
       if (forcedPasswordChange && forcedChangeUserId) {
         return stampPasswordChanged(forcedChangeUserId).then(function() {
           return BioSupabase.signOut().then(function() { return true; });
@@ -678,12 +620,10 @@ function handleUpdatePassword(e) {
     });
 }
 
-/* ============================================
-   PAGE INITIALIZATION
-   ============================================ */
+/* PAGE INITIALIZATION */
 function initLogin() {
   var loginPage = document.querySelector('.page-login');
-  if (!loginPage) return; // Not on login page
+  if (!loginPage) return;
 
   var loginForm = document.getElementById('loginForm');
   var passwordToggleBtn = document.getElementById('passwordToggleBtn');
@@ -712,9 +652,8 @@ function initLogin() {
     });
   }
 
-  // Password recovery: the reset link lands here with a recovery token. Swap
-  // to the "set a new password" form when the client processes it — or if the
-  // token was already processed before we subscribed (fallback hash check).
+  // Swap to the reset form when the client processes the recovery token, or when
+  // it was already processed before we subscribed (the isRecoveryLink fallback).
   if (window.BioSupabase && window.BioSupabase.isConfigured() && window.BioSupabase.onAuthStateChange) {
     window.BioSupabase.onAuthStateChange(function(event) {
       if (event === 'PASSWORD_RECOVERY') enterRecoveryMode();
@@ -722,7 +661,7 @@ function initLogin() {
   }
   if (isRecoveryLink()) enterRecoveryMode();
 
-  // Hide the demo helper text — real auth no longer accepts any password.
+  // The demo hint is wrong now that real auth rejects wrong passwords.
   var helperTexts = document.querySelectorAll('.helper-text');
   helperTexts.forEach(function(el) { el.style.display = 'none'; });
 }

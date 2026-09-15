@@ -1,12 +1,9 @@
 /**
- * ZitBio — Settings Page Component
- * Real, live data from Supabase: last login, last password change, system
- * version/updated, and a live database health check. Password change uses
- * Supabase Auth and records profiles.password_changed_at.
+ * Settings page: live Supabase account data and the password change flow.
  */
 
 /**
- * Format a date/ISO string into a readable datetime string.
+ * Falls back to the input unchanged when it cannot be parsed.
  */
 function formatSettingsDateTime(isoStr) {
   if (!isoStr) return '—';
@@ -24,13 +21,8 @@ function formatSettingsDateTime(isoStr) {
 }
 
 /**
- * Paint the identity half of Account Information: the fields this page can fill
- * from the session alone.
- *
- * Split out of populateAccountInfo() because the `session:changed` subscription
- * at the bottom of this file repaints the identity when the route guard's
- * verified profile arrives, and must not re-fire that function's three live
- * Supabase reads to do it.
+ * Split out of populateAccountInfo() so the `session:changed` repaint of the identity
+ * does not re-fire that function's three live Supabase reads.
  */
 function renderAccountIdentity() {
   if (!window.BioData) return;
@@ -39,10 +31,9 @@ function renderAccountIdentity() {
   if (!session) return;
 
   var user = BioData.getUserByEmail(session.email);
-  // Account code comes from the shared formatter so this page and the header
-  // dropdown can never show the same person two different codes. The previous
-  // local copy fell back to the *email* when the profile row had not arrived,
-  // which rendered nonsense like "ADMIN-SINY" next to the real role (#86).
+  // The shared formatter keeps this page and the header dropdown from showing the
+  // same person two different codes: the old local copy fell back to the *email*
+  // before the profile row arrived, rendering nonsense like "ADMIN-SINY".
   var accountSource = session.id || (user && user.id) || '';
   var roleDisplay = session.role === 'admin' ? 'Administrator'
     : (session.role === 'field_officer' ? 'Field Officer' : '\u2014');
@@ -66,10 +57,6 @@ function renderAccountIdentity() {
   }
 }
 
-/**
- * Populate Account Information from the live Supabase profile +
- * system_meta + a real DB health check.
- */
 function populateAccountInfo() {
   if (!window.BioData) return;
 
@@ -79,7 +66,6 @@ function populateAccountInfo() {
   var user = BioData.getUserByEmail(session.email);
   renderAccountIdentity();
 
-  // Live Supabase data for the other fields.
   if (window.BioSupabase && window.BioSupabase.isConfigured()) {
     window.BioSupabase.ready()
       .then(function(client) {
@@ -88,10 +74,9 @@ function populateAccountInfo() {
           ? client.from('profiles').select('last_login, password_changed_at, created_at').eq('id', userId).maybeSingle()
           : Promise.resolve({ data: null, error: null });
 
-        // System meta
         var sysPromise = client.from('system_meta').select('key, value');
 
-        // DB health check via a cheap, RLS-safe read.
+        // Cheap, RLS-safe read for the health check.
         var healthPromise = client.from('species_reference').select('common_name').limit(1);
 
         return Promise.all([profilePromise, sysPromise, healthPromise]);
@@ -115,7 +100,6 @@ function populateAccountInfo() {
         if (versionEl) versionEl.textContent = sysMap.version || '—';
         if (updatedEl) updatedEl.textContent = formatSettingsDateTime(sysMap.last_updated_at);
 
-        // Live DB status
         var dbDot = document.getElementById('settingsDbDot');
         var dbStatus = document.getElementById('settingsDbStatus');
         if (healthResult.error) {
@@ -135,20 +119,14 @@ function populateAccountInfo() {
   }
 }
 
-/**
- * Initialize settings page event listeners
- */
 function initSettingsPage() {
-  // Guard: only run on the settings page (detected by the change password button)
   const changePwdBtn = document.getElementById('changePwdBtn');
   if (!changePwdBtn) {
     return; // Not the settings page
   }
 
-  // Populate account info from live data
   populateAccountInfo();
 
-  // Password change — real Supabase Auth, records password_changed_at.
   changePwdBtn.addEventListener('click', function() {
     const current = document.getElementById('currentPwd').value;
     const newPwd = document.getElementById('newPwd').value;
@@ -159,8 +137,7 @@ function initSettingsPage() {
         showToast(message, type || 'success');
         return;
       }
-      // Falls back to the console instead of alert(): a blocking dialog for a
-      // form message is exactly what #52 removed.
+      // Never alert(): a blocking dialog for a form message is what was removed.
       console.warn('Settings: ' + message);
     }
 
@@ -187,7 +164,6 @@ function initSettingsPage() {
       return;
     }
 
-    // Verify current password, then update + record timestamp.
     window.BioSupabase.signIn(email, current)
       .then(function(res) {
         if (res.error) {
@@ -225,18 +201,12 @@ function initSettingsPage() {
   });
 }
 
-// ============================================================
-//  SPECIES & BASELINES — population warning reference data
-//  ------------------------------------------------------------
-//  Lists species_registry entries with an inline baseline editor.
-//  Derived baselines = mean of verified observation counts (clearly
-//  labelled — never fabricated). Admin-set baselines persist via
+//  Species registry with an inline baseline editor. Derived baselines are the
+//  mean of verified counts, never fabricated; admin-set baselines persist via
 //  BioData.updateSpeciesBaseline + BioSync.updateSpeciesBaselineCloud.
-// ============================================================
 
-// HTML-escaping built from char codes + concatenation only, so no entity
-// literals (& / < …) exist in source that an editor/auto-formatter
-// could un-escape. Entity strings are assembled at runtime.
+// Escaping built from char codes so no entity literal exists in source for an
+// editor or auto-formatter to un-escape; the strings are assembled at runtime.
 var SETTING_HTML_ENTITIES = (function() {
   var amp = String.fromCharCode(38);      // &
   var map = {};
@@ -255,8 +225,7 @@ function escapeSettingHtml(v) {
 
 function settingsShortDate(isoStr) {
   if (!isoStr) return '—';
-  // Delegates to the one shared formatter (#46 → #62); see the note on
-  // analyticsShortDate. Fails soft if lib/date.js is absent.
+  // The one shared formatter; fails soft if lib/date.js is absent.
   if (!window.BioDate) return String(isoStr);
   var formatted = window.BioDate.mediumDate(isoStr);
   return formatted === '\u2014' ? String(isoStr) : formatted;
@@ -273,7 +242,7 @@ function initBaselinesSection() {
     if (!window.BioData || !window.BioData.getSpeciesRegistry) return;
     var registry = window.BioData.getSpeciesRegistry();
     var verified = window.BioData.getVerifiedObservations();
-    // Enrich with entity ids so analytics grouping is consistent.
+    // Entity ids, so analytics grouping matches.
     var enriched = verified.map(function(o) {
       return Object.assign({}, o, {
         species_id: window.BioData.resolveSpeciesId(o) || null,
@@ -281,13 +250,11 @@ function initBaselinesSection() {
       });
     });
 
-    // Site list for the per-site override column (#72). Uses sites.short_name
-    // for the compact label, falling back to the full name.
+    // Per-site override column: sites.short_name for the compact label.
     var sites = window.BioData.getSiteRegistry ? (window.BioData.getSiteRegistry() || []) : [];
 
     var html = '';
     registry.forEach(function(sp) {
-      // Current derived estimate: mean of verified counts for this species.
       var spObs = enriched.filter(function(o) { return o.species_id === sp.id; });
       var derived = spObs.length > 0
         ? (spObs.reduce(function(s, o) { return s + (o.count || 0); }, 0) / spObs.length)
@@ -342,7 +309,6 @@ function initBaselinesSection() {
         (window.BioData.getSiteRegistry ? window.BioData.getSiteRegistry().length : 0) + ' sites';
     }
 
-    // Wire inline save buttons.
     tbody.querySelectorAll('.baseline-save-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var speciesId = btn.getAttribute('data-species-id');
@@ -378,9 +344,9 @@ function initBaselinesSection() {
       });
     });
 
-    // Wire per-site override saves (issue #72). One button per species writes the
-    // row's COMPLETE map in a single request: a per-key read-modify-write raced,
-    // and the second site's stale copy silently blanked the first site's value.
+    // One button per species writes the row's COMPLETE map in a single request: a
+    // per-key read-modify-write raced, and the second site's stale copy silently
+    // blanked the first site's value.
     tbody.querySelectorAll('.baseline-site-save-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var speciesId = btn.getAttribute('data-species-id');
@@ -426,7 +392,6 @@ function initBaselinesSection() {
 
   if (refreshBtn) refreshBtn.addEventListener('click', renderBaselines);
 
-  // Cloud registry hydration (new tables) + re-render after sync.
   if (window.BioSync && window.BioSync.loadRegistries) {
     window.BioSync.loadRegistries().then(renderBaselines).catch(function() { renderBaselines(); });
   } else {
@@ -434,7 +399,6 @@ function initBaselinesSection() {
   }
 }
 
-// Initialize when DOM is ready
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', function() {
     initSettingsPage();
@@ -449,16 +413,14 @@ window.addEventListener('biodata:synced', function() {
 });
 
 // This page reads the session during DOMContentLoaded, which can beat the route
-// guard's profile lookup. Repaint the identity (locally — no extra reads) when
-// the verified identity lands, so Account Information never keeps a placeholder
-// role or a stale account code (#86).
+// guard's profile lookup. Repaint the identity (locally, no extra reads) when the
+// verified identity lands, so it never keeps a placeholder role or a stale code.
 if (window.BioData && typeof BioData.subscribe === 'function') {
   BioData.subscribe('session:changed', function() {
     if (document.getElementById('changePwdBtn')) renderAccountIdentity();
   });
 }
 
-// Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { initSettingsPage };
 }

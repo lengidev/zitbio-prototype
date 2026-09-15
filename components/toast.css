@@ -1,16 +1,12 @@
-/**
- * ZitBio — Toast surface
- *
- * Transient confirmation for an action whose result would otherwise only be
- * visible inside the surface that just closed.
- */
+/* Toast surface: transient confirmation for an action whose result would
+   otherwise only be visible inside the surface that just closed. */
 
 .toast-container {
     position: fixed;
     right: 24px;
     bottom: 24px;
-    /* Above the modal backdrop, because the message describes what just happened
-       inside a modal — confirming it from underneath would be pointless. */
+    /* Above the modal backdrop, because the message describes the modal that
+       just closed; confirming it from underneath would be pointless. */
     z-index: 2000;
     display: flex;
     flex-direction: column;
@@ -43,8 +39,8 @@
     min-width: 0;
 }
 
-/* Dismiss control. Optional to use — every toast also clears itself (4s, or 7s
-   for errors) — but the reader decides, not the timer. */
+/* Dismiss control. Optional to use: every toast also clears itself (4s, or 7s
+   for errors), but the reader decides, not the timer. */
 .toast-close {
     flex-shrink: 0;
     display: inline-flex;
@@ -63,7 +59,7 @@
     transition: opacity 150ms ease;
 }
 
-/* Opacity only — a tinted hover would need a different alpha per toast colour,
+/* Opacity only: a tinted hover would need a different alpha per toast colour,
    and warning is a light surface while success and error are dark. */
 .toast-close:hover {
     opacity: 1;

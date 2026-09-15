@@ -1,9 +1,6 @@
-/* ============================================
-   Field Officer Page — V2 Redesign
-   Centered card layout, Material Design philosophy
-   ============================================ */
+/* Field officer page: centered card layout, Material Design philosophy. */
 
-/* --- Page Background --- */
+/* Page Background */
 .page-fieldofficer-v2 {
   background-color: var(--color-bg);
   font-family: var(--font-sans);
@@ -11,7 +8,7 @@
   margin: 0;
 }
 
-/* --- Top Bar --- */
+/* Top Bar */
 .fo-topbar {
   display: flex;
   justify-content: space-between;
@@ -44,20 +41,20 @@
   color: var(--color-text-muted);
 }
 
-/* --- Logo Image --- */
+/* Logo Image */
 .fo-logo-img {
   height: 28px;
   display: block;
 }
 
-/* --- Main Container --- */
+/* Main Container */
 .fo-main {
   max-width: 1100px;
   margin: 32px auto;
   padding: 0 20px;
 }
 
-/* --- Card --- */
+/* Card */
 .fo-card {
   background-color: var(--color-bg-white);
   border: 1px solid var(--border-color);
@@ -81,7 +78,7 @@
   padding: 32px;
 }
 
-/* --- Sections --- */
+/* Sections */
 .fo-section {
   margin-bottom: 32px;
 }
@@ -100,7 +97,7 @@
   display: inline-block;
 }
 
-/* --- Grids --- */
+/* Grids */
 .fo-grid {
   display: grid;
   gap: 16px;
@@ -111,7 +108,7 @@
 .fo-grid-2 { grid-template-columns: repeat(2, 1fr); }
 .fo-grid-1 { grid-template-columns: 1fr; }
 
-/* --- Fields --- */
+/* Fields */
 .fo-field {
   display: flex;
   flex-direction: column;
@@ -133,7 +130,7 @@
   margin-left: 2px;
 }
 
-/* --- Inputs --- */
+/* Inputs */
 .fo-input-wrap {
   position: relative;
   display: flex;
@@ -180,7 +177,7 @@
   font-style: italic;
 }
 
-/* Date and Time inputs — no Material icon, so remove left padding */
+/* Date and Time inputs: no Material icon, so remove left padding */
 .fo-input-date {
   padding-left: 12px;
 }
@@ -218,7 +215,7 @@ textarea.fo-input.fo-textarea-tall {
   resize: vertical;
 }
 
-/* Textarea wrapper — icon stays top-left */
+/* Textarea wrapper: icon stays top-left */
 .fo-textarea-wrap .fo-input-icon {
   top: 10px;
   position: absolute;
@@ -240,7 +237,7 @@ textarea.fo-input.fo-textarea-tall {
   cursor: default;
 }
 
-/* --- Count Stepper --- */
+/* Count Stepper */
 .fo-count-wrap {
   padding-left: 36px;
 }
@@ -292,7 +289,7 @@ textarea.fo-input.fo-textarea-tall {
   margin: 0;
 }
 
-/* --- GPS Row --- */
+/* GPS Row */
 .fo-gps-row {
   display: flex;
   align-items: center;
@@ -344,14 +341,14 @@ textarea.fo-input.fo-textarea-tall {
   animation: fo-spin 1s linear infinite;
 }
 
-/* --- Helper Text --- */
+/* Helper Text */
 .fo-helper {
   font-size: 11px;
   color: var(--color-text-muted);
   margin-top: 4px;
 }
 
-/* --- Error Messages --- */
+/* Error Messages */
 .fo-error {
   font-size: 12px;
   color: var(--color-danger);
@@ -363,7 +360,7 @@ textarea.fo-input.fo-textarea-tall {
   display: block;
 }
 
-/* --- Notes Section Header --- */
+/* Notes Section Header */
 .fo-notes-header {
   display: flex;
   align-items: center;
@@ -375,7 +372,7 @@ textarea.fo-input.fo-textarea-tall {
   margin-bottom: 0;
 }
 
-/* --- Location Row — two independent columns --- */
+/* Location Row: two independent columns */
 .fo-location-row {
   display: flex;
   gap: 16px;
@@ -392,7 +389,7 @@ textarea.fo-input.fo-textarea-tall {
   min-width: 0;
 }
 
-/* --- Instructions Panel (replaces Media Placeholder) --- */
+/* Instructions Panel */
 .fo-instructions-panel {
   background-color: var(--color-bg-header);
   border: 1px solid var(--border-color);
@@ -441,7 +438,7 @@ textarea.fo-input.fo-textarea-tall {
   color: var(--color-warning);
 }
 
-/* --- Actions Row --- */
+/* Actions Row */
 .fo-actions {
   display: flex;
   justify-content: space-between;
@@ -456,7 +453,7 @@ textarea.fo-input.fo-textarea-tall {
   gap: 10px;
 }
 
-/* --- Buttons --- */
+/* Buttons */
 .fo-btn {
   font-family: inherit;
   font-size: 14px;
@@ -498,7 +495,7 @@ textarea.fo-input.fo-textarea-tall {
   border-color: var(--color-primary-hover);
 }
 
-/* --- Toast System --- */
+/* Toast System */
 .toast-container {
   position: fixed;
   bottom: 20px;
@@ -538,7 +535,7 @@ textarea.fo-input.fo-textarea-tall {
   to { transform: translateX(100%); opacity: 0; }
 }
 
-/* --- Responsive: Tablet (768px–1023px) --- */
+/* Responsive: Tablet (768px–1023px) */
 @media (min-width: 768px) and (max-width: 1023px) {
   .fo-card-body {
     padding: 24px;
@@ -587,7 +584,7 @@ textarea.fo-input.fo-textarea-tall {
   }
 }
 
-/* --- Responsive: Mobile (<768px) --- */
+/* Responsive: Mobile (<768px) */
 @media (max-width: 767px) {
   .fo-topbar {
     padding: 10px 16px;

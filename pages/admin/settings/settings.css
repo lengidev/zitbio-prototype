@@ -1,9 +1,6 @@
 /**
- * Settings Page - Specific Styles
- * Flat sections, no card styling, matches design system
+ * Settings page styles: flat sections, no cards, matching the design system.
  */
-
-/* Layout uses shared .content-area from layout.css - no custom container override needed */
 
 /* Section – flat, no card background */
 .page-settings .section {
@@ -20,9 +17,8 @@
     border-bottom: 1px solid var(--border-color);
 }
 
-/* Add margin-top from the top border of the first section */
 .page-settings .section:first-of-type {
-    margin-top: 8px;      /* adjust as needed – creates space below the page subtitle */
+    margin-top: 8px;
 }
 
 /* Form groups within settings */
@@ -133,7 +129,7 @@
     background: var(--color-primary-hover);
 }
 
-/* Toast notifications (same as your standalone version) */
+/* Toast notifications */
 .toast-container {
     position: fixed;
     top: 80px;
@@ -201,9 +197,7 @@
     }
 }
 
-/* ============================================================
-   SPECIES & BASELINES
-   ============================================================ */
+/* SPECIES & BASELINES */
 .page-settings .section-desc {
     font-size: 13px;
     color: var(--color-text-secondary);
@@ -260,8 +254,8 @@
     font-style: italic;
     color: var(--color-text-secondary);
 }
-/* Per-site baseline overrides (#72). The capability already existed in the
-   analytics engine and in the data layer but had no UI at all — the flagship
+/* Per-site baseline overrides. The capability already existed in the analytics
+   engine and in the data layer but had no UI at all: the flagship
    "built-but-unreachable" case. */
 .page-settings .baseline-site-cell {
     min-width: 190px;

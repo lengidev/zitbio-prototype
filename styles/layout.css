@@ -8,9 +8,7 @@
     width: 100%;
 }
  
-/* ============================================
-   Container Utilities
-   ============================================ */
+/* Container Utilities */
 .container {
   width: 100%;
   max-width: 1200px;
@@ -23,9 +21,7 @@
   padding: 0 var(--spacing-lg);
 }
 
-/* ============================================
-   Flexbox Layout Utilities
-   ============================================ */
+/* Flexbox Layout Utilities */
 .flex {
   display: flex;
 }
@@ -122,9 +118,7 @@
   gap: var(--spacing-2xl);
 }
 
-/* ============================================
-   Grid Layout Utilities
-   ============================================ */
+/* Grid Layout Utilities */
 .grid {
   display: grid;
 }
@@ -145,9 +139,7 @@
   grid-template-columns: repeat(4, 1fr);
 }
 
-/* ============================================
-   App Layout Structure - Unified Admin Sidebar
-   ============================================ */
+/* App Layout Structure - Unified Admin Sidebar */
 .app-container {
     display: flex;
     min-height: 100vh;
@@ -258,7 +250,7 @@
     background-color: var(--color-bg-active, #eff6ff);
     /* Must agree with components/buttons.css, which also styles the active item
        (that rule wins where buttons.css is loaded). Token is theme-aware so dark
-       mode does not get dark-green text on a dark surface (issue #60). */
+       mode does not get dark-green text on a dark surface. */
     color: var(--color-nav-active-fg, var(--color-text-primary, #1f2937));
     border-left-color: var(--color-primary, #2563eb);
     font-weight: 600;
@@ -499,9 +491,7 @@
     width: 100%;
     margin: 0 auto;
 }
-/* ============================================
-   Card Layout
-   ============================================ */
+/* Card Layout */
 .card {
   background: var(--color-bg-card);
   border: 1px solid var(--border-color);
@@ -527,9 +517,7 @@
   flex: 1;
 }
 
-/* ============================================
-   Stats Grid Layout
-   ============================================ */
+/* Stats Grid Layout */
 /* Stats Grid - Force 3 columns */
 .stats-grid {
     display: grid;
@@ -595,26 +583,20 @@
     color: var(--color-primary);
 }
 
-/* ============================================
-   Middle Section Layout
-   ============================================ */
+/* Middle Section Layout */
 .middle-section {
     display: grid;
     grid-template-columns: 0.48fr 1fr;
     gap: 24px;
 }
 
-/* ============================================
-   Hamburger Menu Button - Icon Sizing
-   ============================================ */
+/* Hamburger Menu Button - Icon Sizing */
 .hamburger .material-symbols-outlined {
     width: 24px;
     height: 24px;
 }
 
-/* ============================================
-   Overlay/Modal Backdrop
-   ============================================ */
+/* Overlay/Modal Backdrop */
 .sidebar-overlay {
   display: none;
   position: fixed;
@@ -627,9 +609,7 @@
   display: block;
 }
 
-/* ============================================
-   Hamburger Menu Button
-   ============================================ */
+/* Hamburger Menu Button */
 .hamburger {
   display: none;
   width: 36px;
@@ -680,9 +660,7 @@
   display: none;
 }
 
-/* ============================================
-   Admin Dashboard Page Layout
-   ============================================ */
+/* Admin Dashboard Page Layout */
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -892,9 +870,7 @@
   border-color: var(--border-color-dark);
 }
 
-/* ============================================
-   Responsive Breakpoints
-   ============================================ */
+/* Responsive Breakpoints */
 
 /* Desktop (>=1200px): Two-column layouts, full layout tables */
 @media (min-width: 1200px) {
@@ -1027,7 +1003,7 @@
     padding: 0 var(--spacing-md);
   }
 
-  /* Hide header title on mobile - user requested */
+  /* Hide header title on mobile */
   .top-header .header-title {
     display: none;
   }

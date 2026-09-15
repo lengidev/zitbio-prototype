@@ -1,20 +1,8 @@
+// ZitBio: Dashboard Page. KPI cards, recent activity and the weekly chart, all
+// fed from the BioData layer so every page reports the same numbers.
 /**
- * ZitBio — Dashboard Page
- * Populates stats and recent activity table from the unified BioData layer,
- * then renders the weekly observations chart using Chart.js.
- *
- * Design decisions:
- *   - Uses the same BioData.getObservations() source as every other page,
- *     ensuring the dashboard always reflects the current data state.
- *   - The weekly chart shows Mon–Sun ordering to align with standard
- *     biodiversity reporting periods.
- *   - Sample data fallback prevents an empty chart state during initial
- *     deployment when real data hasn't been collected yet.
- */
-/**
- * Render the four KPI cards and the recent-activity table from the
- * unified BioData layer. Shared by the initial load and the post-sync
- * refresh so both paths stay identical (no duplicated markup logic).
+ * Shared by the initial load and the post-sync refresh so both paths stay
+ * identical.
  */
 function renderDashboardStats() {
   if (!window.BioData) return;
@@ -37,17 +25,12 @@ function renderDashboardStats() {
   tbody.innerHTML = html;
 }
 
-// Escapes untrusted activity fields before they reach innerHTML — species
-// names, localities and officer names are all user-entered in the field form.
+// Escapes untrusted activity fields before they reach innerHTML: species names,
+// localities and officer names are all user-entered in the field form.
 function escapeActivity(value) {
   return window.BioEscape.escapeHtml(value);
 }
 
-/**
- * Build the rolling 7-day observation window (oldest → today) used by the
- * weekly chart (Issue #26). Returns { labels, counts } where labels are the
- * weekday names for those actual dates and counts are per-day totals.
- */
 function computeWeeklyWindow() {
   var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   var counts = [0, 0, 0, 0, 0, 0, 0];
@@ -83,10 +66,6 @@ function computeWeeklyWindow() {
   return { labels: labels, counts: counts };
 }
 document.addEventListener('DOMContentLoaded', function() {
-  // ============================================
-  //  Populate dashboard KPIs from the unified data layer
-  //  to ensure cross-page consistency.
-  // ============================================
   if (window.BioData) {
     var session = BioData.getSession();
     if (session) {
@@ -97,24 +76,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   renderDashboardStats();
 
-  // ============================================
-  //  Weekly Chart — Chart.js Spline Area Chart
-  //  Aggregates observations by day-of-week for the last 7 days.
-  //  Using Mon–Sun ordering to align with standard weekly reporting.
-  // ============================================
   var ctx = document.getElementById('weeklyChart');
   if (!ctx) return;
   if (typeof Chart === 'undefined') return;
 
   var now = new Date();
 
-  // Sliding 7-day window (oldest → today) — Issue #26. "Today" is always
-  // the rightmost bar; labels are the weekday names for those actual dates.
   var weekly = computeWeeklyWindow();
   var labels = weekly.labels;
   var dataValues = weekly.counts;
 
-  // Compute trend: last 7 days vs prior 7 days
   var thisWeekTotal = dataValues.reduce(function(a, b) { return a + b; }, 0);
   var priorWeekTotal = 0;
   if (window.BioData) {
@@ -136,9 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Trend badge — week-over-week comparison informs rangers of
-  // patrol effectiveness (e.g., more sightings may indicate better
-  // coverage rather than population increase).
+  // More sightings can mean better patrol coverage, not a population change.
   var trendBadge = document.getElementById('trendBadge');
   if (trendBadge) {
     // Absence of sightings is NOT a population decline: when nothing was
@@ -159,7 +128,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Chart.js gradient fill — green tones to match ZitBIO branding
   var gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
   gradient.addColorStop(0, 'rgba(46, 125, 50, 0.3)');
   gradient.addColorStop(1, 'rgba(46, 125, 50, 0.02)');
@@ -240,14 +208,12 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// Re-render dashboard stats + chart after Supabase sync seeds cloud data.
+// Re-render after Supabase sync seeds cloud data.
 if (typeof window !== 'undefined') {
   window.addEventListener('biodata:synced', function() {
-    // KPIs + recent activity
     renderDashboardStats();
 
-    // Chart — recompute the rolling 7-day window from the refreshed cache
-    // and update the existing Chart.js instance in place (no re-init).
+    // Update the existing chart instance in place, from the refreshed cache.
     if (window.dashChart && window.BioData) {
       var weekly = computeWeeklyWindow();
       window.dashChart.data.labels = weekly.labels;
