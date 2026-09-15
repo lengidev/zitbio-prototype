@@ -1276,8 +1276,8 @@ function buildReportWarnings(data) {
       var badge = '<span class="report-warning-badge ' + (isCritical ? 'badge-critical' : 'badge-warning') + '">' +
         (isCritical ? 'Critical' : 'Warning') + '</span>';
       var note = isCritical
-        ? 'Critical: the average number recorded per verified sighting is far below the expected population for this species. Verify recent field observations or review the baseline in Settings &rarr; Species &amp; Baselines.'
-        : 'The average number recorded per verified sighting is below the expected population. Re-check recent field observations, or review the baseline in Settings &rarr; Species &amp; Baselines.';
+        ? 'Critical: the average number recorded per verified sighting is far below the expected population for this species. Verify recent field observations or review the baseline in Settings &rarr; Species Registry.'
+        : 'The average number recorded per verified sighting is below the expected population. Re-check recent field observations, or review the baseline in Settings &rarr; Species Registry.';
       html += '<div class="report-warning-row ' + cls + '">' +
         '<svg class="material-symbols-outlined report-warning-icon" aria-hidden="true"><use href="#i-' + iconName + '"/></svg>' +
         '<div class="report-warning-content">' +
@@ -1289,7 +1289,7 @@ function buildReportWarnings(data) {
   }
   if (warnings.some(function(w) { return w.baselineSource === 'derived'; })) {
     html += '<p class="report-meta">Baselines marked "derived" are auto-computed from verified observations &mdash; ' +
-      'set an admin baseline in Settings &rarr; Species &amp; Baselines for authoritative numbers.</p>';
+      'set an admin baseline in Settings &rarr; Species Registry for authoritative numbers.</p>';
   }
   container.innerHTML = html;
 }

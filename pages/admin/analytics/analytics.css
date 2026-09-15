@@ -34,9 +34,12 @@
     padding-left: 0;
 }
 
+/* --color-nav-active-fg rather than --color-primary: the latter is defined for
+   the light theme only, so on the dark page this rendered #2E7D32 at 3.2:1.
+   Settings uses the same token for its tab strip, so the two stay in step. */
 .page-analytics .analytics-tab.active {
-    color: var(--color-primary);
-    border-bottom-color: var(--color-primary);
+    color: var(--color-nav-active-fg);
+    border-bottom-color: var(--color-nav-active-fg);
     font-weight: 600;
 }
 

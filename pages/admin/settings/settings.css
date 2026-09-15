@@ -1,80 +1,155 @@
 /**
  * Settings page styles: flat sections, no cards, matching the design system.
+ * The page is split into three tab panels (see settings.js) so each stays short
+ * enough to scan without a long scroll.
  */
 
-/* Section – flat, no card background */
-.page-settings .section {
-    margin-bottom: 32px;
+/* Section tabs. Same values as .analytics-tab in
+   pages/admin/analytics/analytics.css, so both tab strips look identical. */
+.page-settings .settings-tabs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 24px;
+}
+
+.page-settings .settings-tab {
+    background: none;
     border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.page-settings .settings-tab:first-child {
+    padding-left: 0;
+}
+
+.page-settings .settings-tab:hover {
+    color: var(--color-text-main);
+}
+
+/* --color-nav-active-fg rather than --color-primary: the latter is defined for
+   the light theme only, so on the dark page it would render #2E7D32 at 3.3:1. */
+.page-settings .settings-tab.active {
+    color: var(--color-nav-active-fg);
+    border-bottom-color: var(--color-nav-active-fg);
+    font-weight: 600;
+}
+
+/* No local focus rule for the tabs: the site-wide `:focus-visible` outline in
+   styles/global.css is the indicator, and replacing it with a box-shadow ring
+   here would make it weaker than every other control on the page. */
+
+/* Tab panels: only the active one is rendered, so a hidden panel cannot be
+   reached by Tab or read out by a screen reader. */
+.page-settings .settings-panel {
+    display: none;
+}
+
+.page-settings .settings-panel.active {
+    display: block;
+}
+
+/* Sections are flat and separated by ONE hairline above each heading rather than
+   a rule under every row. The shared column already groups each label with its
+   value, so the per-row rules only made the page read as a spreadsheet. */
+.page-settings .section {
+    margin: 0;
+    border: none;
+}
+
+.page-settings .section + .section {
+    margin-top: 32px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border-color-light);
 }
 
 .page-settings .section-title {
     font-size: 18px;
     font-weight: 600;
+    line-height: 1.3;
     color: var(--color-text-main);
-    margin-bottom: 20px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 16px;
 }
 
-.page-settings .section:first-of-type {
-    margin-top: 8px;
-}
-
-/* Form groups within settings */
-.page-settings .form-group {
-    margin-bottom: 20px;
-}
-
-.page-settings .form-label {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--color-text-main);
-}
-
-.page-settings .form-input {
-    width: 100%;
-    max-width: 400px;
-    padding: 10px 12px;
-    background: var(--color-bg-input);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-size: 14px;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.page-settings .form-input:focus {
-    border-color: var(--color-primary);
-    box-shadow: var(--focus-ring);
-    outline: none;
-}
-
-/* Info rows (key-value pairs) */
-.page-settings .info-table {
+/* Setting rows: the label (and its hint) in the left column, the control in the
+   right, so every control on the page begins on the same vertical line. */
+.page-settings .settings-rows {
     display: flex;
     flex-direction: column;
-    gap: 16px;
 }
 
-.page-settings .info-row {
-    display: flex;
-    align-items: baseline;
+.page-settings .settings-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 24px;
-    font-size: 14px;
+    align-items: center;
+    padding: 16px 0;
 }
 
-.page-settings .info-label {
-    width: 160px;
-    flex-shrink: 0;
+.page-settings .settings-row:first-child {
+    padding-top: 0;
+}
+
+.page-settings .settings-row:last-child {
+    padding-bottom: 0;
+}
+
+/* Rows and the action bar stop short of the full content width: at 1400px the
+   label and its control drift so far apart they stop reading as one setting.
+   The rule on the row and the button under it share this cap so they stay
+   aligned to the same right edge. */
+.page-settings .settings-row,
+.page-settings .settings-actions {
+    max-width: 900px;
+}
+
+.page-settings .settings-row-info {
+    min-width: 0;
+}
+
+/* Works as a <label> for the password fields and as a <span> for read-only
+   rows, hence display:block rather than inline. */
+.page-settings .settings-row-label {
+    display: block;
+    font-size: 14px;
     font-weight: 500;
+    color: var(--color-text-main);
+}
+
+.page-settings .settings-row-hint {
+    margin: 4px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
     color: var(--color-text-secondary);
 }
 
-.page-settings .info-value {
-    color: var(--color-text-main);
+.page-settings .settings-row-control {
+    min-width: 0;
 }
+
+.page-settings .settings-row-value {
+    font-size: 14px;
+    color: var(--color-text-main);
+    overflow-wrap: anywhere;
+}
+
+.page-settings .settings-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 20px;
+}
+
+/* No width cap on the control: capping it left every field ending short of the
+   action button's right edge, which reads as a mistake rather than a choice.
+   Padding, states and focus come from components/forms.css. */
 
 .page-settings .status-active {
     color: var(--color-success);
@@ -113,21 +188,9 @@
     display: block;
 }
 
-/* Button */
-.page-settings .btn-primary {
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: var(--radius-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.page-settings .btn-primary:hover {
-    background: var(--color-primary-hover);
-}
+/* Buttons are components/buttons.css: `.btn` plus a variant. This page used to
+   redefine .btn-primary locally, which cost every button here the shared
+   hover, sizes and — needed by the registry editor — the disabled state. */
 
 /* Toast notifications */
 .toast-container {
@@ -185,19 +248,30 @@
 
 /* Responsive */
 @media (max-width: 767px) {
-    .page-settings .info-row {
-        flex-direction: column;
-        gap: 4px;
+    /* One column: each label sits above its own control. */
+    .page-settings .settings-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        align-items: start;
     }
-    .page-settings .info-label {
-        width: auto;
+    .page-settings .section + .section {
+        margin-top: 24px;
+        padding-top: 24px;
     }
-    .page-settings .form-input {
-        max-width: 100%;
+    /* Three tabs do not fit a phone: scroll the strip sideways rather than
+       wrapping it onto a second line and pushing the panel down the page. */
+    .page-settings .settings-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: thin;
+    }
+    .page-settings .settings-tab {
+        flex: 0 0 auto;
+        white-space: nowrap;
     }
 }
 
-/* SPECIES & BASELINES */
+/* SPECIES REGISTRY */
 .page-settings .section-desc {
     font-size: 13px;
     color: var(--color-text-secondary);
@@ -206,17 +280,87 @@
     line-height: 1.5;
 }
 
+/* The counts ARE the filters. One control answers "how many?" and "show me
+   those" at once, so the strip never needs a separate filter bar beside it. */
+.page-settings .registry-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.page-settings .registry-filter {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    min-width: 104px;
+    padding: 8px 14px;
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--color-text-main);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.page-settings .registry-filter:hover {
+    background: var(--color-bg-hover);
+    border-color: var(--border-color-dark);
+}
+
+/* The pressed state is the same green as an active page tab, so "this is the
+   current view" reads the same everywhere on the page. */
+.page-settings .registry-filter[aria-pressed="true"] {
+    background: var(--color-primary-light);
+    border-color: var(--color-nav-active-fg);
+}
+
+.page-settings .registry-filter-value {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+}
+
+.page-settings .registry-filter-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-main);
+}
+
+.page-settings .registry-filter[aria-pressed="true"] .registry-filter-value,
+.page-settings .registry-filter[aria-pressed="true"] .registry-filter-label {
+    color: var(--color-nav-active-fg);
+}
+
 .page-settings .baselines-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
 }
 .page-settings .baselines-note {
     font-size: 13px;
-    color: var(--color-text-secondary);
+    line-height: 1.5;
+    max-width: 620px;
+    color: var(--color-text-main);
+}
+
+/* Live count of what the table is showing; the strip above says what exists. */
+.page-settings .registry-summary {
+    margin: 0 0 10px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-main);
 }
 
 .page-settings .baselines-table-wrap {
@@ -225,103 +369,359 @@
 .page-settings .baselines-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 720px;
+    min-width: 680px;
 }
 .page-settings .baselines-table th {
-    padding: 10px 12px;
+    padding: 9px 12px;
     text-align: left;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-main);
     border-bottom: 1px solid var(--border-color);
     background: var(--color-bg-header);
     white-space: nowrap;
 }
 .page-settings .baselines-table td {
-    padding: 10px 12px;
+    padding: 12px;
     font-size: 13px;
     color: var(--color-text-main);
     border-bottom: 1px solid var(--border-color-light);
     vertical-align: middle;
 }
-.page-settings .baselines-table tr:hover td {
+
+/* A closed editor is `hidden`, but the mobile card stack below sets
+   `display: block` on every row, which outranks the attribute's own rule. */
+.page-settings .baselines-table tr.registry-editor[hidden] {
+    display: none;
+}
+
+.page-settings .registry-row:hover td {
     background: var(--color-bg-hover);
 }
-.page-settings .baseline-species {
+
+/* The open row and its editor read as one block. */
+.page-settings .registry-row.is-open td {
+    background: var(--color-primary-lighter);
+}
+.page-settings .registry-row.is-open td:first-child {
+    box-shadow: inset 2px 0 0 var(--color-nav-active-fg);
+}
+
+.page-settings .registry-species-name {
+    display: block;
+    font-size: 14px;
     font-weight: 600;
 }
-.page-settings .baseline-sci {
+.page-settings .registry-species-sci {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--color-text-secondary);
+    overflow-wrap: anywhere;
+}
+.page-settings .registry-type {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-main);
+}
+
+/* Value first, provenance second: the number is what the warnings compare
+   against, the chip says who decided it. */
+.page-settings .registry-baseline-value {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.page-settings .registry-baseline-value--none {
+    color: var(--color-text-secondary);
+}
+.page-settings .registry-baseline-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+.page-settings .registry-baseline-when {
+    font-size: 12px;
+    color: var(--color-text-main);
+}
+
+.page-settings .registry-chip {
+    display: inline-block;
+    padding: 2px 7px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+/* One accent, reserved for the authoritative case, so green always means "an
+   admin set this" and nothing else. */
+.page-settings .registry-chip--admin {
+    background: var(--color-primary-light);
+    color: var(--color-nav-active-fg);
+}
+.page-settings .registry-chip--derived {
+    background: var(--color-bg-hover);
+    color: var(--color-text-main);
+}
+.page-settings .registry-chip--none {
+    border-style: dashed;
+    border-color: var(--border-color-dark);
+    color: var(--color-text-main);
+}
+
+.page-settings .registry-site-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.page-settings .registry-site-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-hover);
+    font-size: 12px;
+    white-space: nowrap;
+}
+.page-settings .registry-site-chip b {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.page-settings .registry-sites-none {
+    font-size: 12px;
+}
+
+.page-settings .registry-actions-cell {
+    width: 104px;
+    text-align: right;
+}
+.page-settings .registry-toggle svg {
+    transition: transform var(--transition-fast);
+}
+.page-settings .registry-toggle[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+}
+
+.page-settings .registry-empty > td {
+    padding: 32px 16px;
+    text-align: center;
+}
+.page-settings .registry-empty-title {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+}
+.page-settings .registry-empty-text {
+    margin: 0 0 14px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+/* EDITOR: one species at a time, opened in the row it belongs to. A tinted
+   surface rather than a card, because it is a continuation of the row. */
+.page-settings .registry-editor > td {
+    padding: 0;
+    background: var(--color-bg-header);
+    border-bottom: 1px solid var(--border-color);
+    border-left: 2px solid var(--color-nav-active-fg);
+}
+
+.page-settings .registry-editor-inner {
+    padding: 18px 16px;
+    animation: registry-editor-in var(--transition-normal) ease-out;
+}
+
+/* Opacity and transform only, so the reveal stays off the layout thread. The
+   global reduced-motion block collapses the duration. */
+@keyframes registry-editor-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page-settings .registry-editor-title {
+    margin: 0 0 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+.page-settings .registry-editor-sub {
+    margin-left: 6px;
+    font-size: 12px;
+    font-weight: 400;
     font-style: italic;
     color: var(--color-text-secondary);
 }
-/* Per-site baseline overrides. The capability already existed in the analytics
-   engine and in the data layer but had no UI at all: the flagship
-   "built-but-unreachable" case. */
-.page-settings .baseline-site-cell {
-    min-width: 190px;
+
+.page-settings .registry-editor-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 20px 28px;
 }
 
-.page-settings .baseline-site-list {
+.page-settings .registry-field {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
 }
-
-.page-settings .baseline-site-row {
+.page-settings .registry-field-label {
+    padding: 0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-main);
+}
+.page-settings .registry-field-hint {
+    margin: 0;
+    max-width: 46ch;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+}
+.page-settings .registry-field-input {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--color-text-secondary);
+    gap: 8px;
+}
+.page-settings .registry-baseline-input {
+    max-width: 130px;
+}
+/* Beats the `.btn` display, which would otherwise override the attribute. */
+.page-settings .registry-field-input .btn.is-hidden {
+    display: none;
 }
 
-.page-settings .baseline-site-name {
-    white-space: nowrap;
+.page-settings .registry-site-list-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 2px;
 }
-
-.page-settings .baseline-site-input {
-    width: 90px;
-    padding: 4px 6px;
-    font-size: 12px;
-}
-
-.page-settings .baseline-site-save-btn {
-    margin-top: 6px;
-    padding: 4px 10px;
-    font-size: 12px;
-}
-
-.page-settings .baseline-site-empty {
-    font-size: 12px;
-    color: var(--color-text-muted);
-}
-
-.page-settings .baseline-input {
-    max-width: 120px;
-    padding: 6px 10px;
-}
-.page-settings .baseline-source {
-    display: inline-flex;
+.page-settings .registry-site-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 130px;
     align-items: center;
-    padding: 2px 8px;
-    border-radius: var(--radius-full);
-    font-size: 12px;
-    font-weight: 500;
-    background: var(--color-bg-header);
-    color: var(--color-text-secondary);
-    cursor: help;
-    white-space: nowrap;
+    gap: 2px 10px;
+    /* Keeps the site name next to its field; at full width the two ends of a
+       wide column stop reading as one control. */
+    max-width: 340px;
 }
-.page-settings .baseline-source-admin {
-    background: var(--color-primary-light);
-    color: var(--color-primary);
-}
-.page-settings .baseline-source-derived {
-    background: var(--color-warning-light);
-    color: var(--color-warning);
-}
-.page-settings .baseline-save-btn {
-    padding: 6px 14px;
+.page-settings .registry-site-name {
     font-size: 13px;
+    color: var(--color-text-main);
+}
+.page-settings .registry-site-row .validation-message {
+    grid-column: 1 / -1;
+    margin-top: 0;
+}
+
+.page-settings .registry-editor-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-color);
+}
+.page-settings .registry-editor-status {
+    margin-right: auto;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+@media (max-width: 767px) {
+    /* Stack the rows as cards: the editor opens under its own card, so no part
+       of the table needs horizontal scrolling. */
+    .page-settings .baselines-table-wrap {
+        overflow: visible;
+    }
+    .page-settings .baselines-table {
+        min-width: 0;
+    }
+    .page-settings .baselines-table thead {
+        display: none;
+    }
+    .page-settings .baselines-table,
+    .page-settings .baselines-table tbody,
+    .page-settings .baselines-table tr,
+    .page-settings .baselines-table td {
+        display: block;
+        width: 100%;
+    }
+    .page-settings .registry-row {
+        margin-bottom: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+    }
+    /* The open card and its editor join, so the card bottom is squared off. */
+    .page-settings .registry-row.is-open {
+        margin-bottom: 0;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    .page-settings .registry-row.is-open td:first-child {
+        box-shadow: none;
+    }
+    .page-settings .registry-row td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border-color-light);
+    }
+    .page-settings .registry-row td:last-child {
+        border-bottom: none;
+    }
+    /* Column headers are gone, so every cell carries its own label. The first
+       cell is the card's title and needs none. */
+    .page-settings .registry-row td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 3px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--color-text-main);
+    }
+    .page-settings .registry-row td:first-child::before {
+        display: none;
+    }
+    .page-settings .registry-actions-cell {
+        width: auto;
+        text-align: left;
+    }
+    .page-settings .registry-editor > td {
+        margin-bottom: 10px;
+        border: 1px solid var(--border-color);
+        border-top: none;
+        border-left: 1px solid var(--border-color);
+        border-radius: 0 0 var(--radius-md) var(--radius-md);
+    }
+    .page-settings .registry-editor-grid {
+        grid-template-columns: 1fr;
+    }
+    .page-settings .registry-field-hint {
+        max-width: none;
+    }
 }
