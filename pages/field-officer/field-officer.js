@@ -431,9 +431,6 @@ function initFieldOfficer() {
       field_notes: document.getElementById('fieldNotes').value || ''
     };
 
-    // Log to console per spec
-    console.log(observation);
-
     // Persist to the unified data layer so the observation appears in
     // admin dashboards immediately — no separate import step needed.
     if (CentralDataStore) {

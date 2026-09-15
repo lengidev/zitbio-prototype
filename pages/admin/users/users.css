@@ -75,24 +75,6 @@
     color: var(--color-secondary);  /* keep distinct from primary */
 }
 
-/* Action icons inside table */
-.action-icon-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--color-text-muted);
-    padding: 4px 6px;
-    transition: color var(--transition-fast);
-}
-
-.action-icon-btn:hover {
-    color: var(--color-primary);
-}
-
-.action-icon-btn.delete:hover {
-    color: var(--color-danger);
-}
-
 /* Table container with horizontal scroll for responsiveness */
 .page-users .table-container {
     border: 1px solid var(--border-color);
@@ -187,27 +169,6 @@
 .page-users .user-modal-body::-webkit-scrollbar-thumb {
     background: var(--border-color-dark);
     border-radius: var(--radius-full);
-}
-
-/* Section (mirrors observation .section-static / .section-heading) */
-.page-users .user-modal-body .section-static {
-    padding: 8px 0;
-}
-
-.page-users .user-modal-body .section-heading {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--color-text-main);
-    margin-bottom: 10px;
-}
-
-.page-users .user-modal-body .section-heading .section-icon {
-    width: 18px;
-    height: 18px;
-    color: var(--color-text-muted);
 }
 
 /* Form grid. Two columns, so related pairs (name/email, role/institution) read

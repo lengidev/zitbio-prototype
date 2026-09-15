@@ -1672,16 +1672,43 @@ function buildReportTrendChart(data) {
 // ============================================================
 //  ECOSYSTEM INSIGHTS & MANAGEMENT (report card)
 // ============================================================
-function buildReportEcosystem(data) {
-  var container = document.getElementById('reportEcosystemContainer');
-  if (!container) return;
+/**
+ * Inputs shared by the two ecosystem report surfaces (Report tab + PDF).
+ *
+ * Both used to gather the registry/site/ecology context and count
+ * present-vs-tree species themselves, which is how the pair could drift apart.
+ * Returns the insights, their summary, and the two overview counts.
+ */
+function ecosystemReportContext(data) {
   var BioData = window.BioData;
   var registry = (BioData && BioData.getSpeciesRegistry) ? BioData.getSpeciesRegistry() : [];
   var sites = (BioData && BioData.getSiteRegistry) ? BioData.getSiteRegistry() : [];
   var ecology = (BioData && BioData.getSpeciesEcology) ? BioData.getSpeciesEcology() : {};
   var insights = window.BioAnalytics.ecosystemInsights(data, { speciesRegistry: registry, sites: sites, ecology: ecology });
 
-  var s = insights.summary;
+  // Overview counts: species with live data vs permanent woodland trees.
+  var presentCount = 0;
+  var treeCount = 0;
+  insights.species.forEach(function(r) {
+    if (r.present) presentCount++;
+    if (r.flora && !r.present) treeCount++;
+  });
+
+  return {
+    insights: insights,
+    summary: insights.summary,
+    presentCount: presentCount,
+    treeCount: treeCount
+  };
+}
+
+function buildReportEcosystem(data) {
+  var container = document.getElementById('reportEcosystemContainer');
+  if (!container) return;
+
+  var ctx = ecosystemReportContext(data);
+  var insights = ctx.insights;
+  var s = ctx.summary;
   var html = '';
 
   if (s.observations === 0) {
@@ -1690,19 +1717,11 @@ function buildReportEcosystem(data) {
     return;
   }
 
-  // Counts for the overview: species with live data vs permanent trees.
-  var presentCount = 0;
-  var treeCount = 0;
-  insights.species.forEach(function(r) {
-    if (r.present) presentCount++;
-    if (r.flora && !r.present) treeCount++;
-  });
-
   // 1. Overview
   html += '<p class="report-eco-overview">This section explains the ecological role and environmental impact of each ' +
     'monitored park species, what happens when a population rises or falls, and management recommendations. It covers ' +
-    s.parkSpeciesCount + ' monitored park species \u2014 ' + presentCount + ' with live observation data and ' +
-    treeCount + ' permanent woodland trees assumed present \u2014 across ' + s.observations +
+    s.parkSpeciesCount + ' monitored park species \u2014 ' + ctx.presentCount + ' with live observation data and ' +
+    ctx.treeCount + ' permanent woodland trees assumed present \u2014 across ' + s.observations +
     ' verified observation(s) (Shannon diversity H\u2032 = ' + s.shannonIndex.toFixed(3) + ').</p>';
 
   // 2. Species roles & environmental impact (dynamic — the impact text follows
@@ -1799,21 +1818,11 @@ function buildReportCsv(data) {
 }
 
 function downloadCsv(csv, filename) {
-  // Delegates to the shared implementation (lib/csv.js) so the app has one
-  // downloader. The local copy is kept only as a no-JS-module fallback.
-  if (window.BioCsv && window.BioCsv.downloadCsv) {
-    window.BioCsv.downloadCsv(csv, filename);
-    return;
-  }
-  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // One downloader for the whole app: lib/csv.js, which analytics.html loads
+  // with `defer` before this file. No local fallback — a second copy of the
+  // blob/anchor dance is exactly the duplication that drifts, and a missing
+  // lib/csv.js is a load-order bug worth seeing rather than masking.
+  window.BioCsv.downloadCsv(csv, filename);
 }
 
 // ============================================================
@@ -1980,22 +1989,12 @@ function buildReportPdfWarningRows(data) {
 }
 
 function buildReportEcosystemPdf(data) {
-  var BioData = window.BioData;
-  var registry = (BioData && BioData.getSpeciesRegistry) ? BioData.getSpeciesRegistry() : [];
-  var sites = (BioData && BioData.getSiteRegistry) ? BioData.getSiteRegistry() : [];
-  var ecology = (BioData && BioData.getSpeciesEcology) ? BioData.getSpeciesEcology() : {};
-  var insights = window.BioAnalytics.ecosystemInsights(data, { speciesRegistry: registry, sites: sites, ecology: ecology });
-  var s = insights.summary;
-
-  var presentCount = 0;
-  var treeCount = 0;
-  insights.species.forEach(function(r) {
-    if (r.present) presentCount++;
-    if (r.flora && !r.present) treeCount++;
-  });
+  var ctx = ecosystemReportContext(data);
+  var insights = ctx.insights;
+  var s = ctx.summary;
   var paragraph = 'This section explains the ecological role and environmental impact of each monitored park species, what happens when a population rises or falls, and management recommendations. It covers ' +
-    s.parkSpeciesCount + ' monitored park species \u2014 ' + presentCount + ' with live observation data and ' +
-    treeCount + ' permanent woodland trees assumed present \u2014 across ' + s.observations +
+    s.parkSpeciesCount + ' monitored park species \u2014 ' + ctx.presentCount + ' with live observation data and ' +
+    ctx.treeCount + ' permanent woodland trees assumed present \u2014 across ' + s.observations +
     ' verified observations (Shannon H\u2032 = ' + s.shannonIndex.toFixed(3) + ').';
 
   var conditionLabel = {
