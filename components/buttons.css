@@ -676,9 +676,26 @@
         padding-left: 12px;
     }
 
-    .page-observations .controls-right .btn-export,
+    /* Observations page: search row, then Export + Archived side by side, with
+       Add Record full width beneath them.
+
+       The two `.btn-export` buttons carry the row's `flex: 1`, so they always
+       split it in half; `.btn-add` is given a 100% basis so it always starts a
+       new line and fills it. `min-width: 0` on the pair is the insurance that
+       matters: a flex item defaults to `min-width: auto`, which floors it at its
+       own min-content, so without it a longer label would push its partner onto
+       a line of its own and the arrangement would stop being 2 + 1. (Measured at
+       the 320px floor the pair need 103 + 117 + 8 of gap = 228 of the 280
+       available, so the default floor is not close to binding here - this is
+       about the shape being decided by a rule rather than by a few pixels.) */
+    .page-observations .controls-right .btn-export {
+        flex: 1 1 0;
+        min-width: 0;
+        justify-content: center;
+    }
+
     .page-observations .controls-right .btn-add {
-        flex: 1;
+        flex: 1 0 100%;
         justify-content: center;
     }
 }

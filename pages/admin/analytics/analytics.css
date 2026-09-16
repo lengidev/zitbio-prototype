@@ -323,6 +323,14 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
     background: var(--color-bg-input);
+    /* Contain the map's stacking. Leaflet gives its panes z-index 400-800 and
+       this file gives the toolbar 2000 and the status bar 1000; with the
+       container at `z-index: auto` none of that is contained, so the toolbar and
+       the status bar painted OVER the sidebar drawer (z-index 100) and its
+       overlay (99) - the map bled across the navigation while the drawer was
+       open. `isolation: isolate` makes the container a stacking context, so the
+       whole map stays below the nav where it belongs. */
+    isolation: isolate;
 }
 
 #map {
@@ -334,8 +342,16 @@
 /* Leaflet overrides for theme compatibility */
 .leaflet-control-attribution {
     font-size: 10px !important;
-    background: rgba(255,255,255,0.8) !important;
+    /* Was a hardcoded white chip, which left a light rectangle in the dark UI. */
+    background: var(--color-bg-white) !important;
+    /* Not --color-text-secondary: on the white chip that token is 3.5:1. */
+    color: var(--color-text-main);
     padding: 2px 6px !important;
+}
+
+/* Leaflet's own link colour (#0078a8) is 2.98:1 on the dark chip. */
+.leaflet-control-attribution a {
+    color: var(--color-primary-fg);
 }
 
 /* Legacy controls hidden: kept for JS proxy clicks */
@@ -404,8 +420,11 @@
 }
 
 .toolbar-btn.active {
-    background: #e8f0fe;
-    color: #1a73e8;
+    /* Off-palette Google blue replaced with the same active pair the nav and the
+       tab strips use; it is theme-aware and no longer a bright blue chip in dark
+       mode. */
+    background: var(--color-bg-active);
+    color: var(--color-nav-active-fg);
 }
 
 .toolbar-btn .material-symbols-outlined {
@@ -451,8 +470,13 @@
     top: 0px;
     left: 0px;
     z-index: 1000;
-    background: rgba(255, 255, 255, 0.75);
+    /* Was `rgba(255,255,255,0.75)` with the inherited light text colour, which is
+       a light bar with light text in dark mode (measured 1.44:1 - effectively
+       invisible). A solid themed surface is also easier to read over the map. */
+    background: var(--color-bg-white);
+    color: var(--color-text-main);
     padding: 2px 16px;
+    border-bottom-right-radius: var(--radius-md);
     display: flex;
     column-gap: 16px;
     font-size: 11px;
@@ -487,11 +511,27 @@
     opacity: 1;
 }
 
-/* Marker popup customization */
+/* Marker popup customization.
+
+   Leaflet's own stylesheet paints this white with `color: #333`, and only the
+   radius/padding were overridden here, so in dark mode the popup was a white box
+   and `.map-popup-*` (which correctly use the text tokens) put near-white text on
+   it - measured 1.11:1 for the species line and 1.87:1 for the details. The tip
+   and the close button belong to the same surface and are fixed with it. */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+    background: var(--color-bg-card);
+    color: var(--color-text-main);
+}
+
 .leaflet-popup-content-wrapper {
     border-radius: 10px !important;
     padding: 2px !important;
     box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+}
+
+.leaflet-popup-close-button {
+    color: var(--color-text-secondary) !important;
 }
 
 .leaflet-popup-content {
@@ -531,17 +571,17 @@
 
 .map-popup-status.approved {
     background: var(--color-success-light);
-    color: var(--color-primary);
+    color: var(--color-primary-fg);
 }
 
 .map-popup-status.pending {
     background: var(--color-warning-light);
-    color: var(--color-warning);
+    color: var(--color-warning-fg);
 }
 
 .map-popup-status.flagged {
     background: var(--color-danger-light);
-    color: var(--color-danger);
+    color: var(--color-danger-fg);
 }
 
 /* Custom observation marker icon */
@@ -715,7 +755,7 @@
     margin: 14px 0;
 }
 
-/* Column toggles only apply to the Dataset table: hide the Toggle Columns
+/* Column toggles only apply to the Table tab: hide the Toggle Columns
    row (and its divider) on the Map / Graphs / Report tabs. */
 .page-analytics .analytics-filters:not(.with-column-toggles) .col-toggles-row,
 .page-analytics .analytics-filters:not(.with-column-toggles) .filter-divider {
@@ -797,7 +837,15 @@
 
     /* Filter bar: expand fully on small screens (the desktop 400px cap
        clipped the wrapped rows + column toggles). Chip wrappers fill their
-       row (2 per line); the chip itself stays at its normal 34px height. */
+       row (2 per line); the chip itself stays at its normal 34px height.
+
+       `calc(50% - 6px)` is what actually delivers that "2 per line". A
+       `flex-basis` of `130px` let the row pack in as many chips as happened to
+       fit, so the same filter bar was 2 per line at 320-430px, 3 at 480-600 and
+       4-5 above that - the bar regrouped itself as the phone got wider. Two per
+       line is fixed by construction at every width (basis = half the row minus
+       half the 12px gap), so the fields land in the same three rows everywhere
+       in the mobile range. */
     .page-analytics .analytics-filters.open {
         max-height: 1000px;
     }
@@ -805,7 +853,7 @@
         gap: 12px;
     }
     .page-analytics .filter-chip-wrapper {
-        flex: 1 1 130px;
+        flex: 1 1 calc(50% - 6px);
         min-width: 0;
         width: auto;
     }
@@ -816,7 +864,7 @@
 }
 
 /* ≤1023px (tablet + mobile): per-tab control alignment
-   - Dataset (search visible): tabs on top; search + filter side by side below.
+   - Table (search visible): tabs on top; search + filter side by side below.
    - Map / Graphs / Report (no search): filter stays aligned right of the tabs. */
 @media (max-width: 1023px) {
     /* Map/Graphs/Report (no search): keep the filter on the tabs row, right-aligned */
@@ -833,7 +881,7 @@
         margin-left: auto;
     }
 
-    /* Dataset (search visible): stack the tabs, then search + filter side by side */
+    /* Table (search visible): stack the tabs, then search + filter side by side */
     .page-analytics .analytics-tabs.with-search {
         flex-direction: column;
         align-items: stretch;
@@ -932,7 +980,7 @@
     display: block;
     font-size: 24px;
     font-weight: 700;
-    color: var(--color-primary);
+    color: var(--color-primary-fg);
 }
 .page-analytics .report-kpi-value--sm {
     font-size: 13px;
@@ -1017,7 +1065,10 @@
     font-weight: 700;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    color: var(--color-bg-white);
+    /* `--color-bg-white` is a DARK surface in dark mode, which put the card
+       colour on the green fill (2.87:1). `--color-text-inverse` is the actual
+       constant white for text on a filled surface. */
+    color: var(--color-text-inverse);
     background: var(--color-primary);
     border-radius: var(--radius-full);
     padding: 2px 7px;
@@ -1026,7 +1077,7 @@
     margin-left: auto;
     font-size: 14px;
     font-weight: 700;
-    color: var(--color-primary);
+    color: var(--color-primary-fg);
 }
 .page-analytics .report-month-meta {
     font-size: 11px;
@@ -1039,8 +1090,8 @@
     font-size: 12px;
     font-weight: 600;
 }
-.page-analytics .report-month-delta.up { color: var(--color-success-hover); }
-.page-analytics .report-month-delta.down { color: var(--color-danger); }
+.page-analytics .report-month-delta.up { color: var(--color-primary-fg); }
+.page-analytics .report-month-delta.down { color: var(--color-danger-fg); }
 .page-analytics .report-month-delta.flat { color: var(--color-text-disabled); }
 
 .page-analytics .report-warning-row {
@@ -1226,8 +1277,8 @@
     border-radius: var(--radius-full);
 }
 .page-analytics .report-eco-condition.up,
-.page-analytics .report-eco-condition.healthy { background: #E8F5E9; color: #2E7D32; }
-.page-analytics .report-eco-condition.down { background: var(--color-danger-light); color: var(--color-danger); }
+.page-analytics .report-eco-condition.healthy { background: var(--color-success-light); color: var(--color-primary-fg); }
+.page-analytics .report-eco-condition.down { background: var(--color-danger-light); color: var(--color-danger-fg); }
 .page-analytics .report-eco-condition.assumed { background: var(--color-bg-header); color: var(--color-text-secondary); }
 .page-analytics .report-eco-condition.nodata,
 .page-analytics .report-eco-condition.stale { background: var(--color-bg-header); color: var(--color-text-muted); }
@@ -1245,11 +1296,11 @@
 }
 .page-analytics .report-eco-status-badge.up {
     background: var(--color-success-light);
-    color: var(--color-primary);
+    color: var(--color-primary-fg);
 }
 .page-analytics .report-eco-status-badge.down {
     background: var(--color-danger-light);
-    color: var(--color-danger);
+    color: var(--color-danger-fg);
 }
 .page-analytics .report-eco-impact-text {
     display: block;
@@ -1362,6 +1413,27 @@
 /* Mobile ≤767px: graphs & report cards stack full-width (appended after all
    base styles so these overrides win over the desktop 2-column grids). */
 @media (max-width: 767px) {
+    /* Phone: the tab strip owns a full-width row of its own.
+
+       Sharing that row with the Filters button left the four tabs the LEFTOVER
+       width, and at 320-360px that is less than the 205px they need: the strip
+       wrapped 3 + 1, then fitted on one line again from 375px up (group measured
+       153 / 193 / 208 at 320 / 360 / 375). A control strip that changes shape
+       between phones is exactly what this pass removes. The Table tab already
+       stacks (`.analytics-tabs.with-search` sets `flex-direction: column` in the
+       ≤1023 block), so this makes the other three tabs match it.
+
+       These belong HERE, at the end of the file, not in the earlier ≤767 block:
+       that block sits before the ≤1023px block, which sets
+       `.analytics-tabs:not(.with-search) { flex-wrap: nowrap }` at the same
+       specificity, so a rule written up there loses and silently does nothing. */
+    .page-analytics .analytics-tabs:not(.with-search) {
+        flex-wrap: wrap;
+    }
+    .page-analytics .analytics-tabs:not(.with-search) .tabs-left-group {
+        flex: 1 0 100%;
+    }
+
     .page-analytics .graphs-grid,
     .page-analytics .report-grid {
         grid-template-columns: minmax(0, 1fr);

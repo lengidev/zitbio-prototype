@@ -74,6 +74,23 @@
   --color-warning: #ffb74d;
   --color-warning-light: #fff3e0;
 
+  /* FOREGROUNDS for the tints above.
+
+     `--color-primary`, `--color-danger`, `--color-warning` and
+     `--color-secondary` are SURFACE colours: they are meant to be filled, with
+     `--color-text-inverse` or a matching `*-light` tint behind them. Reused as
+     TEXT they happen to survive on the light page and fail badly on the dark
+     one, because the dark theme darkens both the page and the tints they sit on.
+     Measured on the dark theme before these existed: "Approved" 1.97:1,
+     "Flagged" 3.03:1, report KPI values 2.87:1, role badge 2.87:1, map popup
+     status 1.97:1, and the `color: #2E7D32` icon inside
+     `--color-primary-light` 1.97:1 — all far below the 4.5:1 that 12px text
+     needs. These are the text/icon counterparts, per theme. */
+  --color-primary-fg: #1B5E20;
+  --color-secondary-fg: #6D4C41;
+  --color-danger-fg: #B3261E;
+  --color-warning-fg: #8A5300;
+
   /* Border Colors */
   --border-color: #e5e7eb;
   --border-color-light: #f1f5f9;
@@ -174,4 +191,13 @@
   --color-warning-light: #4a3922;
   --tooltip-bg: #3b4c41;
   --tooltip-text: #edf5ef;
+
+  /* Text counterparts of the status colours, for the same reason as `:root`:
+     the tints above are dark in this theme, so the light-theme surface colours
+     are unreadable on them. Light greens/ambers/pinks, all >= 5.9:1 on their own
+     tint and >= 6:1 on the page. */
+  --color-primary-fg: #A5D6A7;
+  --color-secondary-fg: #D7CCC8;
+  --color-danger-fg: #FFB4AB;
+  --color-warning-fg: #FFD98A;
 }

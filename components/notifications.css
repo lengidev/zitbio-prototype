@@ -99,7 +99,7 @@
 .notification-mark-read-btn {
   font-size: 13px;
   font-weight: 500;
-  color: var(--color-primary);
+  color: var(--color-primary-fg);
   background: none;
   border: none;
   cursor: pointer;
@@ -167,17 +167,17 @@
 
 .notification-icon.pending {
   background-color: var(--color-warning-light);
-  color: var(--color-warning);
+  color: var(--color-warning-fg);
 }
 
 .notification-icon.flagged {
   background-color: var(--color-danger-light);
-  color: var(--color-danger);
+  color: var(--color-danger-fg);
 }
 
 .notification-icon.new-user {
   background-color: var(--color-primary-light);
-  color: var(--color-primary);
+  color: var(--color-primary-fg);
 }
 
 /* Content */
@@ -221,7 +221,10 @@
   width: 48px;
   height: 48px;
   margin-bottom: 12px;
-  color: var(--border-color);
+  /* `--border-color` is a hairline tone (1.61:1 on the dropdown surface in dark
+     mode); an empty state this size needs the muted text tone, 5.4:1 or better
+     in both themes. */
+  color: var(--color-text-muted);
 }
 
 @media (max-width: 767px) {

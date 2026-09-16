@@ -52,7 +52,7 @@
     border-radius: 6px;
     border: 1px solid var(--border-color);
     background-color: var(--color-bg);
-    color: var(--color-primary);
+    color: var(--color-primary-fg);
     transition: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     outline: none;
@@ -205,19 +205,19 @@
 
 .status-pending {
     background: var(--color-warning-light);
-    color: var(--color-warning);
+    color: var(--color-warning-fg);
     border: 1px solid var(--color-warning-light);
 }
 
 .status-approved {
     background: var(--color-success-light);
-    color: var(--color-primary);
+    color: var(--color-primary-fg);
     border: 1px solid var(--color-success-light);
 }
 
 .status-flagged {
     background: var(--color-danger-light);
-    color: var(--color-danger);
+    color: var(--color-danger-fg);
     border: 1px solid var(--color-danger-light);
 }
 

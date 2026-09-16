@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ZitBio global styles: typography, base resets, global element styling.
  */
 
@@ -29,12 +29,7 @@ body {
   line-height: 1.5;
   color: var(--color-text-main);
   background-color: var(--color-bg);
-  /* `dvh`, not `vh`, for the same reason as `.app-container`: `100vh` is the
-     viewport with the browser chrome HIDDEN, so a body floored at `100vh` is
-     taller than the screen it is on. The document would then scroll under the
-     toolbar - the exact behaviour the app shell just removed. */
   min-height: 100vh;
-  min-height: 100dvh;
 }
 
 /* Auth-pending hold. Protected pages carry `auth-pending` in their STATIC markup.
@@ -186,7 +181,7 @@ h1,
 
 /* Section Headings (h2/h3) */
 h2 {
-  font-size: 20px;    /* text‑xl */
+  font-size: 20px;    /* textΓÇæxl */
   font-weight: 600;
   line-height: 1.3;
 }
@@ -237,9 +232,7 @@ small, .text-small, .text-xs{
 
 /* Link Styles */
 a {
-    /* `--color-primary-fg`, not `--color-primary`: the latter is the light
-       theme's dark green and turns to 3.0:1 on the dark page. */
-    color: var(--color-primary-fg);
+    color: var(--color-primary);
     text-decoration: none;
     transition: color var(--transition-fast);
 }
@@ -354,7 +347,7 @@ td {
 .form-field-error {
   margin-top: 4px;
   font-size: 12px;
-  color: var(--color-danger-fg);
+  color: var(--color-danger);
 }
 
 .input-error {
@@ -472,7 +465,7 @@ td {
   }
 }
 
-/* Apply the active tier sizes (only shrinks at ≤1023px) */
+/* Apply the active tier sizes (only shrinks at Γëñ1023px) */
 @media (max-width: 1023px) {
   /* Large icons */
   .nav-icon,

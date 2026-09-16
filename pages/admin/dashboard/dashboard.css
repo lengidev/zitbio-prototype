@@ -4,10 +4,16 @@
 
 /* Using shared .content-area from layout.css - no custom override needed */
 
-/* Stats Grid */
+/* Stats Grid.
+
+   `minmax(0, 1fr)` rather than `1fr`: a bare `1fr` means `minmax(auto, 1fr)`, so
+   each track is floored at the widest word in the card and four of them could
+   not fit a 640px content column - the grid overflowed and took the whole page
+   sideways with it. The tablet rule below is what stops four cards being asked
+   to do that in the first place. */
 .page-dashboard .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 24px;
     padding: 16px 0 16px 0;
 }
@@ -101,7 +107,7 @@
     .page-dashboard .stat-icon .material-symbols-outlined {
         width: 24px;
         height: 24px;
-        color: var(--color-primary);
+        color: var(--color-primary-fg);
         font-size: 24px;
     }
 }
@@ -218,12 +224,12 @@
 
 .page-dashboard .trend-badge.up {
     background: var(--color-success-light);
-    color: var(--color-primary);
+    color: var(--color-primary-fg);
 }
 
 .page-dashboard .trend-badge.down {
     background: var(--color-danger-light);
-    color: var(--color-danger);
+    color: var(--color-danger-fg);
 }
 
 .page-dashboard .trend-badge.flat {
@@ -315,6 +321,14 @@
 
 /* Tablet: 768px - 1023px */
 @media (max-width: 1023px) and (min-width: 768px) {
+    /* Two cards per row. The base rule asks for four, and at this width the four
+       min-contents add up to more than the content column has - the overflow the
+       user saw as a page that scrolls sideways instead of fitting. */
+    .page-dashboard .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
     .page-dashboard .middle-section {
         grid-template-columns: 1fr;
     }
@@ -338,7 +352,7 @@
 @media (max-width: 767px) {
     .page-dashboard .stats-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
     }
 
@@ -384,7 +398,7 @@
     .page-dashboard .stat-icon .material-symbols-outlined {
         width: 16px;
         height: 16px;
-        color: var(--color-primary);
+        color: var(--color-primary-fg);
         font-size: 16px;
     }
 

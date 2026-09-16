@@ -152,7 +152,8 @@
    Padding, states and focus come from components/forms.css. */
 
 .page-settings .status-active {
-    color: var(--color-success);
+    /* --color-success is a surface colour: as a foreground it measured 1.87:1. */
+    color: var(--color-primary-fg);
     font-weight: 500;
 }
 
@@ -258,16 +259,41 @@
         margin-top: 24px;
         padding-top: 24px;
     }
-    /* Three tabs do not fit a phone: scroll the strip sideways rather than
-       wrapping it onto a second line and pushing the panel down the page. */
+    /* Phone: the three tabs divide the row instead of scrolling the strip.
+       `overflow-x: auto` kept them at their natural widths on one line, which
+       drew a real scrollbar across the tabs (the site-wide 8px
+       `::-webkit-scrollbar`) and parked "Species Registry" off-screen with
+       nothing to say it was there. Equal-width tabs whose own label wraps need
+       no scrolling at any width, so there is no bar to hide and every tab stays
+       reachable. Type and padding match `.analytics-tab` at this width, so the
+       two strips still read as one component.
+
+       `overflow-wrap: anywhere` is the guarantee, not decoration: it lets a label
+       break mid-word, so no label can ever push the row wider than the screen.
+       `:first-child` is included because the base rule zeroes its left padding to
+       align the strip with the content edge on desktop - that would leave the
+       first label off-centre in an equal-width tab. */
     .page-settings .settings-tabs {
         flex-wrap: nowrap;
-        overflow-x: auto;
-        scrollbar-width: thin;
+        /* `stretch`, not the base `center`: a label that wraps to two lines makes
+           its own tab taller, and centring the others would leave every tab's
+           bottom border - the active-tab indicator - at a different height. */
+        align-items: stretch;
     }
-    .page-settings .settings-tab {
-        flex: 0 0 auto;
-        white-space: nowrap;
+    .page-settings .settings-tab,
+    .page-settings .settings-tab:first-child {
+        flex: 1 1 0;
+        min-width: 0;
+        /* The label is centred in the tab's full height, so one-line and
+           two-line tabs put their text on the same axis. */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 8px;
+        font-size: 12px;
+        line-height: 1.35;
+        white-space: normal;
+        overflow-wrap: anywhere;
     }
 }
 

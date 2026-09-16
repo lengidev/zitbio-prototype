@@ -45,7 +45,7 @@
     font-weight: 600;
     border-radius: var(--radius-full);
     background-color: var(--color-primary-light);
-    color: var(--color-primary);
+    color: var(--color-primary-fg);
 }
 
 /* Override search input width on users page */
@@ -67,12 +67,12 @@
 
 .role-badge.admin {
     background-color: var(--color-primary-light);
-    color: var(--color-primary);
+    color: var(--color-primary-fg);
 }
 
 .role-badge.officer {
     background-color: rgba(141, 110, 99, 0.1);
-    color: var(--color-secondary);  /* keep distinct from primary */
+    color: var(--color-secondary-fg);  /* keep distinct from primary */
 }
 
 /* Table container with horizontal scroll for responsiveness */
@@ -198,7 +198,7 @@
 /* Required marker. aria-hidden because the input already carries `required`, so
    announcing the asterisk too would just be noise. */
 .page-users .user-form-grid .form-required {
-    color: var(--color-danger);
+    color: var(--color-danger-fg);
     font-weight: 600;
 }
 
@@ -250,13 +250,13 @@
 
 .page-users .user-status.is-active {
     background-color: var(--color-success-light);
-    color: var(--color-primary);
+    color: var(--color-primary-fg);
 }
 
 /* Deactivated is the state worth noticing, so it takes the danger pair. */
 .page-users .user-status.is-inactive {
     background-color: var(--color-danger-light);
-    color: var(--color-danger);
+    color: var(--color-danger-fg);
 }
 
 /* Row actions. Text for all three: two icons beside one label read as an

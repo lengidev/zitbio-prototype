@@ -1,6 +1,6 @@
 /* ZitBio analytics page: tab switching, table rendering, pagination, search and
    column toggling. Tables render through the shared observationsRenderer, so the
-   Dataset tab matches the admin Observations page. */
+   Table tab matches the admin Observations page. */
 
 var analyticsCurrentPage = 1;
 var analyticsFilteredData = [];
@@ -490,21 +490,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 targetPanel.classList.add('active');
             }
 
-            var isDataset = (tabName === 'observations');
+            // The Table tab (data-tab="observations") is the one that shows the
+            // search box and the column toggles.
+            var isTableTab = (tabName === 'observations');
             if (searchWrapper) {
-                searchWrapper.style.display = isDataset ? 'inline-flex' : 'none';
+                searchWrapper.style.display = isTableTab ? 'inline-flex' : 'none';
             }
             // Tag the container so CSS can align the search/filter controls per
-            // tab at responsive breakpoints: Dataset shows both (side by side
+            // tab at responsive breakpoints: Table shows both (side by side
             // below the tabs on small screens); the other tabs keep the filter
             // button right-aligned next to the tabs on every breakpoint.
             if (tabsContainer) {
-                tabsContainer.classList.toggle('with-search', isDataset);
+                tabsContainer.classList.toggle('with-search', isTableTab);
             }
-            // Column toggles apply to the Dataset table only: flagging the filter
+            // Column toggles apply to the Table tab only: flagging the filter
             // bar hides the Toggle Columns row on Map/Graphs/Report.
             if (filterBar) {
-                filterBar.classList.toggle('with-column-toggles', isDataset);
+                filterBar.classList.toggle('with-column-toggles', isTableTab);
             }
         }
     }
@@ -552,12 +554,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Apply the same class on first load, not only after a tab click.
     var initialTab = document.querySelector('.analytics-tab.active');
-    var initialIsDataset = !!(initialTab && initialTab.getAttribute('data-tab') === 'observations');
+    var initialIsTableTab = !!(initialTab && initialTab.getAttribute('data-tab') === 'observations');
     if (tabsContainer) {
-        tabsContainer.classList.toggle('with-search', initialIsDataset);
+        tabsContainer.classList.toggle('with-search', initialIsTableTab);
     }
     if (filterBar) {
-        filterBar.classList.toggle('with-column-toggles', initialIsDataset);
+        filterBar.classList.toggle('with-column-toggles', initialIsTableTab);
     }
 
     if (!window.BioData) {

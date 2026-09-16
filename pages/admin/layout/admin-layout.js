@@ -5,52 +5,106 @@
 document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('adminSidebar');
     const mainContent = document.querySelector('.main-content');
-
-    /* DESKTOP: Collapse/Expand sidebar */
     const toggleBtn = document.getElementById('sidebarToggle');
-
-    const isCollapsed = localStorage.getItem('admin-sidebar-collapsed') === 'true';
-    if (sidebar && isCollapsed) {
-        sidebar.classList.add('collapsed');
-        if (mainContent) mainContent.classList.add('expanded');
-    }
-
-    if (toggleBtn && sidebar) {
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            if (mainContent) mainContent.classList.toggle('expanded');
-            localStorage.setItem('admin-sidebar-collapsed', sidebar.classList.contains('collapsed'));
-        });
-    }
-
-    /* MOBILE: Open/Close sidebar as overlay */
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     const sidebarClose = document.getElementById('sidebarClose');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-    function openMobileSidebar() {
+    /* ONE navigation model per width, decided in ONE place.
+
+       >=1024px  a permanent rail the user can collapse to a 72px icon strip, and
+                 that choice is remembered.
+       <=1023px  an off-canvas drawer opened by the hamburger. The geometry lives
+                 in styles/layout.css under the same 1023px breakpoint.
+
+       The remembered collapse belongs to the RAIL only. It used to be applied at
+       every width, so a phone inherited the last desktop session's state and the
+       drawer opened 72px wide: `.sidebar.collapsed` hides every label and sets
+       `.sidebar-footer` to `visibility: hidden`, leaving no page names and no
+       connection state. That is the reported "bar footer gets clipped on phones
+       and you can't get any information of state". */
+    const SIDEBAR_COLLAPSED_KEY = 'admin-sidebar-collapsed';
+    const DRAWER_QUERY = '(max-width: 1023px)';
+    const drawerMode = window.matchMedia(DRAWER_QUERY);
+    let lastWasDrawer = null;
+
+    function syncNavAria() {
         if (!sidebar) return;
-        sidebar.classList.add('mobile-open');
-        if (sidebarOverlay) sidebarOverlay.classList.add('open');
+        const expanded = drawerMode.matches
+            ? sidebar.classList.contains('mobile-open')
+            : !sidebar.classList.contains('collapsed');
+        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', String(expanded));
+        if (hamburgerBtn) hamburgerBtn.setAttribute('aria-expanded', String(expanded));
     }
 
-    function closeMobileSidebar() {
+    function openNavDrawer() {
+        // Refuse in rail mode: the hamburger is `display: none` there, so this is
+        // unreachable by hand - but the overlay it toggles is not scoped to the
+        // drawer breakpoint, and a stray call would cover a perfectly good page.
+        if (!sidebar || !drawerMode.matches) return;
+        sidebar.classList.add('mobile-open');
+        if (sidebarOverlay) sidebarOverlay.classList.add('open');
+        syncNavAria();
+    }
+
+    function closeNavDrawer() {
         if (!sidebar) return;
         sidebar.classList.remove('mobile-open');
         if (sidebarOverlay) sidebarOverlay.classList.remove('open');
+        syncNavAria();
+    }
+
+    function applySidebarMode() {
+        if (!sidebar) return;
+        const isDrawer = drawerMode.matches;
+
+        if (isDrawer) {
+            sidebar.classList.remove('collapsed');
+            if (mainContent) mainContent.classList.remove('expanded');
+        } else {
+            const collapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+            sidebar.classList.toggle('collapsed', collapsed);
+            if (mainContent) mainContent.classList.toggle('expanded', collapsed);
+        }
+
+        // Crossing the breakpoint - a rotation, or a resized window - must not
+        // leave a half-open drawer behind, in either direction. `lastWasDrawer`
+        // is null on the first call so a fresh load is not treated as a change.
+        if (lastWasDrawer !== null && lastWasDrawer !== isDrawer) closeNavDrawer();
+        lastWasDrawer = isDrawer;
+
+        syncNavAria();
+    }
+
+    applySidebarMode();
+
+    if (drawerMode.addEventListener) {
+        drawerMode.addEventListener('change', applySidebarMode);
+    } else if (drawerMode.addListener) {
+        drawerMode.addListener(applySidebarMode); // Safari < 14
+    }
+
+    if (toggleBtn && sidebar) {
+        toggleBtn.addEventListener('click', () => {
+            const collapsed = !sidebar.classList.contains('collapsed');
+            sidebar.classList.toggle('collapsed', collapsed);
+            if (mainContent) mainContent.classList.toggle('expanded', collapsed);
+            localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+            syncNavAria();
+        });
     }
 
     if (hamburgerBtn) {
-        hamburgerBtn.addEventListener('click', openMobileSidebar);
+        hamburgerBtn.addEventListener('click', openNavDrawer);
     }
     if (sidebarClose) {
-        sidebarClose.addEventListener('click', closeMobileSidebar);
+        sidebarClose.addEventListener('click', closeNavDrawer);
     }
     if (sidebarOverlay) {
-        sidebarOverlay.addEventListener('click', closeMobileSidebar);
+        sidebarOverlay.addEventListener('click', closeNavDrawer);
     }
 
-    /* NAV ITEMS: Active page highlighting + close mobile on navigate */
+    /* NAV ITEMS: Active page highlighting + close the drawer on navigate */
     const currentPath = window.location.pathname;
     const navItems = document.querySelectorAll('.sidebar-menu .nav-item');
 
@@ -72,8 +126,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             navItems.forEach(n => n.classList.remove('active'));
             this.classList.add('active');
-            if (window.innerWidth <= 768) {
-                closeMobileSidebar();
+            // Asked of the same query the drawer is styled with, not of a second
+            // hardcoded width that can drift away from it.
+            if (drawerMode.matches) {
+                closeNavDrawer();
             }
         });
     });

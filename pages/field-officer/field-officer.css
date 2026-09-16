@@ -4,7 +4,10 @@
 .page-fieldofficer-v2 {
   background-color: var(--color-bg);
   font-family: var(--font-sans);
+  /* `dvh`: see styles/global.css. Keeps the page the height of what is on screen
+     rather than the height it would have with the browser chrome hidden. */
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
 }
 

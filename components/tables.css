@@ -131,12 +131,12 @@
 .status-cell.active,
 .status-cell.published {
   background: var(--color-success-light);
-  color: var(--color-primary);
+  color: var(--color-primary-fg);
 }
 
 .status-cell.pending {
   background: var(--color-warning-light);
-  color: var(--color-warning);
+  color: var(--color-warning-fg);
 }
 
 .status-cell.inactive,
@@ -148,7 +148,7 @@
 .status-cell.error,
 .status-cell.rejected {
   background: var(--color-danger-light);
-  color: var(--color-danger);
+  color: var(--color-danger-fg);
 }
 
 /* Status indicator dot */
@@ -194,7 +194,7 @@
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background-color: var(--color-bg-header);
-  color: var(--color-primary);
+  color: var(--color-primary-fg);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -213,7 +213,7 @@
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
     background: var(--color-bg-white);
-    color: var(--color-primary);
+    color: var(--color-primary-fg);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -232,7 +232,7 @@
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background-color: var(--color-bg-header);
-  color: var(--color-secondary);
+  color: var(--color-secondary-fg);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;

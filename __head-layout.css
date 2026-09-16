@@ -1,4 +1,4 @@
-/*
+﻿/*
  Layout Styles Responsive and Layout utilities
  */
 .content-area {
@@ -140,39 +140,18 @@
 }
 
 /* App Layout Structure - Unified Admin Sidebar */
-/* The shell owns the viewport and the CONTENT COLUMN is the only scroller.
-
-   `min-height: 100vh` made the DOCUMENT the scroller, with the sidebar merely
-   `position: fixed` on top of it. That is the layout iOS drifts: during a
-   momentum scroll, and again while the URL bar collapses, the engine re-anchors
-   fixed elements, so the rail visibly slides with the page instead of standing
-   still while the content moves. One scroller removes the whole class of bug.
-
-   `100dvh` (dynamic viewport height) is the height actually visible right now,
-   browser toolbars included, so neither iOS Safari nor Android Chrome can hide
-   the sidebar footer behind its own chrome. The `vh` line before it is the
-   fallback for engines without `dvh` (Safari < 15.4).
-
-   `overflow: hidden` is what keeps the document out of the scrolling business;
-   it also guarantees an off-canvas drawer can never widen the page. */
 .app-container {
     display: flex;
-    height: 100vh;
-    height: 100dvh;
+    min-height: 100vh;
     width: 100%;
     position: relative;
-    overflow: hidden;
 }
 
 /* Sidebar Base*/
 .sidebar {
     width: 260px;
     min-width: 260px;
-    /* `dvh`, not `vh`: on iOS and Android `100vh` is the height with the browser
-       chrome HIDDEN, so the bottom of a 100vh rail sat under the toolbar. The
-       status footer lives exactly there. */
     height: 100vh;
-    height: 100dvh;
     position: fixed;
     top: 0;
     left: 0;
@@ -230,23 +209,7 @@
     flex-direction: column;
     padding: 16px 0;
     flex-grow: 1;
-    /* `min-height: 0` lets the nav give up height instead of pushing the footer
-       past the bottom of the rail on a short viewport (landscape phone). */
-    min-height: 0;
     height: 100%;
-    /* Nav scrolls, footer does not: the connection state and version stay on
-       screen whatever the nav does. `overscroll-behavior` stops the scroll
-       chaining out to the page once the nav hits its end. */
-    overflow-y: auto;
-    overscroll-behavior: contain;
-}
-
-/* The collapsed rail relies on tooltips that hang OUTSIDE the rail
-   (`left: 100%`), so this one state must not clip. It is safe because the rail
-   shows icons only: there is nothing here that needs to scroll before the
-   viewport gets shorter than 7 unlabelled rows. */
-.sidebar.collapsed .sidebar-menu {
-    overflow: visible;
 }
 
 /* Primary navigation group - fills available space */
@@ -346,53 +309,13 @@
     display: none;
 }
 
-/* The content column: header pinned, content scrolling. `min-width: 0` keeps a
-   wide child (a data table) from setting the column's minimum width and pushing
-   the page sideways; `min-height: 0` does the same for the height. */
 .main-content {
     flex-grow: 1;
-    min-width: 0;
-    min-height: 0;
     margin-left: 260px;
+    min-height: 100vh;
     transition: margin-left 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
     width: calc(100% - 260px);
-    display: flex;
-    flex-direction: column;
-    /* The one scroller in the app. The header child is `sticky` inside it, so it
-       stays put for free. */
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    /* Reserve the scrollbar on every page, not just the long ones, so the
-       content does not jump sideways when the page it is on grows. */
     scrollbar-gutter: stable;
-}
-
-/* PRINT: give the document back to the printer.
-   The shell's fixed height and clipped overflow exist to keep ONE on-screen
-   scroller; on paper they clip a multi-page report to its first page. The report
-   printer in analytics gets this for free, because it lifts `#tab-report` out to
-   `.app-container` (its containing block) - that box must not clip either. */
-@media print {
-    .app-container {
-        display: block;
-        height: auto;
-        overflow: visible;
-    }
-
-    .main-content {
-        display: block;
-        height: auto;
-        overflow: visible;
-        margin-left: 0;
-        width: 100%;
-    }
-
-    .sidebar,
-    .sidebar-overlay,
-    .top-header,
-    .hamburger {
-        display: none;
-    }
 }
 
 /* Collapsible Class Modifiers */
@@ -554,15 +477,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    /* A floor on the spacing between the bar's three slots, so the narrowest
-       screen cannot jam the menu button into the bell. */
-    gap: var(--spacing-md);
     padding: 0 var(--spacing-2xl);
     position: sticky;
     top: 0;
     z-index: 100;
     box-shadow: var(--shadow-sm);
-    flex: 0 0 auto;
 }
 
 /* Page Content */
@@ -599,15 +518,10 @@
 }
 
 /* Stats Grid Layout */
-/* Stats Grid - Force 3 columns.
-
-   `minmax(0, 1fr)`, never bare `1fr`: a bare `1fr` is `minmax(auto, 1fr)`, so a
-   track can never shrink below the widest word inside it and the grid overflows
-   its own box instead of fitting (this is how a 4-card row pushed the whole
-   dashboard sideways on a tablet). */
+/* Stats Grid - Force 3 columns */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 24px;
     margin-bottom: 32px;
 }
@@ -800,35 +714,10 @@
   gap: 12px;
 }
 
-/* The title slot absorbs the free space. That is what makes the bar read as
-   three slots - [menu button + title] ... [notifications + user] - instead of
-   three loose items shared out by `space-between`.
-
-   `space-between` spread the free space evenly, so the title landed wherever the
-   arithmetic put it: detached from the menu button it belongs beside, with a
-   wide dead gap to its left and the bar looking unaligned (measured on a 939px
-   tablet bar the title started 187px in). `min-width: 0` is what lets it give up
-   width to the controls rather than push them. */
-.top-header > div:first-of-type {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-/* A long app title truncates. Wrapping it would make the bar taller than its
-   fixed 60px and drag the controls out of vertical alignment. */
-.top-header .header-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .header-right {
   display: flex;
   align-items: center;
   gap: 16px;
-  /* The controls never shrink. The title is the flexible slot; squeezing these
-     instead is what broke the bar's alignment. */
-  flex: 0 0 auto;
 }
 
 .user-menu {
@@ -854,17 +743,10 @@
     color: var(--color-text-secondary);
 }
 
-/* One line, always. At 320px the name wrapped to two lines, which made the bar's
-   content taller than the bar and left the chevron floating beside the second
-   line instead of centred on the control. */
 .user-menu-name {
   font-size: 13px;
   color: var(--color-text-primary);
   font-weight: 400;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .user-menu-arrow {
@@ -996,64 +878,13 @@
     max-width: 1200px;
   }
 
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
   /*.middle-section {
     grid-template-columns: 272px 1fr;
   }*/
-}
-
-/* Navigation drawer (<=1023px): ONE nav pattern for phones and tablets -------
-
-   The rail used to survive up to 1023px, so a tablet got a permanent 260px rail
-   that ate a third of the screen while the pages inside it had already collapsed
-   to their phone layouts. That mismatch is what forced the dashboard into a
-   horizontal scroll: four stat cards cannot fit in what is left of a 768px
-   screen. Below 1024px there is now one navigation pattern instead of two.
-
-   The drawer is ALWAYS the full rail. The stored collapse state describes the
-   DESKTOP rail, so admin-layout.js removes the class here - and the rule below
-   keeps a stale one from opening a 72px icon rail that hides every label AND the
-   status footer, which is the exact opposite of what a drawer is for.
-
-   Keep 1023px in step with DRAWER_QUERY in pages/admin/layout/admin-layout.js:
-   that script is the only thing that opens and closes this drawer. */
-@media (max-width: 1023px) {
-  /* Out of the flow, so the content column gets the whole width. */
-  .sidebar {
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-  }
-
-  .sidebar.mobile-open {
-    transform: translateX(0);
-    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.15);
-  }
-
-  .sidebar.collapsed {
-    width: 260px;
-    min-width: 260px;
-  }
-
-  /* The rail's own toggle cannot close the drawer, so the drawer gets the close
-     button instead - and hides the toggle, which would do nothing here. */
-  #sidebarClose {
-    display: inline-flex;
-    margin-left: auto;
-  }
-
-  .sidebar.mobile-open #sidebarToggle {
-    display: none;
-  }
-
-  .main-content,
-  .main-content.expanded,
-  .main-wrapper {
-    margin-left: 0;
-    width: 100%;
-  }
-
-  .hamburger {
-    display: flex;
-  }
 }
 
 /* Tablet (768px - 1023px): Stacked vertical blocks, compact padding */
@@ -1061,6 +892,10 @@
   .container {
     max-width: 100%;
     padding: 0 var(--spacing-lg);
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .middle-section {
@@ -1088,14 +923,61 @@
 
 /* Mobile (<=767px): Single column, simplified streamlined viewports */
 @media (max-width: 767px) {
+  /* Show sidebar close button on mobile */
+  #sidebarClose {
+    display: inline-flex;
+    margin-left: auto;
+  }
   .container {
     padding: 0 var(--spacing-md);
     min-width: 320px;
   }
 
+  /* Sidebar becomes off-canvas on mobile */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.mobile-open.collapsed {
+    transform: translateX(0) !important;
+  }
+
+  /* Hide sidebar toggle button when sidebar is open on mobile */
+  .sidebar.mobile-open #sidebarToggle {
+    display: none;
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .main-content.expanded {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .main-wrapper {
+    margin-left: 0;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
   /* Stack all grids to single column */
   .stats-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .middle-section {
@@ -1123,17 +1005,6 @@
 
   /* Hide header title on mobile */
   .top-header .header-title {
-    display: none;
-  }
-
-  /* Phone: the user menu becomes icon-only.
-
-     Name + notifications + the menu button do not fit a phone at any legible
-     size, and the name is already the first thing the dropdown it opens shows.
-     Dropping it is what keeps the bar's three slots evenly spaced instead of
-     squeezed, which is the state the user reported as "not organised". The two
-     icons stay the same distance apart as on every other screen. */
-  .top-header .user-menu-name {
     display: none;
   }
 
