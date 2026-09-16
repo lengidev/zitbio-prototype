@@ -18,12 +18,47 @@ var analyticsFilters = {
 // would otherwise reset the checkbox states.
 var analyticsVisibleColumns = {
     coords: false,
-    'focus-area': false,
+    province: false,
     locality: false,
     'recorded-by': false,
     institution: false,
     'obs-id': false
 };
+
+var ANALYTICS_VIEW_KEY = 'analytics_view';
+
+// Filters, column toggles, search and page survive navigating away. The tab is
+// persisted separately under biodata_analytics_tab.
+function saveAnalyticsView() {
+    if (!window.BioPageState) return;
+    var searchInput = document.querySelector('.page-analytics .search-input');
+    window.BioPageState.write(ANALYTICS_VIEW_KEY, {
+        filters: analyticsFilters,
+        columns: analyticsVisibleColumns,
+        search: searchInput ? searchInput.value : '',
+        page: analyticsCurrentPage
+    });
+}
+
+function restoreAnalyticsView() {
+    var saved = window.BioPageState ? window.BioPageState.read(ANALYTICS_VIEW_KEY, null) : null;
+    if (!saved || typeof saved !== 'object') return;
+
+    if (saved.filters && typeof saved.filters === 'object') {
+        Object.keys(analyticsFilters).forEach(function(key) {
+            if (typeof saved.filters[key] === 'string') analyticsFilters[key] = saved.filters[key];
+        });
+    }
+    if (saved.columns && typeof saved.columns === 'object') {
+        Object.keys(analyticsVisibleColumns).forEach(function(key) {
+            if (typeof saved.columns[key] === 'boolean') analyticsVisibleColumns[key] = saved.columns[key];
+        });
+    }
+    if (typeof saved.page === 'number' && saved.page > 0) analyticsCurrentPage = saved.page;
+
+    var searchInput = document.querySelector('.page-analytics .search-input');
+    if (searchInput && typeof saved.search === 'string') searchInput.value = saved.search;
+}
 
 // Two phases: BioData filters first, then a scoped search on top, so the filter
 // badge can count active filters even when no search term is entered.
@@ -79,6 +114,7 @@ function updateFilterCount() {
 function applyFilters() {
     analyticsCurrentPage = 1;
     updateFilterCount();
+    populateSpeciesOptions();
     renderAnalyticsTable();
     var graphsPanel = document.getElementById('tab-graphs');
     var reportPanel = document.getElementById('tab-report');
@@ -114,6 +150,8 @@ function getAnalyticsColumns() {
         },
         {
             label: 'Region / Province',
+            cellClass: 'province-cell',
+            toggleKey: 'province',
             render: function(obs) {
                 var loc = obs.location || {};
                 return escapeHtmlObs(loc.administrative_area || '—');
@@ -153,10 +191,12 @@ function getAnalyticsColumns() {
         },
         {
             label: 'Focus Area',
-            toggleKey: 'focus-area',
+            cellClass: 'focus-area-cell',
             render: function(obs) {
                 var loc = obs.location || {};
-                return escapeHtmlObs(loc.focus_area || '—');
+                var name = loc.focus_area || '';
+                // Full registry name: the tables are where the long form matters.
+                return name ? escapeHtmlObs(window.BioData.getSiteLabel(name, 'full')) : '—';
             }
         },
         {
@@ -214,6 +254,17 @@ function renderAnalyticsTable() {
     });
 
     applyColumnVisibility();
+    markRowsAsMapLinked();
+    saveAnalyticsView();
+}
+
+// A row is a way into the map, but a single click would fight text selection, so
+// the gesture is a double click and the rows say so on hover.
+function markRowsAsMapLinked() {
+    var rows = document.querySelectorAll('.page-analytics .observation-row');
+    rows.forEach(function(row) {
+        row.title = 'Double-click to show this observation on the map';
+    });
 }
 
 function handleAnalyticsSearch() {
@@ -243,41 +294,76 @@ function initFilterToggle() {
 
 function populateFilterDropdowns() {
     if (!window.BioData) return;
+    populateFocusAreaOptions();
+    populateSpeciesOptions();
+}
 
-    // The two canonical CBU areas. These display names lenient-match every
-    // stored variant through the focusArea rule in filterObservations
-    // ('CBU Campus', 'The CBU Nature Park', GBIF 'Copperbelt University').
-    var focusAreaSelect = document.getElementById('filterFocusArea');
-    if (focusAreaSelect) {
-        var focusAreaOptions = [
-            'The Copperbelt University Campus',
-            'The Copperbelt University Nature Park'
-        ];
-        focusAreaOptions.forEach(function(fa) {
-            var opt = document.createElement('option');
-            opt.value = fa;
-            opt.textContent = fa;
-            focusAreaSelect.appendChild(opt);
-        });
+// Option values are site names because that is what observations.focus_area
+// stores; the shorter registry name is only ever the label.
+function populateFocusAreaOptions() {
+    var select = document.getElementById('filterFocusArea');
+    if (!select) return;
+
+    var previous = select.value;
+    select.innerHTML = '<option value="">All focus areas</option>';
+
+    var registry = window.BioData.getSiteRegistry ? (window.BioData.getSiteRegistry() || []) : [];
+    registry.forEach(function(site) {
+        if (!site || !site.name) return;
+        var opt = document.createElement('option');
+        opt.value = site.name;
+        opt.textContent = site.short_name || site.name;
+        select.appendChild(opt);
+    });
+
+    select.value = previous;
+}
+
+// Scoped to the other active filters, so the list cannot offer a species that is
+// absent from the current result set.
+function populateSpeciesOptions() {
+    var select = document.getElementById('filterSpecies');
+    if (!select || !window.BioData) return;
+
+    var previous = analyticsFilters.species || select.value || '';
+    select.innerHTML = '<option value="">All species</option>';
+
+    var scoped = window.BioData.filterObservations({
+        dateFrom: analyticsFilters.dateFrom,
+        dateTo: analyticsFilters.dateTo,
+        focusArea: analyticsFilters.focusArea,
+        status: analyticsFilters.status,
+        species: ''
+    });
+
+    var seen = {};
+    var names = [];
+    scoped.forEach(function(obs) {
+        var sd = obs.species_details || {};
+        var name = sd.common_name || sd.scientific_name || '';
+        if (!name || seen[name]) return;
+        seen[name] = true;
+        names.push(name);
+    });
+    names.sort(function(a, b) { return a.localeCompare(b); });
+
+    names.forEach(function(name) {
+        var opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+    });
+
+    // A species the admin already picked stays on the list, labelled, so an empty
+    // table explains itself rather than the filter changing under them.
+    if (previous && !seen[previous]) {
+        var stale = document.createElement('option');
+        stale.value = previous;
+        stale.textContent = previous + ' (outside the current filters)';
+        select.appendChild(stale);
     }
 
-    var speciesSelect = document.getElementById('filterSpecies');
-    if (speciesSelect) {
-        var obs = window.BioData.getObservations();
-        var speciesSet = {};
-        obs.forEach(function(o) {
-            if (o.species_details && o.species_details.common_name) {
-                speciesSet[o.species_details.common_name] = true;
-            }
-        });
-        var sorted = Object.keys(speciesSet).sort();
-        sorted.forEach(function(name) {
-            var opt = document.createElement('option');
-            opt.value = name;
-            opt.textContent = name;
-            speciesSelect.appendChild(opt);
-        });
-    }
+    select.value = previous;
 }
 
 //  COLUMN VISIBILITY
@@ -293,6 +379,35 @@ function applyColumnVisibility() {
     }
 }
 
+// The filter bar's controls, looked up in one place so every reader resolves the
+// same set of ids.
+function getFilterControls() {
+    return {
+        dateFrom: document.getElementById('filterDateFrom'),
+        dateTo: document.getElementById('filterDateTo'),
+        focusArea: document.getElementById('filterFocusArea'),
+        status: document.getElementById('filterStatus'),
+        species: document.getElementById('filterSpecies'),
+        clearBtn: document.getElementById('filterClear')
+    };
+}
+
+// Pushes the restored state back into the controls, so the filter bar and toggle
+// buttons show what the table is already doing.
+function applyFilterControlsFromState() {
+    var controls = getFilterControls();
+
+    if (controls.dateFrom) controls.dateFrom.value = analyticsFilters.dateFrom;
+    if (controls.dateTo) controls.dateTo.value = analyticsFilters.dateTo;
+    if (controls.focusArea) controls.focusArea.value = analyticsFilters.focusArea;
+    if (controls.status) controls.status.value = analyticsFilters.status;
+    if (controls.species) controls.species.value = analyticsFilters.species;
+
+    document.querySelectorAll('.page-analytics .col-toggle-btn').forEach(function(btn) {
+        btn.classList.toggle('active', !!analyticsVisibleColumns[btn.getAttribute('data-col')]);
+    });
+}
+
 //  COLUMN TOGGLE BUTTONS
 
 function initColumnToggleButtons() {
@@ -306,6 +421,7 @@ function initColumnToggleButtons() {
             this.classList.toggle('active');
             
             applyColumnVisibility();
+            saveAnalyticsView();
         });
     });
 }
@@ -314,38 +430,41 @@ function initColumnToggleButtons() {
 //  Re-render on change, not on every keystroke, to avoid churn.
 
 function initFilterListeners() {
-    var dateFrom = document.getElementById('filterDateFrom');
-    var dateTo = document.getElementById('filterDateTo');
-    var focusArea = document.getElementById('filterFocusArea');
-    var status = document.getElementById('filterStatus');
-    var species = document.getElementById('filterSpecies');
-    var clearBtn = document.getElementById('filterClear');
+    var controls = getFilterControls();
 
     function onFilterChange() {
-        analyticsFilters.dateFrom = dateFrom ? dateFrom.value : '';
-        analyticsFilters.dateTo = dateTo ? dateTo.value : '';
-        analyticsFilters.focusArea = focusArea ? focusArea.value : '';
-        analyticsFilters.status = status ? status.value : '';
-        analyticsFilters.species = species ? species.value : '';
+        analyticsFilters.dateFrom = controls.dateFrom ? controls.dateFrom.value : '';
+        analyticsFilters.dateTo = controls.dateTo ? controls.dateTo.value : '';
+        analyticsFilters.status = controls.status ? controls.status.value : '';
+        analyticsFilters.species = controls.species ? controls.species.value : '';
         applyFilters();
     }
 
-    if (dateFrom) dateFrom.addEventListener('change', onFilterChange);
-    if (dateTo) dateTo.addEventListener('change', onFilterChange);
-    if (focusArea) focusArea.addEventListener('change', onFilterChange);
-    if (status) status.addEventListener('change', onFilterChange);
-    if (species) species.addEventListener('change', onFilterChange);
+    if (controls.dateFrom) controls.dateFrom.addEventListener('change', onFilterChange);
+    if (controls.dateTo) controls.dateTo.addEventListener('change', onFilterChange);
+    if (controls.status) controls.status.addEventListener('change', onFilterChange);
+    if (controls.species) controls.species.addEventListener('change', onFilterChange);
 
-    if (clearBtn) {
-        clearBtn.addEventListener('click', function() {
-            if (dateFrom) dateFrom.value = '';
-            if (dateTo) dateTo.value = '';
-            if (focusArea) focusArea.value = '';
-            if (status) status.value = '';
-            if (species) species.value = '';
-            
-            analyticsFilters = { dateFrom: '', dateTo: '', focusArea: '', status: '', species: '' };
-            applyFilters();
+    // Focus Area is not a plain filter: it also decides which map area is in
+    // scope, so it goes through the one function that owns that decision.
+    if (controls.focusArea) {
+        controls.focusArea.addEventListener('change', function() {
+            setFocusArea(this.value, { fit: true });
+        });
+    }
+
+    if (controls.clearBtn) {
+        controls.clearBtn.addEventListener('click', function() {
+            if (controls.dateFrom) controls.dateFrom.value = '';
+            if (controls.dateTo) controls.dateTo.value = '';
+            if (controls.status) controls.status.value = '';
+            if (controls.species) controls.species.value = '';
+
+            analyticsFilters.dateFrom = '';
+            analyticsFilters.dateTo = '';
+            analyticsFilters.status = '';
+            analyticsFilters.species = '';
+            setFocusArea('', { fit: true });
         });
     }
 }
@@ -446,7 +565,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // Restored first: the dropdown options are built from the restored filters.
+    restoreAnalyticsView();
     populateFilterDropdowns();
+    applyFilterControlsFromState();
     initFilterToggle();
     initFilterListeners();
     initColumnToggleButtons();
@@ -464,7 +586,10 @@ document.addEventListener('DOMContentLoaded', function() {
 if (typeof window !== 'undefined') {
   window.addEventListener('biodata:synced', function() {
     if (typeof renderAnalyticsTable === 'function') {
-      applyFilters(); // re-apply active filters against the refreshed dataset
+      // The cloud copy of the site registry replaces the local one, so the option
+      // labels are rebuilt before the filters are applied.
+      populateFocusAreaOptions();
+      applyFilters();
     }
   });
 }
@@ -533,9 +658,11 @@ if (typeof window !== 'undefined') {
     };
 
     // MAP STATE PERSISTENCE
-    // Area, map/satellite mode, zoom/center and the status filters survive
-    // navigating away and back. The focused observation is NOT persisted:
-    // auto-flying to a record the admin never clicked confused people.
+    // Mode, zoom/center and the status filters survive navigating away and back.
+    // The active area is NOT stored here: the Focus Area filter owns it, so there
+    // is one value instead of two that can disagree. The focused observation is
+    // not stored either, because auto-flying to a record nobody clicked confused
+    // people.
     var MAP_STATE_KEY = 'biodata_analytics_map';
 
     // In memory only, for the explicit table-row→map fly. Never restored on load.
@@ -543,7 +670,6 @@ if (typeof window !== 'undefined') {
 
     function saveMapState() {
         var state = {
-            area: mapActiveArea,
             mode: mapMode,
             statusFilters: statusFilterState
         };
@@ -561,7 +687,6 @@ if (typeof window !== 'undefined') {
             var raw = localStorage.getItem(MAP_STATE_KEY);
             if (!raw) return null;
             var state = JSON.parse(raw);
-            if (state.area !== 'park' && state.area !== 'campus') state.area = 'park';
             if (state.mode !== 'map' && state.mode !== 'satellite') state.mode = 'map';
             if (typeof state.zoom !== 'number' || isNaN(state.zoom)) state.zoom = 16;
             if (!Array.isArray(state.center) || state.center.length !== 2) state.center = [-12.805, 28.240];
@@ -579,6 +704,88 @@ if (typeof window !== 'undefined') {
             return null;
         }
     }
+
+    // The Focus Area filter is the single owner of the area in scope. The map's own
+    // toggle and the toolbar button both read and write through setFocusArea, so
+    // there is no second value to drift.
+    function getSiteRegistry() {
+        return (window.BioData && window.BioData.getSiteRegistry) ? (window.BioData.getSiteRegistry() || []) : [];
+    }
+
+    function areaForSiteName(name) {
+        var wanted = String(name == null ? '' : name).toLowerCase();
+        if (!wanted) return '';
+        var match = getSiteRegistry().find(function(site) {
+            return (site.name || '').toLowerCase() === wanted;
+        });
+        var probe = match ? (match.name || '').toLowerCase() : wanted;
+        if (/nature park/.test(probe)) return 'park';
+        if (/campus|copperbelt university/.test(probe)) return 'campus';
+        return '';
+    }
+
+    function focusAreaForArea(area) {
+        var pattern = area === 'park' ? /nature park/ : /campus|copperbelt university/;
+        var match = getSiteRegistry().find(function(site) {
+            return pattern.test((site.name || '').toLowerCase());
+        });
+        return match ? match.name : '';
+    }
+
+    function updateAreaStatus() {
+        var label = document.getElementById('map-status-area');
+        if (!label) return;
+        var site = getSiteRegistry().find(function(s) {
+            return mapActiveArea && areaForSiteName(s.name) === mapActiveArea;
+        });
+        label.textContent = site ? (site.short_name || site.name) : 'All focus areas';
+    }
+
+    function updateAreaControls() {
+        var toggle = document.getElementById('map-area-toggle');
+        if (toggle) {
+            toggle.querySelectorAll('.map-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-area') === mapActiveArea);
+            });
+        }
+        var focusBtn = document.getElementById('toolbar-focus-toggle');
+        if (focusBtn) {
+            var nextLabel = mapActiveArea === 'park' ? 'Campus' : 'Nature Park';
+            focusBtn.setAttribute('data-tooltip', 'Switch to ' + nextLabel);
+            focusBtn.setAttribute('aria-label', 'Switch to ' + nextLabel);
+        }
+    }
+
+    /**
+     * The only writer of the focus-area scope: keeps the filter chip, the table and
+     * charts, the polygon styles, the camera and the status bar in step.
+     */
+    window.setFocusArea = function(value, options) {
+        var opts = options || {};
+        analyticsFilters.focusArea = value || '';
+
+        var chip = document.getElementById('filterFocusArea');
+        if (chip) chip.value = analyticsFilters.focusArea;
+
+        if (opts.apply !== false) applyFilters();
+
+        mapActiveArea = areaForSiteName(analyticsFilters.focusArea);
+
+        if (mapInstance) {
+            renderPolygons(mapActiveArea);
+            if (opts.fit !== false) fitActiveArea();
+        }
+
+        updateAreaControls();
+        updateAreaStatus();
+        saveMapState();
+    };
+
+    // The toolbar button cycles the same value the filter chip owns.
+    window.cycleMapFocus = function() {
+        var next = mapActiveArea === 'park' ? 'campus' : 'park';
+        window.setFocusArea(focusAreaForArea(next), { fit: true });
+    };
 
     function getStatusColor(status) {
         var s = (status || '').toLowerCase();
@@ -721,11 +928,17 @@ if (typeof window !== 'undefined') {
 
     function fitActiveArea() {
         if (!mapInstance) return;
-        var poly = mapActiveArea === 'park' ? parkPolygon : campusPolygon;
+        var poly = mapActiveArea === 'park' ? parkPolygon : (mapActiveArea === 'campus' ? campusPolygon : null);
         if (poly) {
             mapInstance.fitBounds(poly.getBounds(), { padding: [80, 80] });
-            updateZoomDisplay();
+        } else {
+            // No area in scope: frame both zones so the difference is visible.
+            var both = L.latLngBounds([]);
+            if (parkPolygon) both.extend(parkPolygon.getBounds());
+            if (campusPolygon) both.extend(campusPolygon.getBounds());
+            if (both.isValid()) mapInstance.fitBounds(both, { padding: [80, 80] });
         }
+        updateZoomDisplay();
     }
 
     function showMapToast(message) {
@@ -796,15 +1009,11 @@ if (typeof window !== 'undefined') {
             });
         }
 
-        mapActiveArea = savedState ? savedState.area : 'park';
+        // The area in scope follows the filter, which is restored with the rest of
+        // the view state, so the map never invents its own idea of focus.
+        mapActiveArea = areaForSiteName(analyticsFilters.focusArea);
         renderPolygons(mapActiveArea);
-
-        var restoredAreaToggle = document.getElementById('map-area-toggle');
-        if (restoredAreaToggle) {
-            restoredAreaToggle.querySelectorAll('.map-btn').forEach(function(btn) {
-                btn.classList.toggle('active', btn.getAttribute('data-area') === mapActiveArea);
-            });
-        }
+        updateAreaControls();
 
         if (savedState && savedState.statusFilters) {
             statusFilterState = savedState.statusFilters;
@@ -830,10 +1039,7 @@ if (typeof window !== 'undefined') {
 
         updateZoomDisplay();
         updateMarkerCount();
-        var areaLabel = document.getElementById('map-status-area');
-        if (areaLabel) {
-            areaLabel.textContent = mapActiveArea === 'park' ? 'CBU Nature Park' : 'CBU Campus';
-        }
+        updateAreaStatus();
     }
 
     //  MAP UI CONTROLS
@@ -843,28 +1049,7 @@ if (typeof window !== 'undefined') {
         areaToggle.addEventListener('click', function(e) {
             var btn = e.target.closest('.map-btn');
             if (!btn || !btn.hasAttribute('data-area')) return;
-
-            var area = btn.getAttribute('data-area');
-            if (area === mapActiveArea) return;
-            mapActiveArea = area;
-
-            areaToggle.querySelectorAll('.map-btn').forEach(function(b) {
-                b.classList.toggle('active', b.getAttribute('data-area') === area);
-            });
-
-            renderPolygons(area);
-
-            var areaLabel = document.getElementById('map-status-area');
-            if (areaLabel) {
-                areaLabel.textContent = area === 'park' ? 'CBU Nature Park' : 'CBU Campus';
-            }
-
-            // Switching focus must visibly move the camera, not just restyle
-            // the polygons.
-            fitActiveArea();
-
-            // Persist the new active area (fitBounds also triggers moveend → save)
-            saveMapState();
+            setFocusArea(focusAreaForArea(btn.getAttribute('data-area')), { fit: true });
         });
     }
 
@@ -997,7 +1182,7 @@ if (typeof window !== 'undefined') {
         }
     }
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('dblclick', function(e) {
         var row = e.target.closest('.page-analytics .observation-row');
         if (!row) return;
 
@@ -1011,8 +1196,8 @@ if (typeof window !== 'undefined') {
 })();
 
 //  TOOLBAR UI
-//  Proxies clicks to the hidden legacy controls, so the toolbar works without
-//  refactoring the Leaflet controller above.
+//  Proxies clicks to the hidden legacy controls. The focus button is the
+//  exception: it cycles the same focus value the filter chip owns.
 
 (function() {
     'use strict';
@@ -1038,14 +1223,7 @@ if (typeof window !== 'undefined') {
 
     if (focusBtn) {
         focusBtn.addEventListener('click', function() {
-            var areaToggle = document.getElementById('map-area-toggle');
-            if (!areaToggle) return;
-            var btns = areaToggle.querySelectorAll('.map-btn');
-            var currentActive = areaToggle.querySelector('.map-btn.active');
-            if (!currentActive) { btns[0].click(); return; }
-            var idx = Array.prototype.indexOf.call(btns, currentActive);
-            var next = btns[(idx + 1) % btns.length];
-            if (next) next.click();
+            if (window.cycleMapFocus) window.cycleMapFocus();
         });
     }
 
@@ -1059,20 +1237,6 @@ if (typeof window !== 'undefined') {
             var idx = Array.prototype.indexOf.call(btns, currentActive);
             var next = btns[(idx + 1) % btns.length];
             if (next) next.click();
-        });
-    }
-
-    var areaToggle = document.getElementById('map-area-toggle');
-    if (areaToggle && focusBtn) {
-        areaToggle.addEventListener('click', function(e) {
-            var btn = e.target.closest('.map-btn');
-            if (!btn) return;
-            var area = btn.getAttribute('data-area');
-            if (area === 'park') {
-                focusBtn.setAttribute('data-tooltip', 'Switch to Campus');
-            } else {
-                focusBtn.setAttribute('data-tooltip', 'Switch to Nature Park');
-            }
         });
     }
 
