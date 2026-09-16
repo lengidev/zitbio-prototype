@@ -47,6 +47,13 @@
   --color-text-muted: #7F8C8D;
   --color-text-disabled: #b0bec5;
   --color-text-inverse: #ffffff;
+  /* Ink for text that sits ON a status colour - the count label on the map's
+     group bubbles. Deliberately defined ONCE, with no dark-theme twin: the surface
+     it sits on is a fixed status colour (#22c55e / #eab308 / #ef4444), identical in
+     both themes, so this is not a theme decision. Measured against those three:
+     7.7:1, 9.2:1 and 4.7:1. White would fail on two of them (1.9:1 on the amber,
+     3.8:1 on the red), and no other single ink clears 4.5:1 on all three. */
+  --color-on-status: #111827;
 
   /* Tooltips: always a dark bubble with light text, theme-aware */
   --tooltip-bg: #2C3E50;

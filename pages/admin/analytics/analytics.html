@@ -528,13 +528,17 @@
     <script defer src="../../../lib/supabase-client.js"></script>
     <script defer src="../../../lib/auth-guard.js"></script>
     <script defer src="../../../lib/date.js"></script>
-<script defer src="../../../lib/data.js"></script>
+    <script defer src="../../../lib/data.js"></script>
     <script defer src="../../../lib/notification-service.js"></script>
     <script defer src="../../../lib/supabase-sync.js"></script>
     <script defer src="../../../lib/page-state.js"></script>
     <script defer src="../../../lib/observations-renderer.js"></script>
     <script defer src="../../../lib/analytics.js"></script>
     <script defer src="../../../pages/admin/layout/admin-layout.js"></script>
+    <!-- The map's marker layout: screen-distance grouping, ring scatter for records
+         that share a coordinate, and the drill-down. Loaded last because the
+         Analytics map is its only consumer. -->
+    <script defer src="../../../lib/map-cluster.js"></script>
     <script defer src="analytics.js"></script>
 </body>
 </html>

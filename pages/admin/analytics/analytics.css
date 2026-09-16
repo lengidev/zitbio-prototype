@@ -559,6 +559,71 @@
     margin-bottom: 2px;
 }
 
+/* A group's heading says how many observations and how many places; this is the
+   status they all share. */
+.map-popup-sub {
+    display: inline-block;
+    margin-bottom: 4px;
+    padding: 1px 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-bg-hover);
+    color: var(--color-text-main);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.map-popup-foot {
+    margin-top: 4px;
+}
+
+/* Several observations at one coordinate: the popup lists them instead of
+   pretending the pile is a single record. */
+.map-popup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 2px 0;
+}
+
+.map-popup-list-item {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-main);
+}
+
+/* The record the user double-clicked in the table, when it had to be found inside
+   a group's list rather than on the map. */
+.map-popup-list-item--focused {
+    background: var(--color-bg-active);
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+}
+
+.map-popup-list-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.map-popup-list-date {
+    flex: 0 0 auto;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+}
+
+.map-popup-dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+}
+
 .map-popup-status {
     display: inline-block;
     padding: 1px 8px;
@@ -607,6 +672,72 @@
 }
 
 .map-obs-marker.highlighted {
+    animation: marker-pulse 1.5s ease-out 2;
+}
+
+/* A marker that carries more than one observation: concentric halos in the status
+   colour with the count on a solid core. The count is readable without opening
+   anything, which is the whole point of drawing a group rather than the members. */
+.map-cluster {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+}
+
+.map-cluster-halo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: var(--radius-full);
+    background: var(--map-status-color);
+    pointer-events: none;
+}
+
+.map-cluster-halo--outer {
+    width: 40px;
+    height: 40px;
+    opacity: 0.18;
+}
+
+.map-cluster-halo--inner {
+    width: 30px;
+    height: 30px;
+    opacity: 0.3;
+}
+
+/* A pill, not a circle: "+134" is four characters and would not fit a 20px
+   circle at a legible size. The box is 40px, so it still fits with room to spare. */
+.map-cluster-core {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border: 1px solid var(--color-text-inverse);
+    border-radius: var(--radius-full);
+    background: var(--map-status-color);
+    color: var(--color-on-status);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    transition: transform 0.15s;
+}
+
+.map-cluster:hover .map-cluster-core {
+    transform: translate(-50%, -50%) scale(1.15);
+}
+
+/* Focus/highlight pulse, shared with the single marker so a group and a dot answer
+   the same gesture the same way. */
+.map-cluster.highlighted .map-cluster-halo--inner {
     animation: marker-pulse 1.5s ease-out 2;
 }
 
@@ -863,48 +994,69 @@
     }
 }
 
-/* ≤1023px (tablet + mobile): per-tab control alignment
-   - Table (search visible): tabs on top; search + filter side by side below.
-   - Map / Graphs / Report (no search): filter stays aligned right of the tabs. */
-@media (max-width: 1023px) {
-    /* Map/Graphs/Report (no search): keep the filter on the tabs row, right-aligned */
-    .page-analytics .analytics-tabs:not(.with-search) {
-        flex-wrap: nowrap;
+/* Phone only (≤767px): the Filters button keeps the tabs row and the SEARCH
+   FIELD drops to a row of its own, full width.
+
+   This used to be per-tab: `.with-search` (Table) stacked the tabs and put
+   search + filter on a second row, while the other three tabs kept the filter
+   inline. Same strip, two different arrangements, and on phones a third one:
+   the button ended up on its own line on every tab, so the one control that is
+   always present was the one that moved.
+
+   Tablets (768-1023px) keep the desktop arrangement - the strip needs about
+   596px of its 712px there, so tabs + search + Filters fit on one row, exactly
+   as on desktop. On a phone the four tabs plus the 111px button already use the
+   whole row, which is why only the search field moves.
+
+   `display: contents` is what makes this possible without touching the markup:
+   it drops the wrapper's own box and promotes the search field and the Filters
+   button to be direct children of the strip, so the strip decides their order
+   and wrapping. The filter button (order 2) rides the tabs row; the search
+   wrapper (order 3, flex-basis 100%) starts the next row. When the search is
+   hidden (Map/Graphs/Report) its wrapper is `display: none`, so it contributes
+   no row at all and the strip stays one line tall.
+
+   These belong HERE, after the ≤1023px blocks above, not in the earlier ≤767
+   block: rules of equal specificity are decided by source order. */
+@media (max-width: 767px) {
+    .page-analytics .analytics-tabs {
+        flex-wrap: wrap;
         gap: 8px;
     }
-    .page-analytics .analytics-tabs:not(.with-search) .tabs-left-group {
-        flex: 1 1 auto;
+    .page-analytics .tabs-left-group {
+        order: 1;
+        /* Basis 0, not auto: with an auto basis the group asks for its full
+           content width (the four tabs, ~226px at phone type), so at 320px the
+           line could not also hold the 111px Filters button and the button
+           wrapped to a row of its own - the exact defect this block exists to
+           remove. With a 0 basis the group takes whatever the button leaves and
+           wraps the tabs INSIDE itself, so the button stays on the tabs row at
+           every width. */
+        flex: 1 1 0;
         min-width: 0;
     }
-    .page-analytics .analytics-tabs:not(.with-search) .tabs-right-group {
+    .page-analytics .tabs-right-group {
+        display: contents;
+    }
+    .page-analytics .analytics-tabs .observation-filter-btn {
+        order: 2;
         flex: 0 0 auto;
         margin-left: auto;
     }
-
-    /* Table (search visible): stack the tabs, then search + filter side by side */
-    .page-analytics .analytics-tabs.with-search {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
-    }
-    .page-analytics .analytics-tabs.with-search .tabs-right-group {
-        flex-wrap: nowrap;
-        width: 100%;
-    }
-    .page-analytics .analytics-tabs.with-search .observation-search-wrapper {
-        flex: 1 1 auto;
-        min-width: 0;
+    .page-analytics .analytics-tabs .observation-search-wrapper {
+        order: 3;
+        flex: 1 0 100%;
         width: auto;
         max-width: none;
         margin-left: 0;
     }
-    .page-analytics .analytics-tabs.with-search .search-input {
+    /* The search field fills the whole row on phone and tablet: the Filters
+       button has left it (it rides the tabs row now), so the width it used to
+       share is the field's to fill. The old 340px cap left a dead gap - on a
+       1023px tablet the row is ~966px and the field stopped at 340. */
+    .page-analytics .analytics-tabs .search-input {
         width: 100%;
         max-width: 100%;
-    }
-    .page-analytics .analytics-tabs.with-search .observation-filter-btn {
-        margin-left: 0;
-        flex: 0 0 auto;
     }
 }
 
@@ -1413,27 +1565,6 @@
 /* Mobile ≤767px: graphs & report cards stack full-width (appended after all
    base styles so these overrides win over the desktop 2-column grids). */
 @media (max-width: 767px) {
-    /* Phone: the tab strip owns a full-width row of its own.
-
-       Sharing that row with the Filters button left the four tabs the LEFTOVER
-       width, and at 320-360px that is less than the 205px they need: the strip
-       wrapped 3 + 1, then fitted on one line again from 375px up (group measured
-       153 / 193 / 208 at 320 / 360 / 375). A control strip that changes shape
-       between phones is exactly what this pass removes. The Table tab already
-       stacks (`.analytics-tabs.with-search` sets `flex-direction: column` in the
-       ≤1023 block), so this makes the other three tabs match it.
-
-       These belong HERE, at the end of the file, not in the earlier ≤767 block:
-       that block sits before the ≤1023px block, which sets
-       `.analytics-tabs:not(.with-search) { flex-wrap: nowrap }` at the same
-       specificity, so a rule written up there loses and silently does nothing. */
-    .page-analytics .analytics-tabs:not(.with-search) {
-        flex-wrap: wrap;
-    }
-    .page-analytics .analytics-tabs:not(.with-search) .tabs-left-group {
-        flex: 1 0 100%;
-    }
-
     .page-analytics .graphs-grid,
     .page-analytics .report-grid {
         grid-template-columns: minmax(0, 1fr);

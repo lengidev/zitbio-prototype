@@ -609,6 +609,10 @@ if (typeof window !== 'undefined') {
     var parkPolygon = null;
     var campusPolygon = null;
     var obsMarkers = [];
+    // Observations represented on the map, which is not the same as the number of
+    // markers drawn once records are grouped.
+    var plottedRecordCount = 0;
+    var plottedStats = null;
     var mapActiveArea = 'park';
     var mapMode = 'map';
 
@@ -653,6 +657,63 @@ if (typeof window !== 'undefined') {
         [-12.80326, 28.23502]
     ];
 
+    // THE ZOOM WINDOW, and the only place it is written down.
+    //
+    // It used to be minZoom 16, and it used to be written three times: here, in
+    // the tile layer, and again as literals inside `stepZoom`. The effect of the
+    // three copies was that "Fit area" on Campus stopped at 16 - Leaflet clamps
+    // `fitBounds` by `minZoom` - and zooming out looked stuck, because the zoom-out
+    // button was clamped by the same number. The Nature Park is small enough to fit
+    // above 16, which is why only the Campus view looked broken.
+    //
+    // 15 is a deliberate floor, not a fit: it is the furthest out the map is
+    // allowed to go. The Campus bounds are ~1.9km x ~1.1km, which needs ~15.4 to
+    // frame on a 720x380 map and ~15.9 on a large one - so the floor sits just under
+    // the Campus fit and the fit still succeeds on a tablet or a desktop window.
+    // On a phone-width map (a ~328px map) the Campus genuinely needs ~14.4 to fit
+    // horizontally, so there the floor crops it by about a tenth of its width and
+    // the user pans; that is the cost of not being able to zoom out past 15.
+    //
+    // The inset in `fitPadding()` is what keeps the desktop fit above the floor: an
+    // 80px inset needs 14.8, which the floor would refuse.
+    var MAP_MIN_ZOOM = 15;
+    var MAP_MAX_ZOOM = 18;
+
+    // Two zoom thresholds, because there are two different things a "cluster" can
+    // be, and the user asked for them to come apart at different points (2026-09-16):
+    // records at ONE coordinate split at 17.5, and records that are merely close
+    // together split by 18.0, so the top of the range shows every record on its own.
+    //
+    // At and above this one, a group of records that share a coordinate is drawn
+    // apart, around that coordinate, so each is its own marker. It is the only place
+    // the map moves a marker off its position, and it is confined to records that
+    // have no separate position to be drawn on. The popup says how many records
+    // share the point, so the spread is explained rather than implied.
+    var FANOUT_ZOOM = MAP_MAX_ZOOM - 0.5;
+
+    // At and above this one, merely-nearby records stop being merged at all: two
+    // places a few metres apart are two places once you are this close. Below it,
+    // records within lib/map-cluster.js's pixel radius draw as one group, so the map
+    // clusters while you are zoomed out and shows records once you are in.
+    //
+    // amCharts' `stopClusterZoom` is the same idea with one threshold; this splits it
+    // in two because a shared coordinate and a near miss are different claims.
+    var SEPARATE_ZOOM = MAP_MAX_ZOOM;
+
+    // Marker geometry, in px. A dot is 14px plus a 2px border; a group bubble is
+    // large enough for three digits on its core and still small enough that two
+    // groups 40px apart stay distinguishable.
+    var DOT_SIZE = [14, 14];
+    var CLUSTER_BOX = 40;
+
+    function isSeparateZoom() {
+        return !!mapInstance && mapInstance.getZoom() >= SEPARATE_ZOOM;
+    }
+
+    function isFanoutZoom() {
+        return !!mapInstance && mapInstance.getZoom() >= FANOUT_ZOOM;
+    }
+
     var statusFilterState = {
         Approved: true,
         Pending: true,
@@ -669,6 +730,10 @@ if (typeof window !== 'undefined') {
 
     // In memory only, for the explicit table-row→map fly. Never restored on load.
     var focusedObsId = null;
+
+    // Keeps the map's idea of its own size honest when the container changes.
+    // Assigned in initMap; held here so it cannot be collected mid-life.
+    var mapSizer = null;
 
     function saveMapState() {
         var state = {
@@ -797,74 +862,246 @@ if (typeof window !== 'undefined') {
         return '#6b7280';
     }
 
-    function buildPopupContent(obs) {
-        var loc = obs.location || {};
-        var sd = obs.species_details || {};
-        var sciName = sd.scientific_name || 'Unknown';
-        var commonName = sd.common_name || '';
-        var status = obs.verification_status || 'Unknown';
-        var date = obs.timestamp ? obs.timestamp.split('T')[0] : '';
-        var officer = obs.recorded_by || '';
-        var statusClass = status.toLowerCase();
-
-        var html = '<div class="map-popup-species">';
-        if (commonName) {
-            html += commonName + ' <i>(' + sciName + ')</i>';
-        } else {
-            html += '<i>' + sciName + '</i>';
+    // Species names, localities and officer names are user-entered (or imported
+    // from a third party), and both popup builders interpolate them, so every
+    // value goes through lib/escape.js - the app's single escaper.
+    function mapEscape(value) {
+        if (window.BioEscape && typeof window.BioEscape.escapeHtml === 'function') {
+            return window.BioEscape.escapeHtml(value);
         }
-        html += '</div>';
-        if (date) html += '<div class="map-popup-detail">' + date + '</div>';
-        if (officer) html += '<div class="map-popup-detail">' + officer + '</div>';
-        html += '<div style="margin-top:4px;"><span class="map-popup-status ' + statusClass + '">' + status + '</span></div>';
-        return html;
+        return typeof escapeHtmlObs === 'function' ? escapeHtmlObs(value) : '';
     }
 
+    // Statuses arrive as written by officers and by importers, so the filter keys
+    // below are the only spelling the map reasons about.
+    var MAP_STATUSES = ['Approved', 'Pending', 'Flagged'];
+
+    function normaliseMapStatus(status) {
+        var wanted = String(status == null ? '' : status).toLowerCase();
+        for (var i = 0; i < MAP_STATUSES.length; i++) {
+            if (MAP_STATUSES[i].toLowerCase() === wanted) return MAP_STATUSES[i];
+        }
+        return 'Unknown';
+    }
+
+    function buildPopupRow(item) {
+        var obs = item.obs;
+        var sd = obs.species_details || {};
+        var name = sd.common_name || sd.scientific_name || 'Unknown';
+        var date = obs.timestamp ? String(obs.timestamp).split('T')[0] : '';
+        // The record the user double-clicked in the table is marked here, which is
+        // how a record inside a 135-record summary bubble stays findable.
+        var focused = obs.observation_id && obs.observation_id === focusedObsId;
+        return '<div class="map-popup-list-item' + (focused ? ' map-popup-list-item--focused' : '') + '">'
+            + '<span class="map-popup-dot" style="background:' + getStatusColor(item.status) + '"></span>'
+            + '<span class="map-popup-list-text">' + mapEscape(name) + '</span>'
+            + (date ? '<span class="map-popup-list-date">' + mapEscape(date) + '</span>' : '')
+            + '</div>';
+    }
+
+    // One popup builder for every kind of marker: a single observation reads as it
+    // always did; a group says how many records it stands for and how many places
+    // they came from, because a group now means "close together on screen", which
+    // is not the same claim as "at the same coordinate".
+    function buildPopupContent(items, summary) {
+        if (items.length === 1) {
+            var obs = items[0].obs;
+            var sd = obs.species_details || {};
+            var sciName = sd.scientific_name || 'Unknown';
+            var commonName = sd.common_name || '';
+            var status = items[0].status;
+            var date = obs.timestamp ? String(obs.timestamp).split('T')[0] : '';
+            var officer = obs.recorded_by || '';
+
+            var html = '<div class="map-popup-species">';
+            if (commonName) {
+                html += mapEscape(commonName) + ' <i>(' + mapEscape(sciName) + ')</i>';
+            } else {
+                html += '<i>' + mapEscape(sciName) + '</i>';
+            }
+            html += '</div>';
+            if (date) html += '<div class="map-popup-detail">' + mapEscape(date) + '</div>';
+            if (officer) html += '<div class="map-popup-detail">' + mapEscape(officer) + '</div>';
+            // A marker that was spread away from its coordinate has to say so here.
+            // Without it, nine dots drawn in a ring read as nine places, which is the
+            // one thing the fan-out must not be allowed to imply.
+            if (summary && summary.sharedWith > 1) {
+                html += '<div class="map-popup-detail">One of ' + mapEscape(summary.sharedWith)
+                    + ' records recorded at this same point</div>';
+            }
+            html += '<div class="map-popup-foot"><span class="map-popup-status ' + status.toLowerCase() + '">'
+                + mapEscape(status) + '</span></div>';
+            return html;
+        }
+
+        var places = summary && summary.coordinateCount;
+        var heading = items.length + ' observations';
+        if (places > 1) heading += ' at ' + places + ' locations';
+        else heading += ' at this location';
+
+        // A list long enough to scroll is worse than a list that says how much it
+        // is hiding, so the tail is summarised.
+        var MAX_LISTED = 6;
+        var html2 = '<div class="map-popup-species">' + heading + '</div>';
+        html2 += '<div class="map-popup-sub">' + mapEscape(items[0].status) + '</div>';
+        html2 += '<div class="map-popup-list">';
+        items.slice(0, MAX_LISTED).forEach(function(item) {
+            html2 += buildPopupRow(item);
+        });
+        html2 += '</div>';
+        if (items.length > MAX_LISTED) {
+            html2 += '<div class="map-popup-detail">+' + (items.length - MAX_LISTED) + ' more</div>';
+        }
+        // Spotting why the pile exists matters more than the pile: an imported
+        // dataset has one coordinate for the whole hotspot, so every record from it
+        // lands on the same pixel. Saying so stops the map looking broken.
+        if (places === 1 && items.every(function(item) { return item.obs.source === 'gbif'; })) {
+            html2 += '<div class="map-popup-detail">Shared GBIF/eBird hotspot coordinate, so these records sit on one point.</div>';
+        }
+        return html2;
+    }
+
+    // Leaflet anchors an icon by the point it represents, so both icons anchor on
+    // their own centre. The bubble is much bigger than a dot and would otherwise
+    // sit half a bubble up and to the left of its coordinate.
+    function dotIcon(color) {
+        return L.divIcon({
+            className: '',
+            html: '<div class="map-obs-marker" style="background:' + color + ';"></div>',
+            iconSize: DOT_SIZE,
+            iconAnchor: [DOT_SIZE[0] / 2, DOT_SIZE[1] / 2]
+        });
+    }
+
+    // A group: concentric halos in the status colour with the count on a solid
+    // core, so "how many" is readable without opening anything. `--map-status-color`
+    // is set here because it is data (one of three status colours), not theme.
+    function clusterIcon(color, item) {
+        return L.divIcon({
+            className: '',
+            html: '<div class="map-cluster" style="--map-status-color:' + color + ';">'
+                + '<span class="map-cluster-halo map-cluster-halo--outer"></span>'
+                + '<span class="map-cluster-halo map-cluster-halo--inner"></span>'
+                + '<span class="map-cluster-core">' + mapEscape(item.count) + '</span>'
+                + '</div>',
+            iconSize: [CLUSTER_BOX, CLUSTER_BOX],
+            iconAnchor: [CLUSTER_BOX / 2, CLUSTER_BOX / 2]
+        });
+    }
+
+    // amCharts' zoomToCluster: one click on a group of several PLACES goes to them,
+    // because the current zoom is what merged them. A group of records that share a
+    // single coordinate is never drilled into - no zoom can separate it - so it is
+    // given a popup instead.
+    //
+    // `maxZoom` is what makes one call serve both: the members occupy at most the
+    // cluster radius, so this always zooms IN, and it stops at the one zoom where
+    // grouping of merely-nearby records ends. Since that is now the top of the
+    // range, a click on a group from a wide view is a long jump, and that is the
+    // contract: below this zoom the map shows groups, and asking for the members
+    // means asking for the zoom that can show them.
+    function drillInto(members) {
+        var bounds = L.latLngBounds([]);
+        members.forEach(function(entry) {
+            var loc = entry.obs.location || {};
+            if (loc.latitude != null && loc.longitude != null) {
+                bounds.extend([loc.latitude, loc.longitude]);
+            }
+        });
+        if (!bounds.isValid()) return;
+        mapInstance.fitBounds(bounds, { padding: [60, 60], maxZoom: SEPARATE_ZOOM });
+    }
+
+    // Rebuilt from the CURRENT zoom every time, because grouping is a screen
+    // distance: the campus's imported records are one group when the whole campus
+    // fits on screen and separate markers once you zoom in, and records that share
+    // one hotspot coordinate are one counted marker at every zoom. Fixing the
+    // grouping at plot time is what made the old marker count describe a screen
+    // that no longer existed.
     function plotObservations() {
         obsMarkers.forEach(function(m) { mapInstance.removeLayer(m); });
         obsMarkers = [];
 
-        if (!window.BioData) return;
+        if (!window.BioData || !window.BioMapCluster || !mapInstance) return;
 
-                var allObs = typeof getAnalyticsFilteredData === 'function'
-                    ? getAnalyticsFilteredData()
-                    : window.BioData.getObservations();
+        var allObs = typeof getAnalyticsFilteredData === 'function'
+            ? getAnalyticsFilteredData()
+            : window.BioData.getObservations();
         if (!allObs) return;
 
-        allObs.forEach(function(obs) {
+        // Project once here: the layout module works in container pixels so it can
+        // be reasoned about (and tested) without a map.
+        var points = [];
+        var byId = {};
+        allObs.forEach(function(obs, index) {
             var loc = obs.location || {};
             var lat = loc.latitude;
             var lng = loc.longitude;
             if (lat == null || lng == null) return;
 
-            var status = obs.verification_status || 'Approved';
-            if (!statusFilterState[status]) return;
+            var status = normaliseMapStatus(obs.verification_status || 'Approved');
+            // Only the three statuses the map has a filter for are drawn, so the
+            // legend and the marker count agree.
+            if (statusFilterState[status] !== true) return;
 
-            var color = getStatusColor(status);
+            // observation_id is the primary key everywhere else; the fallback keeps
+            // a record that somehow lacks one from stealing another's identity.
+            var id = obs.observation_id || 'unidentified_' + index;
+            var px = mapInstance.latLngToContainerPoint([lat, lng]);
+            points.push({ id: id, lat: Number(lat), lng: Number(lng), x: px.x, y: px.y, status: status });
+            byId[id] = { obs: obs, status: status };
+        });
 
-            var icon = L.divIcon({
-                className: '',
-                html: '<div class="map-obs-marker" style="background:' + color + ';"></div>',
-                iconSize: [14, 14],
-                iconAnchor: [7, 7]
-            });
+        var layout = window.BioMapCluster.plan(points, {
+            groupNearby: !isSeparateZoom(),
+            fanout: isFanoutZoom()
+        });
 
-            var marker = L.marker([lat, lng], { icon: icon });
-            marker.bindPopup(buildPopupContent(obs));
-            marker._obsId = obs.observation_id;
-            marker._status = status;
+        layout.items.forEach(function(item) {
+            var members = [];
+            item.ids.forEach(function(id) { if (byId[id]) members.push(byId[id]); });
+            if (!members.length) return;
 
+            var color = getStatusColor(item.status);
+            var at = mapInstance.containerPointToLatLng([item.x, item.y]);
+            var marker;
+
+            if (item.count > 1) {
+                marker = L.marker(at, { icon: clusterIcon(color, item) });
+                if (item.coordinateCount > 1) {
+                    // Several distinct places, merged only because of this zoom:
+                    // the useful answer is to go and look at them separately.
+                    marker.on('click', function() { drillInto(members); });
+                } else {
+                    // One place with several records. Zooming cannot help, so the
+                    // group answers with its list.
+                    marker.bindPopup(buildPopupContent(members, item));
+                }
+            } else {
+                marker = L.marker(at, { icon: dotIcon(color) });
+                marker.bindPopup(buildPopupContent(members, item));
+            }
+
+            marker._obsIds = item.ids.slice();
             marker.addTo(mapInstance);
             obsMarkers.push(marker);
         });
 
+        plottedStats = layout.stats;
+        plottedRecordCount = layout.stats.records;
         updateMarkerCount();
     }
 
+    // The status bar reports records first, and what is actually on screen only
+    // when it differs, so "Markers:" cannot look like it disagrees with itself.
     function updateMarkerCount() {
-        var visible = obsMarkers.filter(function(m) { return mapInstance.hasLayer(m); }).length;
         var el = document.getElementById('map-status-count');
-        if (el) el.textContent = 'Markers: ' + visible;
+        if (!el) return;
+        if (!plottedStats || plottedStats.drawn === plottedStats.records) {
+            el.textContent = 'Markers: ' + plottedRecordCount;
+            return;
+        }
+        el.textContent = 'Markers: ' + plottedStats.drawn + ' of ' + plottedRecordCount;
     }
 
     function updateZoomDisplay() {
@@ -928,17 +1165,30 @@ if (typeof window !== 'undefined') {
         }
     }
 
+    // The inset that keeps a fitted area off the map edges. It is a fraction of the
+    // map's smaller side rather than a fixed 80px, because the inset and the zoom
+    // floor both decide whether an area can be framed at all: an 80px inset on a
+    // 380px-tall map asks for zoom 14.8 to fit Campus, which MAP_MIN_ZOOM refuses, so
+    // the fit would silently clamp and crop the area it was asked to show.
+    function fitPadding() {
+        var size = mapInstance.getSize();
+        var inset = Math.round(Math.min(size.x, size.y) * 0.09);
+        inset = Math.max(16, Math.min(80, inset));
+        return [inset, inset];
+    }
+
     function fitActiveArea() {
         if (!mapInstance) return;
+        var padding = fitPadding();
         var poly = mapActiveArea === 'park' ? parkPolygon : (mapActiveArea === 'campus' ? campusPolygon : null);
         if (poly) {
-            mapInstance.fitBounds(poly.getBounds(), { padding: [80, 80] });
+            mapInstance.fitBounds(poly.getBounds(), { padding: padding });
         } else {
             // No area in scope: frame both zones so the difference is visible.
             var both = L.latLngBounds([]);
             if (parkPolygon) both.extend(parkPolygon.getBounds());
             if (campusPolygon) both.extend(campusPolygon.getBounds());
-            if (both.isValid()) mapInstance.fitBounds(both, { padding: [80, 80] });
+            if (both.isValid()) mapInstance.fitBounds(both, { padding: padding });
         }
         updateZoomDisplay();
     }
@@ -971,9 +1221,14 @@ if (typeof window !== 'undefined') {
         // the mode we are actually trying to reach.
         mapMode = mode;
 
+        // The layer must never be tighter than the map. Leaflet stops drawing a
+        // tile layer outside the layer's own zoom range, so the `minZoom: 16`
+        // that used to sit here turned the map into a flat grey rectangle the
+        // moment the view went below 16 - the empty tiles were painted over by
+        // the container's `background`.
         tileLayer = L.tileLayer(tileUrl, {
-            maxZoom: 18,
-            minZoom: 16,
+            maxZoom: MAP_MAX_ZOOM,
+            minZoom: MAP_MIN_ZOOM,
             attribution: attribution
         }).addTo(mapInstance);
 
@@ -995,8 +1250,8 @@ if (typeof window !== 'undefined') {
         mapInstance = L.map('map', {
             center: savedState ? savedState.center : [-12.805, 28.240],
             zoom: savedState ? savedState.zoom : 16,
-            minZoom: 16,
-            maxZoom: 18,
+            minZoom: MAP_MIN_ZOOM,
+            maxZoom: MAP_MAX_ZOOM,
             zoomSnap: 0.1,
             zoomControl: false,
             attributionControl: true
@@ -1035,6 +1290,90 @@ if (typeof window !== 'undefined') {
         mapInstance.on('moveend', function() {
             updateZoomDisplay();
             saveMapState();
+        });
+
+        // Grouping is a screen distance, so a new zoom is a new layout: this is what
+        // makes a group split as the user zooms in. Panning cannot change a pixel
+        // distance between two records, so `moveend` deliberately does not re-plot.
+        mapInstance.on('zoomend', function() {
+            plotObservations();
+        });
+
+        // A resize changes the container's pixel geometry too (the nav rail
+        // collapsing, the tab becoming visible), so the grouping has to be redone.
+        mapInstance.on('resize', function() {
+            plotObservations();
+        });
+
+        // Leaflet caches the container's size and only recalculates when told, and
+        // nothing ever told it: `invalidateSize()` ran once, on tab activation. So
+        // any later change to the container's box - a window resize, the nav rail
+        // collapsing, a phone rotating, the browser zooming - left the map drawing
+        // into its OLD viewport. Measured on the real page: growing the container
+        // from 720x380 to 768x560 kept Leaflet at 8 tiles and left 480 of 1680
+        // sampled points inside the map with no tile over them at all - a band down
+        // the side of the map that simply showed the container background. It also
+        // silently corrupted the grouping, which is computed from
+        // `latLngToContainerPoint` and so depended on that stale size.
+        //
+        // A ResizeObserver catches every cause rather than just `window.resize`, and
+        // `invalidateSize` fires the map's own `resize` event, which is already wired
+        // to re-plot. Leaflet returns early when the size has not actually changed,
+        // so re-checking is cheap.
+        //
+        // Re-checked for as long as the container keeps moving, and no longer: one
+        // call can land while a CSS transition is still resizing the box, and the
+        // observer is not promised another callback to correct it with - at
+        // 1268x560 a single call left a 210-point band unpainted and nothing ever
+        // came back to fix it. Remembering the size last applied means each re-check
+        // costs one measurement, corrects a half-applied resize, and stops itself the
+        // moment the container settles.
+        //
+        // A timer, deliberately, not requestAnimationFrame: rAF does not fire for a
+        // page the browser is not rendering, so an animation-frame gate would swallow
+        // the resize and every resize after it, leaving the map wrong for the rest of
+        // the session - a worse version of the bug this exists to fix.
+        var appliedSize = { w: -1, h: -1 };
+        var resizeTimer = null;
+
+        function onContainerResize() {
+            var w = mapEl.clientWidth;
+            var h = mapEl.clientHeight;
+            // A zero-sized box (the tab is not being rendered) measures nothing
+            // useful; wait for a real one rather than teaching the map it is 0x0.
+            if (!w || !h) return;
+            // Applied every time, with no "is it different" guard in front of it:
+            // `_size` is also refreshed by anything else that happens to call
+            // getSize(), and a guard reading it would then conclude there is nothing
+            // to do while the map's tile grid is still drawn for the old box.
+            // Leaflet's own early return covers the cost of a redundant call.
+            mapInstance.invalidateSize({ pan: false });
+            // Keep re-applying only while the container is still moving; the chain
+            // ends by itself once it holds still.
+            if (w !== appliedSize.w || h !== appliedSize.h) {
+                appliedSize = { w: w, h: h };
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(onContainerResize, 200);
+            }
+        }
+
+        if (typeof ResizeObserver === 'function') {
+            mapSizer = new ResizeObserver(onContainerResize);
+            mapSizer.observe(mapEl);
+        } else {
+            // No observer (older browser): a window listener still covers the common
+            // case, which is better than the previous behaviour of covering none.
+            window.addEventListener('resize', onContainerResize);
+        }
+
+        // Neither the observer nor a timer is guaranteed to have been delivered while
+        // the page was in a background tab - a browser does not run rendering steps
+        // for a tab it is not showing, and the observer rides on them. Coming back to
+        // the page is therefore the moment the map has to re-measure itself, whatever
+        // changed the container in the meantime, or the user returns to a map still
+        // sized for a window they no longer have.
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) onContainerResize();
         });
 
         mapInitialized = true;
@@ -1083,11 +1422,14 @@ if (typeof window !== 'undefined') {
         });
     }
 
+    // Clamped by the map's own limits, not by a second copy of them: the hardcoded
+    // `Math.max(16, ...)` here is what made the zoom-out button do nothing on the
+    // Campus view (16 was its floor while the campus needs 14.8 to be framed).
     function stepZoom(delta) {
         if (!mapInstance) return;
         var current = mapInstance.getZoom();
         var next = Math.round((current + delta) * 10) / 10;
-        next = Math.max(16, Math.min(18, next));
+        next = Math.max(mapInstance.getMinZoom(), Math.min(mapInstance.getMaxZoom(), next));
         mapInstance.setZoom(next);
     }
 
@@ -1160,27 +1502,78 @@ if (typeof window !== 'undefined') {
         if (mapInstance) plotObservations();
     };
 
+    function findObservation(obsId) {
+        var allObs = typeof getAnalyticsFilteredData === 'function'
+            ? getAnalyticsFilteredData()
+            : (window.BioData ? window.BioData.getObservations() : null);
+        if (!allObs) return null;
+        for (var i = 0; i < allObs.length; i++) {
+            if (allObs[i].observation_id === obsId) return allObs[i];
+        }
+        return null;
+    }
+
+    /**
+     * Row -> map. A record that shares its coordinate with others is part of a
+     * counted marker, so it has no marker of its own to open; at the separate zoom
+     * its group still exists but lists it first, and the reveal pulses the marker
+     * that stands for it. If the map is not close enough yet, the view goes to the
+     * record's own coordinate at that zoom first and the reveal happens on the plot
+     * that the resulting `zoomend` triggers.
+     */
     function doFly(obsId) {
         if (!mapInstance || !obsId) return;
+
+        var obs = findObservation(obsId);
+        var loc = obs ? (obs.location || {}) : null;
+        var hasPoint = loc && loc.latitude != null && loc.longitude != null;
+
+        // Mark it before anything moves: the popup that opens afterwards lists the
+        // group's records, and this is how the asked-for one is found in that list.
+        focusedObsId = obsId;
+
+        if (hasPoint && mapInstance.getZoom() < SEPARATE_ZOOM) {
+            mapInstance.setView([loc.latitude, loc.longitude], SEPARATE_ZOOM);
+            // zoomend re-plots; reveal once the new markers exist.
+            setTimeout(function() { revealObservation(obsId); }, 450);
+            saveMapState();
+            return;
+        }
+
+        revealObservation(obsId);
+    }
+
+    function revealObservation(obsId) {
+        if (!mapInstance) return;
         for (var i = 0; i < obsMarkers.length; i++) {
             var m = obsMarkers[i];
-            if (m._obsId === obsId) {
-                mapInstance.flyTo(m.getLatLng(), 17, { duration: 1 });
-                focusedObsId = obsId;
-                saveMapState();
-                var iconEl = m.getElement();
-                if (iconEl) {
-                    var dot = iconEl.querySelector('.map-obs-marker');
-                    if (dot) {
-                        dot.classList.add('highlighted');
-                        setTimeout(function() {
-                            dot.classList.remove('highlighted');
-                        }, 3000);
-                    }
-                }
-                setTimeout(function() { m.openPopup(); }, 1200);
-                break;
+            // A group stands for several records, so the match is against the whole
+            // set of ids the marker answers for.
+            if (!m._obsIds || m._obsIds.indexOf(obsId) === -1) continue;
+
+            var target = m.getLatLng();
+            if (mapInstance.getZoom() < SEPARATE_ZOOM) {
+                mapInstance.flyTo(target, SEPARATE_ZOOM, { duration: 1 });
+            } else {
+                mapInstance.panTo(target, { animate: true });
             }
+            saveMapState();
+
+            // Only a marker that IS this one record can be made to pulse as a dot;
+            // inside a group the highlight belongs on the row in the popup's list
+            // (buildPopupRow marks it), so the bubble pulses instead.
+            var iconEl = m.getElement();
+            var pulse = iconEl
+                ? iconEl.querySelector(m._obsIds.length === 1 ? '.map-obs-marker' : '.map-cluster')
+                : null;
+            if (pulse) {
+                pulse.classList.add('highlighted');
+                setTimeout(function() { pulse.classList.remove('highlighted'); }, 3000);
+            }
+            // A group of distinct places deliberately has no popup - clicking it
+            // drills in - so the call is guarded rather than assumed.
+            if (m.getPopup && m.getPopup()) m.openPopup();
+            return;
         }
     }
 
