@@ -420,6 +420,18 @@
     color: var(--color-text-muted);
 }
 
+/* The state chip and the clear action sit at the end of the row, away from the
+   name and the meta line they describe. */
+.page-users .access-request-item .user-status {
+    margin-left: auto;
+}
+
+.page-users .access-requests-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
 /* Footer */
 .page-users .user-modal-footer {
     flex-shrink: 0;

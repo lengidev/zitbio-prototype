@@ -358,9 +358,13 @@ document.addEventListener('click', function(e) {
 
 /* Access requests */
 
+var accessRequestRows = [];
+
 /**
- * Read-only, not a queue: approval is automatic, so this only shows who joined
- * and when. Loaded on first expand because it is reference material.
+ * Read-only, not a queue: approval is automatic, so this shows who asked and what
+ * became of them. The account state is read back from the profile rather than
+ * stored on the request, so the list cannot claim a state the account does not
+ * have. Loaded on first expand because it is reference material.
  */
 function renderAccessRequests() {
     var list = document.getElementById('accessRequestList');
@@ -370,40 +374,122 @@ function renderAccessRequests() {
     if (!(window.BioSync && typeof window.BioSync.loadAccessRequests === 'function')) {
         list.innerHTML = '<p class="access-request-empty">Access requests need a connection.</p>';
         if (count) count.textContent = '';
+        setClearResolvedVisible(false);
         return;
     }
 
     window.BioSync.loadAccessRequests().then(function(res) {
         if (res && res.error) throw res.error;
-        var rows = (res && res.data) || [];
-
-        if (count) {
-            count.textContent = rows.length
-                ? (rows.length === 1 ? '1 request' : rows.length + ' requests')
-                : '';
-        }
-
-        if (rows.length === 0) {
-            list.innerHTML = '<p class="access-request-empty">No requests yet. ' +
-                'People who create an account from the sign-in page appear here.</p>';
-            return;
-        }
-
-        list.innerHTML = rows.map(function(r) {
-            var when = (r.requested_at || '').split('T')[0];
-            return '<div class="access-request-item">' +
-                '<span class="access-request-name">' + escapeHtml(r.full_name || 'Unnamed') + '</span>' +
-                '<span class="access-request-meta">' + escapeHtml(r.email || '') +
-                    (r.institution ? ' · ' + escapeHtml(r.institution) : '') +
-                    (when ? ' · ' + escapeHtml(when) : '') +
-                '</span>' +
-            '</div>';
-        }).join('');
+        // Cleared rows are kept as the audit trail; only this list hides them.
+        accessRequestRows = ((res && res.data) || []).filter(function(r) {
+            return !r.dismissed_at;
+        });
+        renderAccessRequestList();
     }).catch(function(err) {
         console.warn('Could not load access requests:', err && err.message);
         list.innerHTML = '<p class="access-request-empty">Could not load access requests.</p>';
         if (count) count.textContent = '';
+        setClearResolvedVisible(false);
     });
+}
+
+function renderAccessRequestList() {
+    var list = document.getElementById('accessRequestList');
+    var count = document.getElementById('accessRequestsCount');
+    if (!list) return;
+
+    var rows = accessRequestRows;
+    if (count) {
+        count.textContent = rows.length
+            ? (rows.length === 1 ? '1 request' : rows.length + ' requests')
+            : '';
+    }
+
+    if (rows.length === 0) {
+        list.innerHTML = '<p class="access-request-empty">No requests yet. ' +
+            'People who create an account from the sign-in page appear here.</p>';
+        setClearResolvedVisible(false);
+        return;
+    }
+
+    list.innerHTML = rows.map(accessRequestRowHtml).join('');
+    setClearResolvedVisible(resolvedAccessRequests().length > 0);
+}
+
+/**
+ * What the request resolved to. A missing profile covers both a deleted account
+ * and a signup that never completed, so it reports "No account" rather than
+ * guessing which one happened.
+ */
+function accessRequestState(row) {
+    if (row.status === 'pending') return { key: 'pending', label: 'Pending' };
+    if (row.status === 'rejected') return { key: 'declined', label: 'Declined' };
+
+    var wanted = String(row.email || '').toLowerCase();
+    var profiles = (window.BioData && window.BioData.getUsers) ? window.BioData.getUsers() : [];
+    var profile = null;
+    for (var i = 0; i < profiles.length; i++) {
+        if (String(profiles[i].email || '').toLowerCase() === wanted) {
+            profile = profiles[i];
+            break;
+        }
+    }
+
+    if (!profile) return { key: 'none', label: 'No account' };
+    if (profile.active === false) return { key: 'deactivated', label: 'Deactivated' };
+    return { key: 'active', label: 'Active' };
+}
+
+function accessRequestRowHtml(row) {
+    var when = (row.requested_at || '').split('T')[0];
+    var state = accessRequestState(row);
+    var stateClass = state.key === 'active' ? 'is-active' : 'is-inactive';
+
+    return '<div class="access-request-item">' +
+        '<span class="access-request-name">' + escapeHtml(row.full_name || 'Unnamed') + '</span>' +
+        '<span class="access-request-meta">' + escapeHtml(row.email || '') +
+            (row.institution ? ' · ' + escapeHtml(row.institution) : '') +
+            (when ? ' · ' + escapeHtml(when) : '') +
+        '</span>' +
+        '<span class="user-status ' + stateClass + '">' + escapeHtml(state.label) + '</span>' +
+        '<button type="button" class="action-text-btn clear-access-request" data-id="' +
+            escapeHtml(row.id) + '">Clear</button>' +
+    '</div>';
+}
+
+// Settled requests: nobody is left holding an account to keep evidence for. An
+// active account's request stays, because it is still the record of onboarding.
+function resolvedAccessRequests() {
+    return accessRequestRows.filter(function(row) {
+        var key = accessRequestState(row).key;
+        return key !== 'active' && key !== 'pending';
+    });
+}
+
+function clearAccessRequests(ids, message) {
+    if (!ids.length) return;
+
+    if (!(window.BioSync && typeof window.BioSync.dismissAccessRequests === 'function')) {
+        userToast('Clearing requests needs the admin connection. It is not available.', 'error');
+        return;
+    }
+
+    window.BioSync.dismissAccessRequests(ids).then(function(res) {
+        if (res && res.error) throw res.error;
+        // Removed locally only: the next load re-reads the authoritative rows.
+        var cleared = {};
+        ids.forEach(function(id) { cleared[id] = true; });
+        accessRequestRows = accessRequestRows.filter(function(row) { return !cleared[row.id]; });
+        renderAccessRequestList();
+        userToast(message, 'success');
+    }).catch(function(err) {
+        userToast(friendlyUserError(err, 'clear'), 'error');
+    });
+}
+
+function setClearResolvedVisible(visible) {
+    var btn = document.getElementById('clearResolvedRequests');
+    if (btn) btn.hidden = !visible;
 }
 
 /* Status and deletion confirmation */
@@ -542,6 +628,9 @@ function applyDelete() {
 if (typeof window !== 'undefined') {
   window.addEventListener('biodata:synced', function() {
     renderTable();
+    // The request state chips read the profile list, which the sync just replaced.
+    var section = document.getElementById('accessRequestsSection');
+    if (section && section.classList.contains('is-open')) renderAccessRequests();
   });
   document.addEventListener('DOMContentLoaded', function() {
     var toggle = document.getElementById('accessRequestsToggle');
@@ -551,6 +640,26 @@ if (typeof window !== 'undefined') {
         var open = section.classList.toggle('is-open');
         toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (open) renderAccessRequests();
+      });
+    }
+
+    // Delegated: the rows are rebuilt on every load.
+    var requestList = document.getElementById('accessRequestList');
+    if (requestList) {
+      requestList.addEventListener('click', function(e) {
+        var btn = e.target.closest('.clear-access-request');
+        if (!btn) return;
+        clearAccessRequests([btn.getAttribute('data-id')], 'Request cleared. The record is kept.');
+      });
+    }
+
+    var clearResolved = document.getElementById('clearResolvedRequests');
+    if (clearResolved) {
+      clearResolved.addEventListener('click', function() {
+        var rows = resolvedAccessRequests();
+        if (!rows.length) return;
+        clearAccessRequests(rows.map(function(row) { return row.id; }),
+          rows.length === 1 ? '1 request cleared.' : rows.length + ' requests cleared.');
       });
     }
 
