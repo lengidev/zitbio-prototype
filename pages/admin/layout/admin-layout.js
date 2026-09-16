@@ -903,7 +903,13 @@ function initThemeToggle() {
 document.addEventListener('DOMContentLoaded', function() {
   applySavedTheme();
   initThemeToggle();
-  setSyncStatus(navigator.onLine ? 'Syncing' : 'Offline', navigator.onLine ? 'syncing' : 'disconnected');
+  // Only claim to be syncing while a read is actually outstanding. This handler runs
+  // after the one that starts the cloud sync, so painting "Syncing" unconditionally
+  // overwrote a verdict that had already arrived and left the footer claiming to be
+  // syncing forever over local-only data.
+  if (!syncStatusKnown) {
+    setSyncStatus(navigator.onLine ? 'Syncing' : 'Offline', navigator.onLine ? 'syncing' : 'disconnected');
+  }
   setInterval(updateConnectionStatus, 30000);
 });
 
