@@ -1,0 +1,26 @@
+Agent/
+.agents/
+skills-lock.json
+.waylog/
+gbif_occurrences.csv
+
+.env
+.env.*
+*.secret.js
+
+
+.vscode/mcp.json
+.goals/
+.goals/
+
+# ── GitHub Actions / workflow metadata ─────────────
+# Local CI workflow files and issue/PR templates kept out of the repo.
+.github/
+
+
+.fallowrc.jsonc
+
+
+supabase/
+tests/
+scripts/
