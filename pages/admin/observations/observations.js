@@ -7,6 +7,10 @@ var obsFilteredData = [];
 var obsRecordsPerPage = 8;
 var currentObsId = null;
 var obsStatusFilter = ''; // '' = all, otherwise a verification_status value
+var obsSearchField = '';  // '' = all fields, otherwise a searchObservations field
+var obsLocationMode = 'location'; // 'location' (city, province) or 'focus_area'
+
+var OBS_VIEW_KEY = 'observations_view';
 
 function getObsFilteredData() {
     if (!window.BioData) return [];
@@ -16,9 +20,7 @@ function getObsFilteredData() {
     if (!searchInput) {
         rows = window.BioData.getObservations().slice();
     } else {
-        var selectedField = document.querySelector('input[name="obsSearchField"]:checked');
-        var field = selectedField ? selectedField.value : '';
-        rows = window.BioData.searchObservations(searchInput.value, field || undefined);
+        rows = window.BioData.searchObservations(searchInput.value, obsSearchField || undefined);
     }
 
     // Applied after search so the two compose. A record with no status counts as
@@ -30,6 +32,40 @@ function getObsFilteredData() {
     }
 
     return rows;
+}
+
+/* VIEW STATE */
+
+/**
+ * The page remembers filters, column mode and page number, so coming back from
+ * another admin page lands where the admin left off. The `?status=` deep link
+ * still wins, because it is an explicit instruction.
+ */
+function saveObsView() {
+    if (!window.BioPageState) return;
+    var searchInput = document.getElementById('searchInput');
+    window.BioPageState.write(OBS_VIEW_KEY, {
+        locationMode: obsLocationMode,
+        statusFilter: obsStatusFilter,
+        field: obsSearchField,
+        search: searchInput ? searchInput.value : '',
+        page: obsCurrentPage
+    });
+}
+
+function restoreObsView() {
+    var saved = window.BioPageState ? window.BioPageState.read(OBS_VIEW_KEY, null) : null;
+    if (!saved || typeof saved !== 'object') return;
+
+    if (saved.locationMode === 'location' || saved.locationMode === 'focus_area') {
+        obsLocationMode = saved.locationMode;
+    }
+    if (typeof saved.statusFilter === 'string') obsStatusFilter = saved.statusFilter;
+    if (typeof saved.field === 'string') obsSearchField = saved.field;
+    if (typeof saved.page === 'number' && saved.page > 0) obsCurrentPage = saved.page;
+
+    var searchInput = document.getElementById('searchInput');
+    if (searchInput && typeof saved.search === 'string') searchInput.value = saved.search;
 }
 
 /* REVIEW-QUEUE STATUS FILTER */
@@ -86,7 +122,12 @@ function initStatusFilter() {
             while (target && target !== table) {
                 if (target.getAttribute) {
                     if (target.getAttribute('data-filter-value') !== null) {
-                        applyStatusFilter(target.getAttribute('data-filter-value'));
+                        var kind = target.getAttribute('data-filter-kind');
+                        if (kind === 'location') {
+                            setObsLocationMode(target.getAttribute('data-filter-value'));
+                        } else {
+                            applyStatusFilter(target.getAttribute('data-filter-value'));
+                        }
                         return;
                     }
                     if (target.classList && target.classList.contains('th-filter-btn')) {
@@ -243,10 +284,30 @@ function getObsColumns() {
             }
         },
         {
-            label: 'Location',
+            label: obsLocationMode === 'focus_area' ? 'Focus Area' : 'Location',
             cellClass: 'location-cell',
+            // The header menu switches what this column shows rather than narrowing
+            // the rows, so it must not paint itself as an applied filter.
+            filter: {
+                kind: 'location',
+                highlight: false,
+                // No aria-label on purpose: the visible label ("Location" /
+                // "Focus Area") is the accessible name, and overriding it would
+                // leave the control announced as something other than what it says.
+                active: obsLocationMode,
+                options: [
+                    { value: 'location', label: 'Location' },
+                    { value: 'focus_area', label: 'Focus Area' }
+                ]
+            },
             render: function(obs) {
                 var loc = obs.location || {};
+
+                if (obsLocationMode === 'focus_area') {
+                    var focusArea = loc.focus_area || '';
+                    return focusArea ? escapeHtmlObs(window.BioData.getSiteLabel(focusArea, 'full')) : '—';
+                }
+
                 var locationDisplay = loc.city || '';
                 if (loc.administrative_area) {
                     locationDisplay += (locationDisplay ? ', ' : '') + loc.administrative_area;
@@ -304,7 +365,6 @@ function renderObsTable() {
     var totalPages = Math.ceil(obsFilteredData.length / obsRecordsPerPage);
 
     if (obsCurrentPage > totalPages) obsCurrentPage = totalPages || 1;
-
     var result = renderObservationsTable({
         data: obsFilteredData,
         page: obsCurrentPage,
@@ -334,6 +394,48 @@ function renderObsTable() {
             viewRecordById(id);
         });
     });
+
+    saveObsView();
+}
+
+function setObsLocationMode(mode) {
+    if ((mode !== 'location' && mode !== 'focus_area') || mode === obsLocationMode) return;
+    obsLocationMode = mode;
+    closeStatusFilterMenus();
+    renderSearchFieldOptions();
+    renderObsTable();
+}
+
+// The field list follows the column: it can only show one place concept at a
+// time, so the search offers the one in view instead of both.
+function renderSearchFieldOptions() {
+    var dropdown = document.getElementById('obsSearchDropdown');
+    if (!dropdown) return;
+
+    var fields = [
+        { value: '', label: 'All Fields' },
+        { value: 'species', label: 'Species' },
+        obsLocationMode === 'focus_area'
+            ? { value: 'focus_area', label: 'Focus Area' }
+            : { value: 'province', label: 'Province' },
+        { value: 'officer', label: 'Officer' },
+        { value: 'institution', label: 'Institution' }
+    ];
+
+    var offered = {};
+    fields.forEach(function(field) { offered[field.value] = true; });
+    // A field that is no longer offered must not stay selected out of sight.
+    if (!offered[obsSearchField]) obsSearchField = '';
+
+    var html = '<div class="dropdown-header">Search By</div>';
+    fields.forEach(function(field) {
+        html += '<label class="search-field-item">' +
+            '<input type="radio" name="obsSearchField" value="' + escapeHtmlObs(field.value) + '"' +
+            (field.value === obsSearchField ? ' checked' : '') + '>' +
+            '<span>' + escapeHtmlObs(field.label) + '</span>' +
+        '</label>';
+    });
+    dropdown.innerHTML = html;
 }
 
 function handleObsSearch() {
@@ -1148,6 +1250,11 @@ if (typeof document !== 'undefined') {
             return;
         }
 
+        // Restored before the first render so the page paints in the saved state
+        // instead of flashing the defaults.
+        restoreObsView();
+        renderSearchFieldOptions();
+
         renderObsTable();
 
         // Deep-link: open the ?obs= record modal on load. The notification handler
@@ -1168,13 +1275,15 @@ if (typeof document !== 'undefined') {
                 filterBtn.classList.toggle('active');
             });
 
-            var radios = searchDropdown.querySelectorAll('input[type="radio"]');
-            radios.forEach(function(radio) {
-                radio.addEventListener('change', function() {
-                    searchDropdown.classList.remove('open');
-                    filterBtn.classList.remove('active');
-                    handleObsSearch();
-                });
+            // Delegated: the list is rebuilt whenever the Location column switches
+            // between location and focus area.
+            searchDropdown.addEventListener('change', function(e) {
+                var radio = e.target;
+                if (!radio || radio.name !== 'obsSearchField') return;
+                obsSearchField = radio.value || '';
+                searchDropdown.classList.remove('open');
+                filterBtn.classList.remove('active');
+                handleObsSearch();
             });
 
             document.addEventListener('click', function(e) {
