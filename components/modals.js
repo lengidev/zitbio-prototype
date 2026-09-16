@@ -259,8 +259,3 @@ if (typeof document !== 'undefined') {
     initConfirmDeleteModal();
   });
 }
-
-// CommonJS export so the file can be required outside the browser.
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { ModalManager, initModals, initViewObservationModal, initConfirmDeleteModal };
-}

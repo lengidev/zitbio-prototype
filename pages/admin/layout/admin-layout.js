@@ -991,6 +991,3 @@ if (navigator.connection) {
 
 // CommonJS export kept for tests; nothing requires it yet, and the guard above
 // means it never runs in a browser.
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { initUserMenu, initHeaderActions };
-}

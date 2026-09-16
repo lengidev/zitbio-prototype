@@ -1426,7 +1426,3 @@ if (typeof window !== 'undefined') {
     renderObsTable();
   });
 }
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { renderObsTable, handleObsSearch, viewRecordById, closeViewModal, handleDelete, openAddModal, closeAddModal, toggleSection };
-}

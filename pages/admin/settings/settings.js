@@ -1068,7 +1068,3 @@ if (window.BioData && typeof BioData.subscribe === 'function') {
     if (document.getElementById('changePwdBtn')) renderAccountIdentity();
   });
 }
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { initSettingsPage, initSettingsTabs };
-}
