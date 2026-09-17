@@ -24,3 +24,5 @@ gbif_occurrences.csv
 supabase/
 tests/
 scripts/
+
+report/
