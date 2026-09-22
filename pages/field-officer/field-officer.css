@@ -29,20 +29,6 @@
   align-items: center;
 }
 
-.fo-user {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--color-text-main);
-  font-weight: 500;
-}
-
-.fo-user .material-symbols-outlined {
-  width: 20px;
-  height: 20px;
-  color: var(--color-text-muted);
-}
 
 /* Logo Image */
 .fo-logo-img {
@@ -61,7 +47,7 @@
 .fo-card {
   background-color: var(--color-bg-white);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
 }
 
@@ -81,24 +67,6 @@
   padding: 32px;
 }
 
-/* Sections */
-.fo-section {
-  margin-bottom: 32px;
-}
-
-.fo-section:last-child {
-  margin-bottom: 0;
-}
-
-.fo-section-title {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-muted);
-  margin: 0 0 16px 0;
-  display: inline-block;
-}
 
 /* Grids */
 .fo-grid {
@@ -106,10 +74,9 @@
   gap: 16px;
 }
 
-.fo-grid-4 { grid-template-columns: repeat(4, 1fr); }
 .fo-grid-3 { grid-template-columns: repeat(3, 1fr); }
 .fo-grid-2 { grid-template-columns: repeat(2, 1fr); }
-.fo-grid-1 { grid-template-columns: 1fr; }
+
 
 /* Fields */
 .fo-field {
@@ -128,10 +95,6 @@
   margin-bottom: 6px;
 }
 
-.fo-required {
-  color: var(--color-danger);
-  margin-left: 2px;
-}
 
 /* Inputs */
 .fo-input-wrap {
@@ -176,12 +139,8 @@
   box-shadow: 0 0 0 2px var(--color-bg-white), 0 0 0 4px rgba(229, 57, 53, 0.2);
 }
 
-.fo-input-italic {
-  font-style: italic;
-}
 
-/* Date and Time inputs: no Material icon, so remove left padding */
-.fo-input-date {
+/* Date and Time inputs: no Material icon{
   padding-left: 12px;
 }
 
@@ -204,26 +163,6 @@ textarea.fo-input {
   font-family: inherit;
 }
 
-.fo-textarea.fo-textarea-tall {
-  min-height: 150px;
-}
-
-/* Force both textareas (#localityDescription and #fieldNotes) to identical dimensions */
-textarea.fo-input.fo-textarea-tall {
-  height: 150px !important;
-  width: 100%;
-  min-height: 150px;
-  max-height: 300px;
-  box-sizing: border-box;
-  resize: vertical;
-}
-
-/* Textarea wrapper: icon stays top-left */
-.fo-textarea-wrap .fo-input-icon {
-  top: 10px;
-  position: absolute;
-}
-
 /* Empty column filler in grid-2 should not add width */
 .fo-grid-2 .fo-field:empty {
   min-height: 0;
@@ -240,10 +179,6 @@ textarea.fo-input.fo-textarea-tall {
   cursor: default;
 }
 
-/* Count Stepper */
-.fo-count-wrap {
-  padding-left: 36px;
-}
 
 .fo-stepper-btn {
   width: 32px;
@@ -263,12 +198,12 @@ textarea.fo-input.fo-textarea-tall {
 }
 
 .fo-stepper-btn:first-of-type {
-  border-radius: 6px 0 0 6px;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
   border-right: none;
 }
 
 .fo-stepper-btn:last-of-type {
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   border-left: none;
 }
 
@@ -292,57 +227,6 @@ textarea.fo-input.fo-textarea-tall {
   margin: 0;
 }
 
-/* GPS Row */
-.fo-gps-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.fo-gps-input {
-  flex: 1;
-}
-
-.fo-gps-input .fo-input {
-  padding-left: 32px;
-}
-
-/* 32×32 GPS button */
-.fo-gps-btn {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-bg-white);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background-color 0.15s, border-color 0.15s;
-}
-
-.fo-gps-btn:hover {
-  background-color: var(--color-primary-light);
-  border-color: var(--color-primary);
-}
-
-.fo-gps-btn .material-symbols-outlined {
-  width: 20px;
-  height: 20px;
-  color: var(--color-primary);
-}
-
-@keyframes fo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.fo-spin {
-  animation: fo-spin 1s linear infinite;
-}
 
 /* Helper Text */
 .fo-helper {
@@ -351,95 +235,6 @@ textarea.fo-input.fo-textarea-tall {
   margin-top: 4px;
 }
 
-/* Error Messages */
-.fo-error {
-  font-size: 12px;
-  color: var(--color-danger);
-  margin-top: 4px;
-  display: none;
-}
-
-.fo-error.show {
-  display: block;
-}
-
-/* Notes Section Header */
-.fo-notes-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.fo-notes-header .fo-section-title {
-  margin-bottom: 0;
-}
-
-/* Location Row: two independent columns */
-.fo-location-row {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-}
-
-.fo-left-col {
-  flex: 3;
-  min-width: 0;
-}
-
-.fo-right-col {
-  flex: 1;
-  min-width: 0;
-}
-
-/* Instructions Panel */
-.fo-instructions-panel {
-  background-color: var(--color-bg-header);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 16px 20px;
-  min-height: 150px;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-.fo-instructions-title {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-muted);
-  margin: 0 0 10px 0;
-}
-
-.fo-instructions-list {
-  margin: 0;
-  padding: 0 0 0 16px;
-  list-style: disc;
-  flex: 1;
-}
-
-.fo-instructions-list li {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-  margin-bottom: 4px;
-}
-
-.fo-verification-status {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text-muted);
-  border-top: 1px solid var(--border-color);
-  padding-top: 10px;
-  margin-top: 10px;
-}
-
-.fo-status-text {
-  font-weight: 600;
-  color: var(--color-warning);
-}
 
 /* Actions Row */
 .fo-actions {
@@ -544,10 +339,6 @@ textarea.fo-input.fo-textarea-tall {
     padding: 24px;
   }
 
-  /* 4-column grids become 2-column */
-  .fo-grid-4 {
-    grid-template-columns: repeat(2, 1fr);
-  }
 
   /* 3-column grids become 2-column; first item or full-row elements
      can use fo-grid-full class to span both columns via HTML */
@@ -560,25 +351,6 @@ textarea.fo-input.fo-textarea-tall {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* Location row: reduce right-col width slightly at tablet */
-  .fo-location-row {
-    gap: 12px;
-  }
-
-  .fo-right-col {
-    flex: 1.2;
-  }
-
-  /* Instructions panel: slightly shorter on tablet */
-  .fo-instructions-panel {
-    min-height: 120px;
-    padding: 14px 16px;
-  }
-
-  /* GPS row stays horizontal but inputs get more room */
-  .fo-gps-input {
-    flex: 1;
-  }
 
   /* Actions row stays horizontal but buttons shrink slightly */
   .fo-btn {
@@ -610,62 +382,42 @@ textarea.fo-input.fo-textarea-tall {
     font-size: 16px;
   }
 
-  /* All grids collapse to single column */
-  .fo-grid-4,
+  
   .fo-grid-3,
-  .fo-grid-2 {
+
+  .fo-grid-2{
     grid-template-columns: 1fr;
   }
 
-  /* Location row stacks vertically */
-  .fo-location-row {
+
+  .fo-card-header--split {
     flex-direction: column;
-    gap: 16px;
+    align-items: stretch;
   }
 
-  .fo-left-col,
-  .fo-right-col {
-    flex: none;
-    width: 100%;
+  .fo-zone-block {
+    align-items: flex-start;
+    max-width: none;
   }
 
-  /* Instructions panel: more compact */
-  .fo-instructions-panel {
-    min-height: 100px;
-    padding: 12px 16px;
+  .fo-zone-block .fo-helper {
+    text-align: left;
   }
 
-  /* GPS row: three columns on one line */
-  .fo-gps-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    gap: 8px;
-    flex-wrap: nowrap;
-  }
-
-  .fo-gps-input {
-    min-width: 0;
-    flex: none;
-  }
-
-  .fo-gps-btn {
-    width: 36px;
-    height: 36px;
-    flex-shrink: 0;
-  }
-
-  /* Actions: side-by-side buttons using grid */
-  .fo-actions {
+  /* Actions: side-by-side buttons using grid. Scoped to the card, because the
+     dialogs reuse this class for their footers and a two-column grid there
+     pushed Cancel away from the action it cancels. */
+  .fo-card .fo-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
 
-  .fo-actions-right {
+  .fo-card .fo-actions-right {
     width: 100%;
   }
 
-  .fo-actions-right .fo-btn {
+  .fo-card .fo-actions-right .fo-btn {
     width: 100%;
     justify-content: center;
   }
@@ -697,4 +449,535 @@ textarea.fo-input.fo-textarea-tall {
     width: auto;
     height: auto;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Survey flow
+   The four screens, the type picker, and the controls that carry the rules:
+   the three state absence control, the zone chip, and the species picker.
+   --------------------------------------------------------------------------- */
+
+.fo-screen[hidden] {
+  display: none;
+}
+
+.fo-card-header--split {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.fo-card-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* What are you doing today */
+
+.fo-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.fo-type-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  text-align: left;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+
+.fo-type-btn:hover {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.fo-type-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.fo-type-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.fo-type-collects {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* The zone chip. It carries where the zone came from, because a zone read off
+   the GPS is a different kind of fact from one the officer chose. */
+
+.fo-zone-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  max-width: 260px;
+}
+
+.fo-zone-chip {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  color: var(--color-text-main);
+  background-color: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+.fo-zone-chip:hover {
+  background-color: var(--color-bg-hover);
+}
+
+.fo-zone-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.fo-zone-chip--empty {
+  background-color: var(--color-danger-light);
+  border-color: var(--color-danger);
+  color: var(--color-danger-fg);
+}
+
+.fo-zone-block .fo-helper {
+  text-align: right;
+}
+
+/* Type panels */
+
+.fo-type-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.fo-type-panel[hidden] {
+  display: none;
+}
+
+.fo-fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fo-legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-main);
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+/* Point intercept. Four counters, because cover is a ratio of taps and never an
+   estimate the officer types in. */
+
+.fo-tap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.fo-tap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.fo-tap-name {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.fo-tap-count {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  line-height: 1;
+}
+
+.fo-tap-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.fo-tap-add {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  color: var(--color-text-main);
+  background-color: var(--color-bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.fo-tap-add:hover {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.fo-tap-total {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+/* Species rows */
+
+.fo-species-list,
+.fo-sward-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.fo-species-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.fo-species-row--absent {
+  background-color: var(--color-danger-light);
+  border-color: var(--color-danger);
+}
+
+.fo-species-main {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+
+.fo-species-main:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+.fo-species-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.fo-species-detail {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.fo-species-clear {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  min-height: 24px;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  color: var(--color-danger-fg);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.fo-species-clear:hover {
+  background-color: var(--color-danger-light);
+}
+
+.fo-role-tag {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+}
+
+.fo-add-row {
+  align-self: flex-start;
+}
+
+.fo-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* Zone progress */
+
+.fo-zone-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fo-zone-card {
+  padding: 14px 16px;
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.fo-zone-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.fo-zone-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.fo-zone-card-origin {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.fo-zone-card-lines {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.fo-zone-none {
+  list-style: none;
+  margin-left: -18px;
+  color: var(--color-text-muted);
+}
+
+.fo-zone-card-note {
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--color-text-secondary);
+}
+
+/* Ending */
+
+.fo-summary {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.fo-summary p {
+  margin: 0 0 6px;
+}
+
+.fo-done-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-main);
+  line-height: 1.6;
+}
+
+/* Toggles and count entry */
+
+.fo-toggle {
+  align-self: flex-start;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  color: var(--color-text-main);
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.fo-toggle--on {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-nav-active-fg);
+}
+
+.fo-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.fo-count-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.fo-count-line .fo-count-input {
+  width: 90px;
+  text-align: center;
+}
+
+.fo-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--color-text-main);
+}
+
+/* Dialogs */
+
+.fo-dialog {
+  width: min(520px, calc(100vw - 32px));
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-card);
+  box-shadow: var(--shadow-md);
+  font-family: var(--font-sans);
+  color: var(--color-text-main);
+}
+
+.fo-dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.fo-dialog-title {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.fo-dialog-text {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.fo-zone-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.fo-zone-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  text-align: left;
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+
+.fo-zone-option:hover {
+  border-color: var(--color-primary);
+}
+
+.fo-zone-option--suggested {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+.fo-zone-option-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.fo-zone-option-note {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.fo-species-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.fo-species-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 14px;
+  text-align: left;
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+
+.fo-species-option:hover {
+  border-color: var(--color-primary);
+}
+
+.fo-species-option-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.fo-species-option-sci {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.fo-escape-hatch {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  background-color: var(--color-accent-light);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+}
+
+.fo-escape-hatch[hidden] {
+  display: none;
 }

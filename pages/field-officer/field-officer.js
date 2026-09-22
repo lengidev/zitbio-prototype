@@ -1,427 +1,1084 @@
-/* Field officer observation form: session auto-fill, species auto-detect, GPS
-   capture and submission into the unified BioData layer (CentralDataStore). */
+/* Field officer survey flow: what are you doing today, that type's form, the
+   zones so far, and the end. The rules live in lib/survey.js; this file only
+   moves data between that model, the DOM and the sync layer. */
 
-// Dependency-free replacement for String.prototype.padStart, which throws on
-// older engines/webviews and can take the page down.
-function pad2(num) {
-  var s = String(num);
-  return s.length < 2 ? '0' + s : s;
-}
+(function () {
+  'use strict';
 
-/* TOAST UTILITY: ephemeral UX feedback, kept separate from BioData's persistent
-   notification system. */
-function showToast(message, type) {
-  var container = document.getElementById('toastContainer');
-  if (!container) return;
-  var toast = document.createElement('div');
-  toast.className = 'fo-toast fo-toast-' + (type || 'success');
-  toast.textContent = message;
-  container.appendChild(toast);
-  setTimeout(function() { toast.classList.add('fo-toast-out'); }, 2700);
-  setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
-}
+  var Survey = window.BioSurvey;
 
-/* FORM VALIDATION: required fields are checked before submission so incomplete
-   records never enter the data layer; errors render inline, not as one alert. */
-function validateForm() {
-  var isValid = true;
-  var requiredFields = [
-    { id: 'officerName', errorId: 'officerNameError', message: 'Officer name is required' },
-    { id: 'institutionName', errorId: 'institutionNameError', message: 'Institution is required' },
-    { id: 'obsDate', errorId: 'obsDateError', message: 'Date is required' },
-    { id: 'obsTime', errorId: 'obsTimeError', message: 'Time is required' },
-    { id: 'commonName', errorId: 'commonNameError', message: 'Common name is required' },
-    { id: 'scientificName', errorId: 'scientificNameError', message: 'Scientific name is required' },
-    { id: 'populationCount', errorId: 'populationCountError', message: 'Count is required' },
-    { id: 'provinceState', errorId: 'provinceStateError', message: 'Province is required' },
-    { id: 'country', errorId: 'countryError', message: 'Country is required' },
-    { id: 'focusArea', errorId: 'focusAreaError', message: 'Focus area is required' },
-    { id: 'habitatType', errorId: 'habitatTypeError', message: 'Habitat type is required' }
-  ];
+  // How close the officer must be to a zone anchor to be placed in it. This is a
+  // UI tolerance for choosing a zone, not a measurement of anything.
+  var ANCHOR_RADIUS_M = 250;
 
-  requiredFields.forEach(function(field) {
-    var input = document.getElementById(field.id);
-    var error = document.getElementById(field.errorId);
-    if (!input) return;
+  var el = {};
+  var state = {
+    survey: null,
+    zoneId: null,
+    zoneSource: null,
+    position: null,
+    speciesDraft: null,
+    rainedOn: false,
+    sending: false
+  };
 
-    if (!error) {
-      error = document.createElement('span');
-      error.id = field.errorId;
-      error.className = 'fo-error';
-      error.textContent = field.message || 'This field is required';
-      input.parentNode.parentNode.appendChild(error);
-    }
+  function $(id) { return document.getElementById(id); }
 
-    if (!input.value.trim()) {
-      input.classList.add('error');
-      error.classList.add('show');
-      isValid = false;
-    } else {
-      input.classList.remove('error');
-      error.classList.remove('show');
-    }
-  });
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
 
-  return isValid;
-}
-
-/* FIELD OFFICER INITIALIZATION */
-function initFieldOfficer() {
-  var page = document.querySelector('.page-fieldofficer-v2');
-  if (!page) return;
-
-  // Unified BioData layer, so submissions reach the admin dashboards instantly.
-  var CentralDataStore = (window.BioData) ? window.BioData : null;
-  var observationForm = document.getElementById('observationForm');
-  if (!observationForm) return;
-
-  /**
-   * Paint the signed-in officer's identity into the read-only observer fields.
-   * Must be re-run whenever the identity settles: this page's scripts run before
-   * the route guard resolves, so the first call can find no session at all and
-   * leave the markup's placeholder name in a field that is **submitted as the
-   * observation's attribution**. The fields are `readonly`, so repainting them
-   * can never discard anything the officer typed.
-   */
-  function applySessionIdentity() {
-    var session = CentralDataStore ? CentralDataStore.getSession() : null;
-    if (!session) return;
-
-    var userNameEl = document.querySelector('.user-menu-name');
-    if (userNameEl && session.name) userNameEl.textContent = session.name;
-
-    var officerEl = document.getElementById('officerName');
-    if (officerEl) officerEl.value = session.name || '';
-
-    var instEl = document.getElementById('institutionName');
-    if (instEl) instEl.value = session.institution_name || '';
+  function minutesText(value) {
+    return value + (value === 1 ? ' minute' : ' minutes');
   }
 
-  applySessionIdentity();
-  if (CentralDataStore && typeof CentralDataStore.subscribe === 'function') {
-    CentralDataStore.subscribe('session:changed', applySessionIdentity);
-  }
-
-  // Province and Country are locked to Copperbelt/Zambia for current scope.
-
-  var dateEl = document.getElementById('obsDate');
-  var timeEl = document.getElementById('obsTime');
-  setDateTimeToNow();
-
-  // "Reset to now" is shared by initial load, Cancel and Submit so the form
-  // always behaves identically.
-  function setDateTimeToNow() {
-    if (dateEl) {
-      var n = new Date();
-      dateEl.value = n.getFullYear() + '-' + pad2(n.getMonth() + 1) + '-' + pad2(n.getDate());
-    }
-    if (timeEl) {
-      var tn = new Date();
-      timeEl.value = pad2(tn.getHours()) + ':' + pad2(tn.getMinutes());
-    }
-  }
-
-  function resetDateTimeAndErrors() {
-    setDateTimeToNow();
-    document.querySelectorAll('.fo-input.error').forEach(function(el) { el.classList.remove('error'); });
-    document.querySelectorAll('.fo-error.show').forEach(function(el) { el.classList.remove('show'); });
-  }
-
-  // Species auto-detect from the typed common name, to reduce taxonomic
-  // misidentification.
-  var commonNameEl = document.getElementById('commonName');
-  var scientificNameEl = document.getElementById('scientificName');
-  if (commonNameEl && scientificNameEl) {
-    var autoDetectLocked = false;
-    commonNameEl.addEventListener('input', function() {
-      if (autoDetectLocked) return;
-      var match = CentralDataStore ? CentralDataStore.lookupScientificName(this.value) : null;
-      if (match) {
-        scientificNameEl.value = match;
-      }
-    });
-    // If user manually edits scientific name, don't overwrite
-    scientificNameEl.addEventListener('input', function() {
-      if (this.value && commonNameEl.value) {
-        autoDetectLocked = true;
-      }
-    });
-    commonNameEl.addEventListener('change', function() {
-      autoDetectLocked = false;
-    });
-  }
-
-  // A datalist, not a closed picker: the officer stays free to record a species
-  // that is not in the registry (a correctly-entered new species is still a
-  // valid record), while the known names are one keystroke away, which keeps
-  // `common_name` matching the registry instead of drifting.
-  // The registry is hydrated from the cloud, so this also runs on
-  // `biodata:synced`; on a cold load it would otherwise be empty.
-  function populateSpeciesOptions() {
-    var commonList = document.getElementById('commonNameOptions');
-    var sciList = document.getElementById('scientificNameOptions');
-    if (!commonList || !sciList) return;
-
-    var registry = (CentralDataStore && CentralDataStore.getSpeciesRegistry)
-      ? CentralDataStore.getSpeciesRegistry() : [];
-
-    var seen = {};
-    var commonHtml = '';
-    var sciHtml = '';
-    registry.forEach(function(sp) {
-      var common = (sp.common_name || '').trim();
-      if (common && !seen['c:' + common.toLowerCase()]) {
-        seen['c:' + common.toLowerCase()] = true;
-        commonHtml += '<option value="' + escapeFoOption(common) + '"></option>';
-      }
-      var sci = (sp.scientific_name || '').trim();
-      if (sci && !seen['s:' + sci.toLowerCase()]) {
-        seen['s:' + sci.toLowerCase()] = true;
-        sciHtml += '<option value="' + escapeFoOption(sci) + '"></option>';
-      }
-    });
-
-    commonList.innerHTML = commonHtml;
-    sciList.innerHTML = sciHtml;
-  }
-
-  // Registry values are data, not markup, so they are escaped before being
-  // interpolated. Falls back to a local escaper if lib/escape.js did not load.
-  function escapeFoOption(value) {
+  function escapeHtml(value) {
     if (window.BioEscape && typeof window.BioEscape.escapeHtml === 'function') {
       return window.BioEscape.escapeHtml(value);
     }
-    return String(value).replace(/[&<>"']/g, function(c) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
 
-  populateSpeciesOptions();
+  function store() {
+    return window.BioData || null;
+  }
 
-  // Habitat auto-select from focus area
-  // Habitat is derived from the selected focus area (app-wide 2-option
-  // system): the Nature Park → park habitat; campus → urban. Officers
-  // never need to pick a habitat manually.
-  var focusAreaEl = document.getElementById('focusArea');
-  var habitatTypeEl = document.getElementById('habitatType');
+  function zones() {
+    var data = store();
+    var sites = (data && typeof data.getSiteRegistry === 'function') ? (data.getSiteRegistry() || []) : [];
+    return sites.filter(function (site) { return site && site.kind === 'zone'; });
+  }
 
-  // Focus area options are built from the site registry, the single source of
-  // truth for site names: a name in `observations.focus_area` that matches no
-  // `sites` row resolves to no site at all. The HTML copy is only a no-JS
-  // fallback.
-  function populateFocusAreaOptions() {
-    if (!focusAreaEl || !CentralDataStore || typeof CentralDataStore.getSiteRegistry !== 'function') return;
-    var siteRegistry = CentralDataStore.getSiteRegistry() || [];
-    if (siteRegistry.length === 0) return;
+  function zoneById(id) {
+    var found = zones().filter(function (zone) { return zone.id === id; });
+    return found.length ? found[0] : null;
+  }
 
-    // Preserve whatever the officer had selected (this also re-runs when the
-    // cloud sync swaps the registry in).
-    var previous = focusAreaEl.value;
-    focusAreaEl.innerHTML = '';
+  function parentSiteName(zoneRow) {
+    var data = store();
+    var sites = (data && typeof data.getSiteRegistry === 'function') ? (data.getSiteRegistry() || []) : [];
+    var parent = sites.filter(function (site) { return site.id === zoneRow.parent_site_id; })[0];
+    return parent ? (parent.name || parent.short_name || null) : null;
+  }
 
-    var placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Select focus area...';
-    focusAreaEl.appendChild(placeholder);
+  function zoneLabel(id) {
+    var zone = id ? zoneById(id) : null;
+    if (!zone) return id || 'No zone';
+    return zone.short_name || zone.name || id;
+  }
 
-    siteRegistry.forEach(function(site) {
-      if (!site || !site.name) return;
-      var opt = document.createElement('option');
-      // The option value IS the site name, because that is what
-      // observations.focus_area stores.
-      opt.value = site.name;
-      opt.textContent = site.name;
-      focusAreaEl.appendChild(opt);
+  function registry() {
+    var data = store();
+    return (data && typeof data.getSpeciesRegistry === 'function') ? (data.getSpeciesRegistry() || []) : [];
+  }
+
+  function session() {
+    var data = store();
+    return (data && typeof data.getSession === 'function') ? data.getSession() : null;
+  }
+
+  function speciesName(speciesId) {
+    var match = registry().filter(function (item) { return item.id === speciesId; })[0];
+    return match ? (match.common_name || match.scientific_name || speciesId) : speciesId;
+  }
+
+  function roleLabel(role) {
+    if (role === 'dominant') return 'Dominant';
+    if (role === 'invasive') return 'Invasive';
+    return 'Present';
+  }
+
+  // A wildlife census offers fauna and a vegetation survey offers flora. Without
+  // this the sward picker offered Zebra as a candidate dominant grass species.
+  function expectedTaxonType() {
+    var type = state.survey ? state.survey.surveyType : null;
+    if (type === 'wildlife_census') return 'fauna';
+    if (type === 'vegetation') return 'flora';
+    return null;
+  }
+
+  function officerName() {
+    var s = session();
+    return (s && s.name) || 'Field officer';
+  }
+
+  function officerInstitution() {
+    var s = session();
+    return (s && s.institution_name) || '';
+  }
+
+  function officerId() {
+    var s = session();
+    return (s && (s.id || s.user_id)) || null;
+  }
+
+  function nowIso() { return new Date().toISOString(); }
+
+  function formatClock(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+
+  function formatDay(iso) {
+    if (!iso) return '';
+    if (window.BioDate && typeof window.BioDate.mediumDate === 'function') {
+      return window.BioDate.mediumDate(iso);
+    }
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+
+  // Local for now, but it must carry the same announcement contract as the shared
+  // toast in lib/toast.js: without role and aria-live the only error surface in
+  // this flow, including "sending failed", is silent to a screen reader.
+  function showToast(message, type) {
+    var container = $('toastContainer');
+    if (!container) return;
+    var isError = type === 'error';
+    var toast = document.createElement('div');
+    toast.className = 'fo-toast fo-toast-' + (type || 'success');
+    toast.setAttribute('role', isError ? 'alert' : 'status');
+    toast.setAttribute('aria-live', isError ? 'assertive' : 'polite');
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(function () { toast.classList.add('fo-toast-out'); }, 3400);
+    setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3800);
+  }
+
+  function show(screenId) {
+    ['screenStart', 'screenForm', 'screenProgress', 'screenEnd', 'screenDone'].forEach(function (id) {
+      if (el[id]) el[id].hidden = (id !== screenId);
     });
-
-    if (previous) focusAreaEl.value = previous;
+    window.scrollTo(0, 0);
   }
 
-  populateFocusAreaOptions();
-  // The registry is seeded locally, then replaced by the cloud copy during
-  // hydration, so re-populate rather than requiring a reload.
-  window.addEventListener('biodata:synced', populateFocusAreaOptions);
-  window.addEventListener('biodata:synced', populateSpeciesOptions);
-
-  if (focusAreaEl && habitatTypeEl && CentralDataStore && CentralDataStore.getHabitatForFocusArea) {
-    var syncHabitatFromFocus = function() {
-      if (focusAreaEl.value) {
-        habitatTypeEl.value = CentralDataStore.getHabitatForFocusArea(focusAreaEl.value);
-      }
-    };
-    focusAreaEl.addEventListener('change', syncHabitatFromFocus);
-    // Also run once in case a focus area is already selected on load.
-    syncHabitatFromFocus();
+  function metresBetween(a, b) {
+    var R = 6371000;
+    var toRad = function (deg) { return deg * Math.PI / 180; };
+    var dLat = toRad(b.lat - a.lat);
+    var dLng = toRad(b.lng - a.lng);
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
   }
 
-  // GPS capture with reverse-geocode
-  // Captures device GPS, then reverse-geocodes via Nominatim to auto-fill the
-  // city, reducing manual data entry in the field.
-  var gpsBtn = document.getElementById('gpsCaptureBtn');
-  var gpsIcon = document.getElementById('gpsIcon');
-  if (gpsBtn) {
-    gpsBtn.addEventListener('click', function() {
-      if (!navigator.geolocation) {
-        showToast('GPS is not supported by your browser.', 'error');
-        return;
-      }
-      if (gpsIcon) {
-        gpsIcon.querySelector('use').setAttribute('href', '#i-progress_activity');
-        gpsIcon.classList.add('fo-spin');
-      }
+  // The nearest zone anchor wins, and only inside the radius. With no anchor
+  // placed, or no fix from the device, this returns nothing and the officer is
+  // asked instead.
+  function nearestZone() {
+    if (!state.position) return null;
+    var best = null;
+    zones().forEach(function (zone) {
+      if (zone.latitude == null || zone.longitude == null) return;
+      var distance = metresBetween(state.position, { lat: Number(zone.latitude), lng: Number(zone.longitude) });
+      if (distance > ANCHOR_RADIUS_M) return;
+      if (!best || distance < best.distance) best = { zone: zone, distance: distance };
+    });
+    return best ? best.zone : null;
+  }
+
+  function capturePosition() {
+    return new Promise(function (resolve) {
+      if (!navigator.geolocation) return resolve(null);
       navigator.geolocation.getCurrentPosition(
-        function(pos) {
-          var lat = pos.coords.latitude;
-          var lng = pos.coords.longitude;
-          var latEl = document.getElementById('latitude');
-          var lngEl = document.getElementById('longitude');
-          if (latEl) latEl.value = lat.toFixed(6);
-          if (lngEl) lngEl.value = lng.toFixed(6);
-          if (gpsIcon) { gpsIcon.querySelector('use').setAttribute('href', '#i-explore'); gpsIcon.classList.remove('fo-spin'); }
-          showToast('GPS coordinates captured successfully!', 'success');
-
-          // Reverse-geocode to auto-fill the city, for officers who may not know
-          // the administrative boundaries of remote areas.
-          var url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng;
-          fetch(url, { headers: { 'User-Agent': 'BioSystem/1.0' } })
-            .then(function(resp) { return resp.json(); })
-            .then(function(data) {
-              if (!data || !data.address) return;
-              var addr = data.address;
-
-              // City falls back through town, village, county.
-              var cityVal = addr.city || addr.town || addr.village || addr.county || '';
-              var cityEl = document.getElementById('city');
-              if (cityEl && cityVal) {
-                cityEl.value = cityVal;
-              }
-
-              // Province/State is deliberately NOT auto-filled: the field is a
-              // `readonly` input pinned to "Copperbelt Province" for current scope.
-              // This block used to iterate `provEl.options` as though the field
-              // were a <select>; on an <input> `.options` is undefined, so
-              // `.length` threw a TypeError on every successful reverse geocode,
-              // swallowed by the .catch() below. There is no option list to select
-              // from and the field is locked, so there is nothing to do.
-            })
-            .catch(function() { /* best-effort: coordinates are already captured */ });
+        function (pos) {
+          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
         },
-        function(err) {
-          if (gpsIcon) { gpsIcon.querySelector('use').setAttribute('href', '#i-explore'); gpsIcon.classList.remove('fo-spin'); }
-          showToast('GPS error: ' + err.message, 'error');
-        }
+        function () {
+          // No fix means no position. Generating one would put a fabricated
+          // measurement into the record, which is worse than an absent one.
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
       );
     });
   }
 
-  // Count stepper
-  var countMinus = document.getElementById('countMinus');
-  var countPlus = document.getElementById('countPlus');
-  var countInput = document.getElementById('populationCount');
-  if (countMinus && countInput) {
-    countMinus.addEventListener('click', function() {
-      var v = parseInt(countInput.value, 10) || 1;
-      if (v > 1) countInput.value = v - 1;
-    });
-  }
-  if (countPlus && countInput) {
-    countPlus.addEventListener('click', function() {
-      countInput.value = (parseInt(countInput.value, 10) || 1) + 1;
-    });
+  function applySessionIdentity() {
+    if (el.startIdentity) {
+      var institution = officerInstitution();
+      el.startIdentity.textContent = 'Signed in as ' + officerName() +
+        (institution ? ', ' + institution : '');
+    }
+    var nameEl = document.querySelector('.user-menu-name');
+    if (nameEl) nameEl.textContent = officerName();
   }
 
-  // Cancel button: reset form
-  var btnCancel = document.getElementById('btnCancel');
-  if (btnCancel) {
-    btnCancel.addEventListener('click', function() {
-      document.getElementById('observationForm').reset();
-      resetDateTimeAndErrors();
-      showToast('Form cleared.', 'success');
-    });
+  function renderTypeGrid() {
+    if (!el.typeGrid) return;
+    el.typeGrid.innerHTML = Survey.TYPES.map(function (type) {
+      return '<button type="button" class="fo-type-btn" data-type="' + escapeHtml(type.id) + '">' +
+        '<span class="fo-type-label">' + escapeHtml(type.label) + '</span>' +
+        '<span class="fo-type-collects">' + escapeHtml(type.collects) + '</span>' +
+        '</button>';
+    }).join('');
   }
 
-  // Form Submit: persists to the data layer and resets for the next entry.
-  observationForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    if (!validateForm()) {
-      showToast('Please fill in all required fields.', 'error');
+  function renderZoneChip() {
+    if (!el.zoneChip) return;
+    if (!state.zoneId) {
+      el.zoneChip.textContent = 'No location yet. Pick the zone you are in.';
+      el.zoneChip.classList.add('fo-zone-chip--empty');
+    } else {
+      var origin = state.zoneSource === 'gps' ? 'from GPS' : 'set by hand';
+      el.zoneChip.textContent = zoneLabel(state.zoneId) + ' · ' + origin;
+      el.zoneChip.classList.remove('fo-zone-chip--empty');
+    }
+    if (el.zoneHelp) {
+      el.zoneHelp.textContent = state.position
+        ? 'Tap to change the zone.'
+        : 'This device gave no position, so nothing was guessed. Tap to choose the zone.';
+    }
+  }
+
+  function openZoneDialog(suggestedZoneId) {
+    if (!el.zoneDialog || !el.zoneOptions) return;
+
+    var covered = {};
+    (state.survey ? state.survey.zones : []).forEach(function (zone) { covered[zone.zoneId] = true; });
+    var fromGps = nearestZone();
+    var suggestion = fromGps;
+    if (!suggestion && suggestedZoneId) {
+      suggestion = zones().filter(function (zone) { return zone.id === suggestedZoneId; })[0] || null;
+    }
+    var list = zones();
+
+    if (!list.length) {
+      el.zoneDialogText.textContent = 'No park zones are set up yet. Ask an admin to add them in Settings.';
+      el.zoneOptions.innerHTML = '';
+    } else {
+      el.zoneDialogText.textContent = fromGps
+        ? 'You appear to be at ' + (fromGps.short_name || fromGps.name) + '. Change it if that is wrong.'
+        : (suggestion
+            ? 'This is the only zone left on this walk, so it is highlighted. Change it if that is wrong.'
+            : 'Pick the zone you are standing in.');
+      el.zoneOptions.innerHTML = list.map(function (zone) {
+        var isSuggestion = suggestion && suggestion.id === zone.id;
+        var isCovered = covered[zone.id];
+        return '<button type="button" class="fo-zone-option' + (isSuggestion ? ' fo-zone-option--suggested' : '') + '"' +
+          ' data-zone="' + escapeHtml(zone.id) + '">' +
+          '<span class="fo-zone-option-name">' + escapeHtml(zone.name || zone.id) + '</span>' +
+          (isCovered ? '<span class="fo-zone-option-note">Already recorded on this walk</span>' : '') +
+          '</button>';
+      }).join('');
+    }
+    if (typeof el.zoneDialog.showModal === 'function') el.zoneDialog.showModal();
+  }
+
+  function chooseZone(zoneId, source) {
+    state.zoneId = zoneId;
+    state.zoneSource = source || 'manual';
+    Survey.zoneOf(state.survey, zoneId, state.zoneSource);
+    renderZoneChip();
+    renderPanel();
+  }
+
+  function renderPanel() {
+    var type = state.survey ? state.survey.surveyType : null;
+    if (el.panelWildlife) el.panelWildlife.hidden = type !== 'wildlife_census';
+    if (el.panelVegetation) el.panelVegetation.hidden = type !== 'vegetation';
+    if (el.panelWater) el.panelWater.hidden = type !== 'water_quality';
+    if (el.panelSoil) el.panelSoil.hidden = type !== 'soil_condition';
+
+    if (type === 'wildlife_census') renderWildlifeRows();
+    if (type === 'vegetation') renderVegetation();
+    if (type === 'water_quality') renderWater();
+    if (type === 'soil_condition') renderSoil();
+
+    // Repopulate the note from the model. It used to keep whatever was typed for
+    // the previous zone, and `collectZoneFields` then committed that text onto
+    // the next zone the officer opened.
+    if (el.zoneNote) {
+      el.zoneNote.value = state.zoneId ? (Survey.zoneOf(state.survey, state.zoneId).note || '') : '';
+    }
+  }
+
+  // One row per species per zone. Tapping a row reopens it, so seeing more
+  // animals edits the record rather than adding a second one.
+  function renderWildlifeRows() {
+    if (!el.wildlifeRows) return;
+    if (!state.zoneId) {
+      el.wildlifeRows.innerHTML = '<p class="fo-empty">Pick the zone you are in, then record what you saw there.</p>';
+      return;
+    }
+    var rows = Survey.zoneOf(state.survey, state.zoneId).wildlife.species;
+    if (!rows.length) {
+      el.wildlifeRows.innerHTML = '<p class="fo-empty">Nothing recorded in ' + escapeHtml(zoneLabel(state.zoneId)) + ' yet.</p>';
       return;
     }
 
-    var institutionName = document.getElementById('institutionName').value;
-    var date = document.getElementById('obsDate').value;
-    var time = document.getElementById('obsTime').value;
-    var timestamp = null;
-    try {
-      timestamp = new Date(date + 'T' + time + ':00').toISOString();
-    } catch (err) {
-      timestamp = new Date().toISOString();
+    el.wildlifeRows.innerHTML = rows.map(function (row) {
+      var key = escapeHtml(Survey.speciesKey(row));
+      var absent = row.detection === Survey.STATE.notDetected;
+      var detail = absent ? 'None seen' : (row.count + (row.count === 1 ? ' animal' : ' animals'));
+      if (!absent && row.juveniles) {
+        detail += ', ' + row.juveniles + ' juvenile' + (row.juveniles === 1 ? '' : 's');
+      }
+      if (row.confidence && row.confidence !== 'certain') detail += ' · ' + escapeHtml(row.confidence);
+      var name = row.commonName || 'Unnamed';
+      if (!row.speciesId) name += ' (not in the inventory)';
+
+      return '<div class="fo-species-row' + (absent ? ' fo-species-row--absent' : '') + '">' +
+        '<button type="button" class="fo-species-main" data-edit="' + key + '">' +
+        '<span class="fo-species-name">' + escapeHtml(name) + '</span>' +
+        '<span class="fo-species-detail">' + detail + '</span>' +
+        '</button>' +
+        '<button type="button" class="fo-species-clear" data-clear="' + key + '">Remove</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  function renderVegetation() {
+    if (!el.tapGrid) return;
+    if (!state.zoneId) {
+      // Half a panel is worse than an explanation. The counters used to vanish
+      // with no word about why they were not there.
+      el.tapGrid.innerHTML = '';
+      if (el.tapTotal) el.tapTotal.textContent = 'Pick the zone you are in, then count what is under your toe.';
+      if (el.grassHeight) el.grassHeight.value = '';
+      if (el.swardRows) el.swardRows.innerHTML = '<p class="fo-empty">Pick the zone you are in first.</p>';
+      return;
+    }
+    var taps = Survey.zoneOf(state.survey, state.zoneId).vegetation.taps;
+    var labels = { grass: 'Grass', litter: 'Litter', bare: 'Bare soil', woody: 'Woody' };
+
+    el.tapGrid.innerHTML = ['grass', 'litter', 'bare', 'woody'].map(function (name) {
+      return '<div class="fo-tap" data-tap="' + name + '">' +
+        '<span class="fo-tap-name">' + labels[name] + '</span>' +
+        '<span class="fo-tap-count">' + taps[name] + '</span>' +
+        '<div class="fo-tap-buttons">' +
+        '<button type="button" class="fo-tap-add" data-tap-plus="' + name + '">Under my toe</button>' +
+        '<button type="button" class="fo-stepper-btn" data-tap-minus="' + name + '" aria-label="One fewer ' + labels[name] + '">−</button>' +
+        '</div></div>';
+    }).join('');
+
+    updateTapTotal();
+    if (el.grassHeight) {
+      el.grassHeight.value = Survey.zoneOf(state.survey, state.zoneId).vegetation.grassHeightMeanCm == null
+        ? '' : Survey.zoneOf(state.survey, state.zoneId).vegetation.grassHeightMeanCm;
+    }
+    renderSwardRows();
+  }
+
+  // Updates the numbers in place. Rebuilding the grid on every tap destroyed the
+  // focus ring on each of about a hundred taps, which made the counter unusable
+  // from a keyboard and re-created every button on each press.
+  function refreshTapCounts() {
+    if (!el.tapGrid || !state.zoneId) return;
+    var taps = Survey.zoneOf(state.survey, state.zoneId).vegetation.taps;
+    Object.keys(taps).forEach(function (name) {
+      var cell = el.tapGrid.querySelector('[data-tap="' + name + '"] .fo-tap-count');
+      if (cell) cell.textContent = taps[name];
+    });
+    updateTapTotal();
+  }
+
+  function updateTapTotal() {
+    if (!el.tapTotal || !state.zoneId) return;
+    var cover = Survey.coverFromTaps(Survey.zoneOf(state.survey, state.zoneId).vegetation.taps);
+    // Litter is named because it is one of the four counters and the soil survey
+    // no longer records it, so this line is the only place it is reported.
+    el.tapTotal.textContent = cover.total
+      ? cover.total + ' points. Grass ' + cover.grassPct + ' percent, litter ' + cover.litterPct +
+        ' percent, bare ' + cover.barePct + ' percent, woody ' + cover.woodyPct + ' percent.'
+      : 'No taps yet. The percentage is worked out from the taps, so you never estimate it.';
+  }
+
+  function renderSwardRows() {
+    if (!el.swardRows || !state.zoneId) return;
+    var rows = Survey.zoneOf(state.survey, state.zoneId).vegetation.sward;
+    if (!rows.length) {
+      el.swardRows.innerHTML = '<p class="fo-empty">No grass species recorded in ' + escapeHtml(zoneLabel(state.zoneId)) + ' yet.</p>';
+      return;
+    }
+    el.swardRows.innerHTML = rows.map(function (row) {
+      return '<div class="fo-species-row">' +
+        '<span class="fo-species-name">' + escapeHtml(speciesName(row.speciesId)) + '</span>' +
+        '<span class="fo-role-tag">' + escapeHtml(roleLabel(row.role)) + '</span>' +
+        '<button type="button" class="fo-species-clear" data-sward-clear="' + escapeHtml(row.speciesId) + '">Remove</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  function setToggle(button, pressed, onText, offText) {
+    if (!button) return;
+    button.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+    button.textContent = pressed ? onText : offText;
+    button.classList.toggle('fo-toggle--on', !!pressed);
+  }
+
+  function renderWater() {
+    if (!el.waterLevel || !state.zoneId) return;
+    var water = Survey.zoneOf(state.survey, state.zoneId).water;
+    el.waterLevel.value = water.levelPct == null ? '' : water.levelPct;
+    el.waterFlow.value = water.flow || '';
+    el.waterAppearance.value = water.appearance || '';
+    el.waterBank.value = water.bankCondition || '';
+    setToggle(el.waterOdour, water.odourOrFoam, 'Odour or foam seen', 'None seen');
+  }
+
+  function renderSoil() {
+    if (!el.soilSurface || !state.zoneId) return;
+    var soil = Survey.zoneOf(state.survey, state.zoneId).soil;
+    el.soilSurface.value = soil.surfaceCondition || '';
+    el.soilCompaction.value = soil.compaction || '';
+    el.soilErosion.value = soil.erosionSigns || '';
+  }
+
+  function renderProgress() {
+    if (!el.zoneList || !state.survey) return;
+    var survey = state.survey;
+    var summary = Survey.summary(survey);
+
+    if (el.progressTitle) {
+      el.progressTitle.textContent = Survey.typeFor(survey.surveyType).label + ' on ' + formatDay(survey.startedAt);
+    }
+    if (el.progressMeta) {
+      el.progressMeta.textContent = summary.zones
+        ? summary.zones + (summary.zones === 1 ? ' zone' : ' zones') + ', recorded by ' + survey.recordedBy
+        : 'No zones recorded yet.';
     }
 
-    var latEl = document.getElementById('latitude');
-    var lngEl = document.getElementById('longitude');
-    var lat = latEl && latEl.value ? parseFloat(latEl.value) : null;
-    var lng = lngEl && lngEl.value ? parseFloat(lngEl.value) : null;
+    el.zoneList.innerHTML = survey.zones.map(function (zone) {
+      var lines = '';
+      if (zone.wildlife) {
+        lines = zone.wildlife.species.map(function (row) {
+          var absent = row.detection === Survey.STATE.notDetected;
+          return '<li>' + escapeHtml(row.commonName || 'Unnamed') + ' ' +
+            (absent ? 'none seen' : escapeHtml(String(row.count))) + '</li>';
+        }).join('');
+        if (!lines) lines = '<li class="fo-zone-none">Nothing recorded</li>';
+      }
+      if (zone.vegetation) {
+        var cover = Survey.coverFromTaps(zone.vegetation.taps);
+        lines = '<li>' + (cover.total ? 'Grass ' + cover.grassPct + ' percent of ' + cover.total + ' points' : 'No taps') + '</li>';
+        if (zone.vegetation.grassHeightMeanCm != null) {
+          lines += '<li>Mean height ' + zone.vegetation.grassHeightMeanCm + ' cm</li>';
+        }
+        zone.vegetation.sward.forEach(function (row) {
+          lines += '<li>' + escapeHtml(roleLabel(row.role)) + ': ' + escapeHtml(speciesName(row.speciesId)) + '</li>';
+        });
+      }
+      if (zone.water) {
+        var bits = [];
+        if (zone.water.levelPct != null) bits.push(zone.water.levelPct + ' percent full');
+        if (zone.water.flow) bits.push(zone.water.flow);
+        if (zone.water.appearance) bits.push(zone.water.appearance);
+        if (zone.water.bankCondition) bits.push('bank ' + zone.water.bankCondition);
+        lines = '<li>' + (bits.length ? escapeHtml(bits.join(', ')) : 'Nothing recorded') + '</li>';
+      }
+      if (zone.soil) {
+        var soilBits = [];
+        if (zone.soil.surfaceCondition) soilBits.push('surface ' + zone.soil.surfaceCondition);
+        if (zone.soil.compaction) soilBits.push('compaction ' + zone.soil.compaction);
+        if (zone.soil.erosionSigns) soilBits.push('erosion ' + zone.soil.erosionSigns);
+        lines = '<li>' + (soilBits.length ? escapeHtml(soilBits.join(', ')) : 'Nothing recorded') + '</li>';
+      }
 
-    var observation = {
-      observation_id: 'obs_' + Date.now(),
-      taxon: {
-        scientific_name: document.getElementById('scientificName').value,
-        common_name: document.getElementById('commonName').value
-      },
-      location: {
-        latitude: lat,
-        longitude: lng,
-        country: document.getElementById('country').value,
-        administrative_area: document.getElementById('provinceState').value,
-        city: document.getElementById('city').value || '',
-        focus_area: document.getElementById('focusArea').value || null,
-        habitat_type: document.getElementById('habitatType').value,
-        locality_description: document.getElementById('localityDescription').value || ''
-      },
-      recorded_by: officerName,
-      timestamp: timestamp,
-      institution_name: institutionName,
-      activity: document.getElementById('activity').value || '',
-      field_notes: document.getElementById('fieldNotes').value || ''
+      return '<div class="fo-zone-card">' +
+        '<div class="fo-zone-card-head">' +
+        '<span class="fo-zone-card-name">' + escapeHtml(zoneLabel(zone.zoneId)) + '</span>' +
+        '<span class="fo-zone-card-origin">' + (zone.zoneSource === 'gps' ? 'from GPS' : 'set by hand') + '</span>' +
+        '</div>' +
+        '<ul class="fo-zone-card-lines">' + lines + '</ul>' +
+        (zone.note ? '<p class="fo-zone-card-note">' + escapeHtml(zone.note) + '</p>' : '') +
+        '</div>';
+    }).join('');
+  }
+
+  function renderEnd() {
+    if (!el.endSummary || !state.survey) return;
+    var summary = Survey.summary(state.survey);
+    var parts = [];
+
+    if (el.endMeta) {
+      // Measured from now, not from `endedAt`: the survey is still open at this
+      // point, so reading the end time gave a blank where the officer most wants
+      // to know how long they have been out.
+      var startedMs = Date.parse(state.survey.startedAt);
+      var soFar = isNaN(startedMs) ? null : Math.round((Date.now() - startedMs) / 60000);
+      el.endMeta.textContent = 'Started ' + formatClock(state.survey.startedAt) +
+        (soFar == null ? '' : ', ' + minutesText(soFar) + ' so far');
+    }
+
+    parts.push('<p>Zones: ' + (summary.zones
+      ? state.survey.zones.map(function (zone) { return escapeHtml(zoneLabel(zone.zoneId)); }).join(', ')
+      : 'none recorded') + '</p>');
+
+    if (state.survey.surveyType === 'wildlife_census') {
+      parts.push('<p>' + summary.speciesRecorded + ' species recorded, ' + summary.speciesNotSeen +
+        ' searched and not seen, ' + summary.animals + ' animals in total.</p>');
+    }
+
+    el.endSummary.innerHTML = parts.join('');
+  }
+
+  // Species picker. Matches come from the registry; the escape hatch accepts a
+  // typed name for a taxon genuinely absent from it.
+  function openSpeciesDialog(role, editingKey) {
+    state.speciesDraft = { role: role || 'present', editingKey: editingKey || null };
+    if (el.speciesSearch) el.speciesSearch.value = '';
+    if (el.speciesMatches) el.speciesMatches.innerHTML = '';
+    if (el.escapeHatch) el.escapeHatch.hidden = true;
+    renderSpeciesMatches();
+    if (typeof el.speciesDialog.showModal === 'function') el.speciesDialog.showModal();
+    if (el.speciesSearch) el.speciesSearch.focus();
+  }
+
+  function renderSpeciesMatches() {
+    if (!el.speciesMatches || !el.speciesSearch) return;
+    var query = el.speciesSearch.value.trim().toLowerCase();
+    var wanted = expectedTaxonType();
+    var matches = registry().filter(function (item) {
+      if (wanted && item.taxon_type && item.taxon_type !== wanted) return false;
+      if (!query) return true;
+      var hay = ((item.common_name || '') + ' ' + (item.scientific_name || '') + ' ' + (item.id || '')).toLowerCase();
+      return hay.indexOf(query) !== -1;
+    }).slice(0, 12);
+
+    el.speciesMatches.innerHTML = matches.map(function (item) {
+      return '<button type="button" class="fo-species-option" data-species="' + escapeHtml(item.id) + '">' +
+        '<span class="fo-species-option-name">' + escapeHtml(item.common_name || item.scientific_name) + '</span>' +
+        '<span class="fo-species-option-sci">' + escapeHtml(item.scientific_name || '') + '</span>' +
+        '</button>';
+    }).join('');
+
+    if (!el.escapeHatch) return;
+    var typed = el.speciesSearch.value.trim();
+    var exact = matches.some(function (item) {
+      return (item.common_name || '').toLowerCase() === query;
+    });
+
+    // Only a wildlife census can take a typed name. The sward list needs a
+    // registry reference, because a plant cannot be recorded as free text and
+    // then grouped by anything. Offering the hatch there promised something the
+    // model refuses.
+    if (typed.length < 3 || exact || expectedTaxonType() !== 'fauna') {
+      el.escapeHatch.hidden = true;
+      return;
+    }
+    el.escapeHatch.hidden = false;
+    el.escapeHatchText.textContent = '"' + typed + '" is not in the park inventory. It will be recorded as you typed it, and an admin will be asked to review it.';
+    el.btnUseTypedName.textContent = 'Record "' + typed + '"';
+  }
+
+  function chooseSpecies(speciesId) {
+    var draft = state.speciesDraft;
+    if (state.survey.surveyType === 'vegetation') {
+      Survey.addSwardSpecies(state.survey, state.zoneId, speciesId, draft.role);
+      renderSwardRows();
+      closeDialog(el.speciesDialog);
+      return;
+    }
+    var match = registry().filter(function (item) { return item.id === speciesId; })[0] || {};
+    closeDialog(el.speciesDialog);
+    openCountDialog({
+      speciesId: speciesId,
+      commonName: match.common_name || match.scientific_name || speciesId,
+      scientificName: match.scientific_name || ''
+    });
+  }
+
+  function openCountDialog(draft) {
+    state.speciesDraft = draft;
+    // Looked up by species key rather than by whether a row was tapped open.
+    // Recording an existing species through the picker used to reset its count
+    // to the default of 1, silently losing the number it already had.
+    var existing = Survey.speciesInZone(state.survey, state.zoneId, {
+      speciesId: draft.speciesId,
+      commonName: draft.commonName
+    });
+
+    if (el.confirmTitle) el.confirmTitle.textContent = 'How many ' + draft.commonName + '?';
+    if (el.confirmText) {
+      el.confirmText.innerHTML =
+        '<span class="fo-count-line">' +
+        '<button type="button" class="fo-stepper-btn" id="draftMinus" aria-label="One fewer">−</button>' +
+        '<input type="number" min="0" step="1" id="draftCount" class="fo-input fo-count-input" value="' +
+        (existing ? existing.count : 1) + '">' +
+        '<button type="button" class="fo-stepper-btn" id="draftPlus" aria-label="One more">+</button>' +
+        '</span>' +
+        '<label class="fo-checkbox"><input type="checkbox" id="draftAbsent"> I searched and saw none</label>' +
+        '<span class="fo-helper">A zone you searched and found empty is recorded as none seen, which is a different fact from leaving it out.</span>';
+    }
+    if (el.btnConfirmYes) el.btnConfirmYes.textContent = 'Record it';
+    if (el.btnConfirmNo) el.btnConfirmNo.textContent = 'Cancel';
+    el.confirmDialog.setAttribute('data-mode', 'count');
+    if (typeof el.confirmDialog.showModal === 'function') el.confirmDialog.showModal();
+  }
+
+  function saveCount() {
+    var countEl = $('draftCount');
+    var absentEl = $('draftAbsent');
+    var draft = state.speciesDraft;
+    var payload = {
+      speciesId: draft.speciesId || null,
+      commonName: draft.commonName,
+      scientificName: draft.scientificName || ''
     };
 
-    if (CentralDataStore) {
-      CentralDataStore.addObservation({
-        count: parseInt(document.getElementById('populationCount').value, 10),
-        source: 'field_observation',
-        species_details: observation.taxon,
-        location: observation.location,
-        recorded_by: observation.recorded_by,
-        timestamp: observation.timestamp,
-        institution_name: observation.institution_name,
-        activity: observation.activity,
-        field_notes: observation.field_notes
+    try {
+      if (absentEl && absentEl.checked) {
+        Survey.markNotSeen(state.survey, state.zoneId, payload);
+        showToast('None seen recorded for ' + draft.commonName + ' in ' + zoneLabel(state.zoneId) + '.');
+      } else {
+        payload.count = countEl ? countEl.value : 1;
+        Survey.recordSpecies(state.survey, state.zoneId, payload);
+        showToast(draft.commonName + ' recorded in ' + zoneLabel(state.zoneId) + '.');
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+      return;
+    }
+
+    closeDialog(el.confirmDialog);
+    renderWildlifeRows();
+  }
+
+  function closeDialog(dialog) {
+    if (dialog && typeof dialog.close === 'function' && dialog.open) dialog.close();
+  }
+
+  function collectZoneFields() {
+    var type = state.survey.surveyType;
+    if (type === 'vegetation' && el.grassHeight) {
+      Survey.setGrassHeight(state.survey, state.zoneId, el.grassHeight.value);
+    }
+    if (type === 'water_quality') {
+      Survey.setWater(state.survey, state.zoneId, {
+        levelPct: el.waterLevel.value === '' ? null : el.waterLevel.value,
+        flow: el.waterFlow.value || null,
+        appearance: el.waterAppearance.value || null,
+        bankCondition: el.waterBank.value || null,
+        odourOrFoam: el.waterOdour.getAttribute('aria-pressed') === 'true'
+      });
+    }
+    if (type === 'soil_condition') {
+      Survey.setSoil(state.survey, state.zoneId, {
+        surfaceCondition: el.soilSurface.value || null,
+        compaction: el.soilCompaction.value || null,
+        erosionSigns: el.soilErosion.value || null
+      });
+    }
+    if (el.zoneNote) Survey.setNote(state.survey, state.zoneId, el.zoneNote.value);
+  }
+
+  function hasContent(zone) {
+    if (zone.wildlife) return zone.wildlife.species.length > 0;
+    if (zone.vegetation) {
+      return Survey.coverFromTaps(zone.vegetation.taps).total > 0 || zone.vegetation.sward.length > 0;
+    }
+    if (zone.water) {
+      return zone.water.levelPct != null || !!zone.water.flow || !!zone.water.appearance || !!zone.water.bankCondition;
+    }
+    if (zone.soil) {
+      return !!zone.soil.surfaceCondition || !!zone.soil.compaction || !!zone.soil.erosionSigns;
+    }
+    return false;
+  }
+
+  function saveZone() {
+    if (!state.zoneId) {
+      showToast('Pick the zone you are in before saving it.', 'error');
+      openZoneDialog();
+      return;
+    }
+
+    // Collect BEFORE judging the zone empty. `collectZoneFields` is the only
+    // writer of the water, soil, height and note values, so guarding on the model
+    // first made those four fields unsaveable: the zone always looked empty and
+    // water and soil walks could never leave this screen at all.
+    try {
+      collectZoneFields();
+    } catch (err) {
+      showToast(err.message, 'error');
+      return;
+    }
+
+    var zone = Survey.zoneOf(state.survey, state.zoneId);
+    if (!hasContent(zone) && !zone.note) {
+      showToast('Nothing recorded for ' + zoneLabel(state.zoneId) + ' yet. Add what you saw there, or pick another zone.', 'error');
+      return;
+    }
+
+    Survey.markZoneRecorded(state.survey, state.zoneId, nowIso());
+    renderProgress();
+    show('screenProgress');
+  }
+
+  function openZoneForRecording() {
+    var uncovered = zones().filter(function (zone) {
+      return !state.survey.zones.some(function (covered) { return covered.zoneId === zone.id; });
+    });
+    var suggestion = nearestZone();
+
+    // With a fix the zone is placed and the chip says so. Without one the officer
+    // always confirms: silently selecting the only remaining zone and stamping it
+    // "set by hand" claimed a choice nobody made.
+    if (suggestion) {
+      chooseZone(suggestion.id, 'gps');
+      show('screenForm');
+      return;
+    }
+
+    renderZoneChip();
+    renderPanel();
+    openZoneDialog(uncovered.length === 1 ? uncovered[0].id : null);
+    show('screenForm');
+  }
+
+  function buildPayload() {
+    var survey = state.survey;
+    var zone = state.zoneId ? Survey.zoneOf(survey, state.zoneId) : null;
+    var zoneRow = zone ? zoneById(zone.zoneId) : null;
+
+    // Read the park and the habitat off the site record instead of retyping them
+    // here. The old block hard-coded the park, the habitat and the city, and the
+    // observation row then carried them as measured at that spot.
+    // Province and city are constants of this deployment: no site record holds
+    // them yet, and every zone in this park is inside the same two.
+    var context = {
+      latitude: state.position ? state.position.lat : null,
+      longitude: state.position ? state.position.lng : null,
+      focusArea: zoneRow ? parentSiteName(zoneRow) : null,
+      habitatType: zoneRow ? (zoneRow.habitat_type_default || '') : '',
+      administrativeArea: 'Copperbelt Province',
+      city: 'Kitwe'
+    };
+
+    return {
+      surveyRow: Survey.toSurveyRow(survey),
+      zoneRows: Survey.toSurveyZoneRows(survey),
+      observationRows: Survey.toObservationRows(survey, { context: context }),
+      readingRows: survey.zones.map(function (zone) {
+        return Survey.toReadingRow(survey, zone);
+      }).filter(Boolean),
+      swardRows: survey.surveyType === 'vegetation'
+        ? survey.zones.reduce(function (all, zone) {
+            return all.concat(Survey.toSwardRows(survey, zone));
+          }, [])
+        : []
+    };
+  }
+
+  function submitWalk() {
+    // A second tap while the first send is still in flight posts the walk twice:
+    // two survey upserts race and the zone rows are written against whichever
+    // returned last.
+    if (state.sending) return;
+
+    var survey = state.survey;
+    var where = survey.zones.map(function (zone) { return zoneLabel(zone.zoneId); }).join(' and ') || 'no zone';
+    var what = Survey.typeFor(survey.surveyType).label.toLowerCase();
+
+    try {
+      Survey.endSurvey(survey, {
+        endedAt: nowIso(),
+        distanceM: el.endDistance && el.endDistance.value !== '' ? el.endDistance.value : null,
+        rainfallOfficerFlag: state.rainedOn
+      });
+    } catch (err) {
+      showToast(err.message, 'error');
+      return;
+    }
+
+    // Summarised AFTER ending. Duration is derived from the end time, so reading
+    // it before `endSurvey` always reported nothing.
+    var summary = Survey.summary(survey);
+
+    if (!window.BioSync || typeof window.BioSync.submitSurvey !== 'function') {
+      showToast('This walk has not been sent: this page cannot reach the record store. Keep this screen open and do not reload.', 'error');
+      return;
+    }
+
+    state.sending = true;
+    window.BioSync.submitSurvey(buildPayload()).then(function () {
+      if (el.doneTitle) el.doneTitle.textContent = 'Walk recorded';
+      if (el.doneText) {
+        el.doneText.textContent = 'A ' + what + ' covering ' + where + ', recorded by ' +
+          survey.recordedBy + ' on ' + formatDay(survey.startedAt) +
+          (summary.durationMinutes == null ? '' : ', ' + minutesText(summary.durationMinutes)) + '.';
+      }
+      show('screenDone');
+    }).catch(function (err) {
+      // The send failed, so the walk can be sent again. Leaving the flag set would
+      // make the retry the copy asks for silently do nothing.
+      state.sending = false;
+      // The walk is only in memory, so the copy must not promise it is stored.
+      // Saying so was a lie in a field app where a reload is one tap away.
+      showToast('The walk was not sent: ' +
+        (err && err.message ? err.message : 'unknown error') +
+        '. It is still open on this screen, so try End survey again.', 'error');
+    });
+  }
+
+  function startSurvey(surveyType) {
+    // The send guard belongs to one walk, not to the session. Leaving it set
+    // after a successful send made every later walk in the same session silently
+    // impossible to submit, which is what happened on the second walk recorded.
+    state.sending = false;
+
+    state.survey = Survey.createSurvey({
+      surveyType: surveyType,
+      startedAt: nowIso(),
+      recordedBy: officerName(),
+      userId: officerId(),
+      institutionName: officerInstitution()
+    });
+    state.zoneId = null;
+    state.zoneSource = null;
+    state.rainedOn = false;
+
+    var type = Survey.typeFor(surveyType);
+    if (el.formTypeTitle) el.formTypeTitle.textContent = type.label;
+    if (el.formMeta) {
+      el.formMeta.textContent = 'Started ' + formatClock(state.survey.startedAt) + ', recorded by ' + state.survey.recordedBy;
+    }
+
+    renderZoneChip();
+    openZoneForRecording();
+
+    capturePosition().then(function (position) {
+      state.position = position;
+      var suggestion = nearestZone();
+
+      // Only place the officer if they have not already chosen. A late fix used to
+      // overwrite a hand-picked zone and silently re-file everything already
+      // recorded in that panel under a different zone.
+      if (suggestion && state.zoneId === null) {
+        chooseZone(suggestion.id, 'gps');
+        showToast('You are at ' + (suggestion.short_name || suggestion.name) + '. Change it if that is wrong.');
+        return;
+      }
+      renderZoneChip();
+    });
+  }
+
+  function wireEvents() {
+    if (el.typeGrid) {
+      el.typeGrid.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-type]');
+        if (button) startSurvey(button.getAttribute('data-type'));
       });
     }
 
-    showToast('Observation recorded successfully!', 'success');
+    if (el.zoneChip) el.zoneChip.addEventListener('click', openZoneDialog);
 
-    // Re-apply the session identity after the reset, so the next record is
-    // attributed to the officer actually signed in.
-    observationForm.reset();
+    if (el.zoneOptions) {
+      el.zoneOptions.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-zone]');
+        if (!button) return;
+        var chosen = button.getAttribute('data-zone');
+        var suggestion = nearestZone();
+        chooseZone(chosen, suggestion && suggestion.id === chosen ? 'gps' : 'manual');
+        closeDialog(el.zoneDialog);
+      });
+    }
+
+    if (el.btnZoneCancel) el.btnZoneCancel.addEventListener('click', function () { closeDialog(el.zoneDialog); });
+    if (el.btnSpeciesCancel) el.btnSpeciesCancel.addEventListener('click', function () { closeDialog(el.speciesDialog); });
+
+    if (el.btnAddSpecies) {
+      el.btnAddSpecies.addEventListener('click', function () {
+        if (!state.zoneId) {
+          showToast('Pick the zone first, so the record says where you were.', 'error');
+          openZoneDialog();
+          return;
+        }
+        openSpeciesDialog('present', null);
+      });
+    }
+
+    if (el.btnAddSward) {
+      el.btnAddSward.addEventListener('click', function () {
+        // Saying nothing when no zone is open made the button look broken.
+        if (!state.zoneId) {
+          showToast('Pick the zone first, so the record says where you were.', 'error');
+          openZoneDialog();
+          return;
+        }
+        openSpeciesDialog('dominant', null);
+      });
+    }
+
+    if (el.speciesSearch) {
+      el.speciesSearch.addEventListener('input', renderSpeciesMatches);
+      el.speciesSearch.addEventListener('focus', renderSpeciesMatches);
+    }
+
+    if (el.speciesMatches) {
+      el.speciesMatches.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-species]');
+        if (button) chooseSpecies(button.getAttribute('data-species'));
+      });
+    }
+
+    if (el.btnUseTypedName) {
+      el.btnUseTypedName.addEventListener('click', function () {
+        var typed = (el.speciesSearch.value || '').trim();
+        if (!typed || expectedTaxonType() !== 'fauna') return;
+        closeDialog(el.speciesDialog);
+        openCountDialog({ speciesId: null, commonName: typed, scientificName: '' });
+      });
+    }
+
+    if (el.wildlifeRows) {
+      el.wildlifeRows.addEventListener('click', function (event) {
+        var rows = Survey.zoneOf(state.survey, state.zoneId).wildlife.species;
+        var findByKey = function (key) {
+          return rows.filter(function (item) { return Survey.speciesKey(item) === key; })[0];
+        };
+
+        var edit = event.target.closest('[data-edit]');
+        if (edit) {
+          var row = findByKey(edit.getAttribute('data-edit'));
+          if (row) {
+            openCountDialog({
+              speciesId: row.speciesId,
+              commonName: row.commonName,
+              scientificName: row.scientificName,
+              editingKey: Survey.speciesKey(row)
+            });
+          }
+          return;
+        }
+
+        var clear = event.target.closest('[data-clear]');
+        if (clear) {
+          var target = findByKey(clear.getAttribute('data-clear'));
+          if (target) {
+            Survey.clearSpecies(state.survey, state.zoneId, target);
+            renderWildlifeRows();
+          }
+        }
+      });
+    }
+
+    if (el.swardRows) {
+      el.swardRows.addEventListener('click', function (event) {
+        var clear = event.target.closest('[data-sward-clear]');
+        if (!clear) return;
+        Survey.removeSwardSpecies(state.survey, state.zoneId, clear.getAttribute('data-sward-clear'));
+        renderSwardRows();
+      });
+    }
+
+    if (el.tapGrid) {
+      el.tapGrid.addEventListener('click', function (event) {
+        if (!state.zoneId) return;
+        var plus = event.target.closest('[data-tap-plus]');
+        var minus = event.target.closest('[data-tap-minus]');
+        if (!plus && !minus) return;
+
+        var current = Object.assign({}, Survey.zoneOf(state.survey, state.zoneId).vegetation.taps);
+        var name = plus ? plus.getAttribute('data-tap-plus') : minus.getAttribute('data-tap-minus');
+        current[name] = Math.max(0, (current[name] || 0) + (plus ? 1 : -1));
+        Survey.setTaps(state.survey, state.zoneId, current);
+        refreshTapCounts();
+      });
+    }
+
+    if (el.waterOdour) {
+      el.waterOdour.addEventListener('click', function () {
+        var on = el.waterOdour.getAttribute('aria-pressed') === 'true';
+        setToggle(el.waterOdour, !on, 'Odour or foam seen', 'None seen');
+      });
+    }
+
+    if (el.rainFlag) {
+      el.rainFlag.addEventListener('click', function () {
+        state.rainedOn = !state.rainedOn;
+        setToggle(el.rainFlag, state.rainedOn, 'Rained on this walk', 'Not rained on');
+      });
+    }
+
+    if (el.btnDoneZone) el.btnDoneZone.addEventListener('click', saveZone);
+    if (el.btnAnotherZone) el.btnAnotherZone.addEventListener('click', openZoneForRecording);
+
+    if (el.btnLeaveWalk) {
+      el.btnLeaveWalk.addEventListener('click', function () {
+        state.survey = null;
+        state.zoneId = null;
+        show('screenStart');
+      });
+    }
+
+    if (el.btnEndSurvey) {
+      el.btnEndSurvey.addEventListener('click', function () {
+        renderEnd();
+        show('screenEnd');
+      });
+    }
+    if (el.btnBackToProgress) el.btnBackToProgress.addEventListener('click', function () { show('screenProgress'); });
+    if (el.btnConfirmEnd) el.btnConfirmEnd.addEventListener('click', submitWalk);
+
+    if (el.btnNewWalk) {
+      el.btnNewWalk.addEventListener('click', function () {
+        state.survey = null;
+        state.zoneId = null;
+        state.position = null;
+        state.rainedOn = false;
+        if (el.endDistance) el.endDistance.value = '';
+        setToggle(el.rainFlag, false, 'Rained on this walk', 'Not rained on');
+        show('screenStart');
+      });
+    }
+
+    if (el.confirmText) {
+      el.confirmText.addEventListener('click', function (event) {
+        var count = $('draftCount');
+        if (!count) return;
+        if (event.target.closest('#draftMinus')) count.value = Math.max(0, (parseInt(count.value, 10) || 0) - 1);
+        if (event.target.closest('#draftPlus')) count.value = (parseInt(count.value, 10) || 0) + 1;
+      });
+    }
+
+    if (el.btnConfirmYes) {
+      el.btnConfirmYes.addEventListener('click', function () {
+        if (el.confirmDialog.getAttribute('data-mode') === 'count') saveCount();
+      });
+    }
+    if (el.btnConfirmNo) el.btnConfirmNo.addEventListener('click', function () { closeDialog(el.confirmDialog); });
+  }
+
+  function cacheElements() {
+    [
+      'startIdentity', 'typeGrid',
+      'screenStart', 'screenForm', 'screenProgress', 'screenEnd', 'screenDone',
+      'formTypeTitle', 'formMeta', 'zoneChip', 'zoneHelp', 'typeFields',
+      'panelWildlife', 'panelVegetation', 'panelWater', 'panelSoil',
+      'wildlifeRows', 'btnAddSpecies', 'tapGrid', 'tapTotal', 'grassHeight',
+      'swardRows', 'btnAddSward', 'waterLevel', 'waterFlow', 'waterAppearance',
+      'waterBank', 'waterOdour', 'soilSurface', 'soilCompaction', 'soilErosion',
+      'zoneNote', 'btnLeaveWalk', 'btnDoneZone', 'progressTitle', 'progressMeta',
+      'zoneList', 'btnAnotherZone', 'btnEndSurvey', 'endMeta', 'endDistance',
+      'rainFlag', 'endSummary', 'btnBackToProgress', 'btnConfirmEnd',
+      'doneTitle', 'doneText', 'btnNewWalk',
+      'zoneDialog', 'zoneDialogText', 'zoneOptions', 'btnZoneCancel',
+      'speciesDialog', 'speciesSearch', 'speciesMatches', 'escapeHatch',
+      'escapeHatchText', 'btnUseTypedName', 'btnSpeciesCancel',
+      'confirmDialog', 'confirmTitle', 'confirmText', 'btnConfirmYes', 'btnConfirmNo'
+    ].forEach(function (id) { el[id] = $(id); });
+  }
+
+  function init() {
+    if (!document.querySelector('.page-fieldofficer-v2')) return;
+    if (!Survey) return;
+
+    cacheElements();
     applySessionIdentity();
+    renderTypeGrid();
+    renderZoneChip();
+    wireEvents();
+    show('screenStart');
 
-    // Reset date/time to now and clear validation errors
-    resetDateTimeAndErrors();
-  });
+    if (store() && typeof store().subscribe === 'function') {
+      store().subscribe('session:changed', applySessionIdentity);
+    }
+  }
 
-  // Live error clearing as user types
-  document.querySelectorAll('.fo-input').forEach(function(input) {
-    input.addEventListener('input', function() {
-      this.classList.remove('error');
-      var errorEl = document.getElementById(this.id + 'Error');
-      if (errorEl) errorEl.classList.remove('show');
-    });
-  });
-}
-
-/* PAGE INITIALIZATION: only runs when .page-fieldofficer-v2 is present. */
-document.addEventListener('DOMContentLoaded', function() {
-  initFieldOfficer();
-});
+  document.addEventListener('DOMContentLoaded', init);
+})();

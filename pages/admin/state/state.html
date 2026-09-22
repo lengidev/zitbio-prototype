@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://hhudwocgyrpgzqoffdqg.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-<title>Settings</title>
+<title>Ecological state</title>
 <link rel="icon" type="image/png" href="../../../assets/favicon/logo-64.png">
 <link rel="stylesheet" href="../../../styles/theme.css">
 <link rel="stylesheet" href="../../../styles/global.css">
@@ -23,12 +23,12 @@
 <link rel="stylesheet" href="../../../components/buttons.css">
 <link rel="stylesheet" href="../../../components/forms.css">
 <link rel="stylesheet" href="../../../components/modals.css">
-    <link rel="stylesheet" href="settings.css">
+    <link rel="stylesheet" href="state.css">
     <link rel="stylesheet" href="../../../components/notifications.css">
     <link rel="stylesheet" href="../../../components/toast.css">
     <link rel="stylesheet" href="../../../components/user-dropdown.css">
 </head>
-<body class="page-settings auth-pending">
+<body class="page-state auth-pending">
 
   <!-- Boot layer: static markup, so it paints with no JS and no data. It covers
        the window in which the route guard is still verifying the session,
@@ -95,7 +95,7 @@
                 <svg class="material-symbols-outlined nav-icon" aria-hidden="true"><use href="#i-analytics"/></svg>
                 <span class="nav-text">Analytics</span>
             </a>
-            <a href="../state/state.html" class="nav-item" id="navState" data-tooltip="Ecological state">
+            <a href="../state/state.html" class="nav-item active" id="navState" data-tooltip="Ecological state">
                 <svg class="material-symbols-outlined nav-icon" aria-hidden="true"><use href="#i-verified"/></svg>
                 <span class="nav-text">Ecological state</span>
             </a>
@@ -106,7 +106,7 @@
                 <span class="nav-text">Appearance</span>
                 <span class="theme-switch" aria-hidden="true"><span class="theme-switch-knob"></span></span>
             </button>
-            <a href="settings.html" class="nav-item" id="navSettings" data-tooltip="Settings">
+            <a href="../settings/settings.html" class="nav-item" id="navSettings" data-tooltip="Settings">
                 <svg class="material-symbols-outlined nav-icon" aria-hidden="true"><use href="#i-settings"/></svg>
                 <span class="nav-text">Settings</span>
             </a>
@@ -170,194 +170,92 @@
         </header>
 
         <!-- Content -->
-        <div class="content-area">
-            <div class="content-header">
-                <h1 class="page-title">Settings</h1>
-                <p class="page-subtitle">Manage your account, system health, and species baselines</p>
+                <div class="content-area">
+            <div class="state-intro">
+                <p class="state-lede">What the park can currently carry, and the origin of every number that answer rests on. A value with no stated origin is reported as missing rather than assumed.</p>
+                <p class="state-asof" id="datasetNote" role="status"></p>
+                <p class="state-warning" id="registerWarning" role="status" hidden></p>
+                <p class="state-pending" id="pendingNote" role="status" hidden></p>
             </div>
 
-            <!-- Section tabs. One panel is visible at a time so the page reads as
-                 three short pages instead of one long scroll. The active tab is
-                 restored on reload (localStorage) and #tab-account /
-                 #tab-system / #tab-species win over it, matching Analytics. -->
-            <div class="settings-tabs" role="tablist" aria-label="Settings sections">
-                <button type="button" class="settings-tab active" id="settingsTabAccount" role="tab"
-                        aria-selected="true" aria-controls="settingsPanelAccount" data-tab="account">Account Security</button>
-                <button type="button" class="settings-tab" id="settingsTabSystem" role="tab"
-                        aria-selected="false" aria-controls="settingsPanelSystem" data-tab="system" tabindex="-1">System Information</button>
-                <button type="button" class="settings-tab" id="settingsTabSpecies" role="tab"
-                        aria-selected="false" aria-controls="settingsPanelSpecies" data-tab="species" tabindex="-1">Species Registry</button>
-            </div>
-
-            <!-- Panel: Account Security -->
-            <section class="settings-panel active" id="settingsPanelAccount" role="tabpanel" aria-labelledby="settingsTabAccount">
-
-            <!-- Change Password -->
-            <div class="section">
-                <div class="section-title">Change Password</div>
-                <p class="section-desc">Confirm the password you signed in with, then choose a new one. Changing it here does not sign you out of this device.</p>
-
-                <div class="settings-rows">
-                    <div class="settings-row">
-                        <div class="settings-row-info">
-                            <label class="settings-row-label" for="currentPwd">Current password</label>
-                            <p class="settings-row-hint">The password you signed in with today.</p>
-                        </div>
-                        <div class="settings-row-control">
-                            <input type="password" id="currentPwd" class="form-input" autocomplete="current-password" />
-                        </div>
-                    </div>
-
-                    <div class="settings-row">
-                        <div class="settings-row-info">
-                            <label class="settings-row-label" for="newPwd">New password</label>
-                            <p class="settings-row-hint">At least 8 characters.</p>
-                        </div>
-                        <div class="settings-row-control">
-                            <input type="password" id="newPwd" class="form-input" autocomplete="new-password" />
-                        </div>
-                    </div>
-
-                    <div class="settings-row">
-                        <div class="settings-row-info">
-                            <label class="settings-row-label" for="confirmPwd">Confirm new password</label>
-                            <p class="settings-row-hint">Must match the new password exactly.</p>
-                        </div>
-                        <div class="settings-row-control">
-                            <input type="password" id="confirmPwd" class="form-input" autocomplete="new-password" />
-                        </div>
-                    </div>
+            <section class="state-strip" aria-label="Recorded so far">
+                <div class="state-tile">
+                    <span class="state-tile-label">Surveys recorded</span>
+                    <span class="state-tile-value" id="tileSurveys">0</span>
+                    <span class="state-tile-note" id="tileSurveysNote">loading</span>
                 </div>
-
-                <div class="settings-actions">
-                    <button class="btn btn-primary" id="changePwdBtn">Change Password</button>
+                <div class="state-tile">
+                    <span class="state-tile-label">Observations</span>
+                    <span class="state-tile-value" id="tileObservations">0</span>
+                    <span class="state-tile-note" id="tileObservationsNote">loading</span>
                 </div>
-            </div>
-
-           
-            <!-- Account Information -->
-            <div class="section">
-                <div class="section-title">Account Information</div>
-                <div class="settings-rows">
-                    <div class="settings-row">
-                        <div class="settings-row-info"><span class="settings-row-label">User ID</span></div>
-                        <div class="settings-row-control"><span class="settings-row-value" id="settingsUserId">ADM-001</span></div>
-                    </div>
-                    <div class="settings-row">
-                        <div class="settings-row-info"><span class="settings-row-label">Role</span></div>
-                        <div class="settings-row-control"><span class="settings-row-value" id="settingsRole">Administrator</span></div>
-                    </div>
-                    <div class="settings-row">
-                        <div class="settings-row-info"><span class="settings-row-label">Status</span></div>
-                        <div class="settings-row-control"><span class="settings-row-value status-active">Active</span></div>
-                    </div>
-                    <div class="settings-row">
-                        <div class="settings-row-info"><span class="settings-row-label">Account created</span></div>
-                        <div class="settings-row-control"><span class="settings-row-value" id="settingsCreated">November 15, 2025</span></div>
-                    </div>
-                    <div class="settings-row">
-                        <div class="settings-row-info"><span class="settings-row-label">Last password change</span></div>
-                        <div class="settings-row-control"><span class="settings-row-value" id="settingsPasswordChanged">—</span></div>
-                    </div>
-                    <div class="settings-row">
-                        <div class="settings-row-info"><span class="settings-row-label">Last login</span></div>
-                        <div class="settings-row-control"><span class="settings-row-value" id="settingsLastLogin">5/27/2026, 7:43:19 AM</span></div>
-                    </div>
+                <div class="state-tile">
+                    <span class="state-tile-label">Register parameters</span>
+                    <span class="state-tile-value" id="tileParameters">0</span>
+                    <span class="state-tile-note" id="tileParametersNote">loading</span>
                 </div>
-            </div>
-
+                <div class="state-tile">
+                    <span class="state-tile-label">Placeholder values</span>
+                    <span class="state-tile-value" id="tilePlaceholders">0</span>
+                    <span class="state-tile-note" id="tilePlaceholdersNote">loading</span>
+                </div>
             </section>
 
-
-
-            <!-- Panel: System Information. tabindex="0" because this panel holds no
-                 focusable control of its own, so keyboard users would otherwise
-                 have nothing to land on after the tab strip. -->
-            <section class="settings-panel" id="settingsPanelSystem" role="tabpanel" aria-labelledby="settingsTabSystem" tabindex="0">
-
-            <!-- System Information -->
-            <div class="section">
-                <div class="section-title">System Information</div>
-                <p class="section-desc">Build details, and the live state of the database this device is talking to.</p>
-                <div class="settings-rows">
-                    <div class="settings-row">
-                        <div class="settings-row-info"><span class="settings-row-label">Version</span></div>
-                        <div class="settings-row-control"><span class="settings-row-value" id="settingsVersion">—</span></div>
-                    </div>
-                    <div class="settings-row">
-                        <div class="settings-row-info"><span class="settings-row-label">Last updated</span></div>
-                        <div class="settings-row-control"><span class="settings-row-value" id="settingsLastUpdated">—</span></div>
-                    </div>
-                    <div class="settings-row">
-                        <div class="settings-row-info">
-                            <span class="settings-row-label">Database connection</span>
-                            <p class="settings-row-hint">Probed on every visit against the species reference table.</p>
-                        </div>
-                        <div class="settings-row-control">
-                            <span class="settings-row-value db-status">
-                                <span class="db-dot" id="settingsDbDot"></span>
-                                <span id="settingsDbStatus">Checking…</span>
-                            </span>
-                        </div>
-                    </div>
+            <section class="state-card" aria-labelledby="capacityHeading">
+                <div class="state-card-header">
+                    <h2 class="state-card-title" id="capacityHeading">Can the park carry what it holds</h2>
+                    <p class="state-card-sub">Assessed one zone at a time, because both the grazable area and the standing forage are properties of a zone. Change a standing count to ask what would happen: nothing that was recorded is altered.</p>
                 </div>
-            </div>
-
+                <div class="state-card-body" id="capacityBody" aria-live="polite">
+                    <p class="state-empty">Loading the assessment...</p>
+                </div>
             </section>
 
-            <!-- Panel: Species Registry (population warning reference data) -->
-            <section class="settings-panel" id="settingsPanelSpecies" role="tabpanel" aria-labelledby="settingsTabSpecies">
-
-            <div class="section">
-                <div class="section-title">Species Registry</div>
-                <p class="section-desc">The park's canonical taxa and the population baselines the low-population warnings compare against. Leave a baseline blank to auto-derive it from verified observations; "derived" baselines are never fabricated.</p>
-
-                <!-- The counts are the filters: one control answers "how many?"
-                     and "show me those" at once, so nothing here duplicates a
-                     separate filter bar. -->
-                <div class="registry-filters" id="registryFilters" role="group" aria-label="Filter species by baseline source">
-                    <button type="button" class="registry-filter" data-filter="all" aria-pressed="true">
-                        <span class="registry-filter-value" id="registryStatSpecies">—</span>
-                        <span class="registry-filter-label">All Species</span>
-                    </button>
-                    <button type="button" class="registry-filter" data-filter="admin" aria-pressed="false">
-                        <span class="registry-filter-value" id="registryStatAdmin">—</span>
-                        <span class="registry-filter-label">Admin-set</span>
-                    </button>
-                    <button type="button" class="registry-filter" data-filter="derived" aria-pressed="false">
-                        <span class="registry-filter-value" id="registryStatDerived">—</span>
-                        <span class="registry-filter-label">Derived</span>
-                    </button>
-                    <button type="button" class="registry-filter" data-filter="none" aria-pressed="false">
-                        <span class="registry-filter-value" id="registryStatNoBaseline">—</span>
-                        <span class="registry-filter-label">No baseline</span>
-                    </button>
+            <section class="state-card" aria-labelledby="couplingHeading">
+                <div class="state-card-header">
+                    <h2 class="state-card-title" id="couplingHeading">How one species affects another</h2>
+                    <p class="state-card-sub">A direction and a named mechanism. A magnitude appears only where a source supplied one, and its absence is shown rather than hidden.</p>
                 </div>
-
-                <div class="baselines-toolbar">
-                    <span class="baselines-note" id="baselinesNote"></span>
-                    <button class="btn btn-primary" id="baselinesRefreshBtn">Refresh</button>
+                <div class="state-card-body">
+                    <div class="state-table-wrap">
+                        <table class="state-table" aria-label="Species relationships">
+                            <thead>
+                                <tr>
+                                    <th scope="col">From</th>
+                                    <th scope="col">Direction</th>
+                                    <th scope="col">Affects</th>
+                                    <th scope="col">Mechanism</th>
+                                    <th scope="col">Origin</th>
+                                </tr>
+                            </thead>
+                            <tbody id="couplingBody"></tbody>
+                        </table>
+                    </div>
                 </div>
+            </section>
 
-                <!-- What the table is currently showing, announced as it changes. -->
-                <p class="registry-summary" id="registrySummary" role="status" aria-live="polite"></p>
-
-                <div class="baselines-table-wrap">
-                    <table class="baselines-table" aria-label="Species baselines and per-site overrides">
-                        <thead>
-                            <tr>
-                                <th scope="col">Species</th>
-                                <th scope="col">Type</th>
-                                <th scope="col">Baseline</th>
-                                <th scope="col">Per-site overrides</th>
-                                <th scope="col"><span class="sr-only">Actions</span></th>
-                            </tr>
-                        </thead>
-                        <tbody id="baselinesTableBody"></tbody>
-                    </table>
+            <section class="state-card" aria-labelledby="walksHeading">
+                <div class="state-card-header">
+                    <h2 class="state-card-title" id="walksHeading">Walks recorded</h2>
+                    <p class="state-card-sub">Every survey type with the readings it produced. Three of these four types were written and never read back until now.</p>
                 </div>
-            </div>
-
+                <div class="state-card-body">
+                    <div class="state-table-wrap">
+                        <table class="state-table" aria-label="Recorded surveys">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Where</th>
+                                    <th scope="col">Officer</th>
+                                    <th scope="col">When</th>
+                                    <th scope="col">Readings</th>
+                                </tr>
+                            </thead>
+                            <tbody id="walksBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="state-note" id="walksNote"></p>
+                </div>
             </section>
         </div>
     </main>
@@ -374,8 +272,11 @@
 <script defer src="../../../lib/notification-service.js"></script>
     <script defer src="../../../lib/supabase-sync.js"></script>
     <script defer src="../../../lib/analytics.js"></script>
+    <script defer src="../../../lib/survey.js"></script>
+    <script defer src="../../../lib/ecology.js"></script>
+    <script defer src="../../../lib/capacity.js"></script>
     <script defer src="../../../pages/admin/layout/admin-layout.js"></script>
-    <script defer src="settings.js"></script>
+    <script defer src="state.js"></script>
 
 </body>
 </html>

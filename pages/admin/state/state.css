@@ -1,0 +1,454 @@
+/* Ecological state. A read-only surface, so there are no interactive states to
+   define here; every colour comes from a token in styles/theme.css. */
+
+.page-state .state-intro {
+  margin-bottom: 20px;
+}
+
+.state-lede {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+/* The window every count is read through, and how old it is. A reading that does
+   not say when it was taken is a claim, so this line is not decoration. */
+.state-asof {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--color-text-main);
+  background-color: var(--color-bg-hover);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+}
+
+.state-asof--stale {
+  color: var(--color-warning-fg);
+  background-color: var(--color-warning-light);
+  border-color: var(--color-warning);
+}
+
+.state-warning {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--color-warning-fg);
+  background-color: var(--color-warning-light);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+}
+
+.state-warning[hidden] {
+  display: none;
+}
+
+/* A walk waiting for review is not an error, so it does not wear the warning
+   colour. It is a statement about what the page cannot see yet. */
+.state-pending {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--color-text-main);
+  background-color: var(--color-bg-hover);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.state-pending[hidden] {
+  display: none;
+}
+
+/* Summary strip */
+.state-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.state-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background-color: var(--color-bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.state-tile-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+}
+
+.state-tile-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.state-tile-note {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Cards */
+.state-card {
+  margin-bottom: 24px;
+  background-color: var(--color-bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.state-card-header {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.state-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.state-card-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.state-card-body {
+  padding: 20px;
+}
+
+/* One zone */
+.state-zone + .state-zone {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border-color-light);
+}
+
+.state-zone-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.state-zone-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.state-verdict {
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+}
+
+.state-verdict--ok {
+  color: var(--color-primary-fg);
+  background-color: var(--color-accent-light);
+  border-color: var(--color-accent);
+}
+
+.state-verdict--bad {
+  color: var(--color-danger-fg);
+  background-color: var(--color-danger-light);
+  border-color: var(--color-danger);
+}
+
+.state-verdict--unknown {
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-hover);
+  border-color: var(--border-color);
+}
+
+.state-verdict--measured {
+  color: var(--color-secondary-fg);
+  background-color: var(--color-bg-hover);
+  border-color: var(--border-color);
+}
+
+.state-zone-lede {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--color-text-main);
+}
+
+/* The verdict and its figures are one region, repainted together when a count
+   changes, so the badge can never disagree with the numbers under it. */
+.state-zone-headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.state-verdict--whatif {
+  color: var(--color-warning-fg);
+  background-color: var(--color-warning-light);
+  border-color: var(--color-warning);
+}
+
+/* A partial count is not a warning and not an error. It is a statement about how
+   much of the picture this number is drawn from. */
+.state-verdict--partial {
+  color: var(--color-secondary-fg);
+  background-color: var(--color-accent-light);
+  border-color: var(--color-secondary);
+}
+
+.state-verdict--partial,
+.state-verdict--whatif {
+  font-weight: 500;
+}
+
+/* The gaps, each stated with the direction it leans, so nobody has to work out
+   whether the number above is a floor, a ceiling or a measurement. */
+.state-caveats {
+  margin: 12px 0 0;
+  padding: 12px 14px 12px 30px;
+  font-size: 13px;
+  color: var(--color-warning-fg);
+  background-color: var(--color-warning-light);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+}
+
+.state-caveats li + li {
+  margin-top: 6px;
+}
+
+.state-whatif-marker {
+  font-size: 12px;
+  color: var(--color-warning-fg);
+}
+
+/* The standing count is the only editable thing on this page, so it carries the
+   full set of states the design law asks for. It never writes anything. */
+.state-count-input {
+  width: 80px;
+  padding: 4px 8px;
+  min-height: 24px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-text-main);
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.state-count-input:hover {
+  border-color: var(--color-primary);
+}
+
+.state-count-input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.state-reset {
+  padding: 4px 10px;
+  min-height: 24px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-text-main);
+  background-color: var(--color-bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.state-reset[hidden] {
+  display: none;
+}
+
+.state-reset:hover {
+  background-color: var(--color-bg-hover);
+  border-color: var(--color-primary);
+}
+
+.state-reset:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.state-reset:active {
+  background-color: var(--color-bg-active);
+}
+
+/* The mechanisms a changed count sets off, so a what-if answers with a reason and
+   not only with a sum. */
+.state-mechanisms {
+  margin-top: 14px;
+}
+
+.state-mechanisms ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.state-mechanisms li {
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--color-text-main);
+}
+
+/* Figures */
+.state-figures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 16px 0 0;
+}
+
+.state-figures dt {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+}
+
+.state-figures dd {
+  margin: 4px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.state-figures dd span {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.state-note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+/* Tables */
+.state-table-wrap {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.state-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.state-table th {
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.state-table td {
+  padding: 10px;
+  color: var(--color-text-main);
+  vertical-align: top;
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.state-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* A missing input is the honest state, so it is marked rather than hidden. */
+.state-row-missing td {
+  color: var(--color-warning-fg);
+}
+
+.state-kind {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+}
+
+.state-kind--measured {
+  color: var(--color-primary-fg);
+  border-color: var(--color-accent);
+}
+
+.state-kind--prototype {
+  color: var(--color-warning-fg);
+  border-color: var(--color-warning);
+}
+
+.state-kind--literature,
+.state-kind--external {
+  color: var(--color-secondary-fg);
+}
+
+.state-kind--nofigure {
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.state-direction {
+  font-weight: 600;
+}
+
+.state-direction--up {
+  color: var(--color-primary-fg);
+}
+
+.state-direction--down {
+  color: var(--color-danger-fg);
+}
+
+.state-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* Responsive: Tablet (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .state-strip,
+  .state-figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Responsive: Mobile (767px and below) */
+@media (max-width: 767px) {
+  .state-strip,
+  .state-figures {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .state-card-body {
+    padding: 16px;
+  }
+}

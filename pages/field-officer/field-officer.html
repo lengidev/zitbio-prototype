@@ -114,240 +114,257 @@
         </div>
     </header>
 
-    <!-- Main Card -->
     <main class="fo-main">
-        <form id="observationForm" class="fo-card" novalidate>
 
-            <!-- Card Header -->
+        <!-- Screen 1. The survey is created here rather than at the end, so
+             started_at is the real start time and a walk that is never submitted
+             still exists as a walk. -->
+        <section class="fo-card fo-screen" id="screenStart">
             <div class="fo-card-header">
-                <h1 class="fo-card-title">Biodiversity Observation Submission Form</h1>
+                <h1 class="fo-card-title">What are you doing today?</h1>
+                <p class="fo-card-sub" id="startIdentity"></p>
             </div>
-
-            <!-- Card Body -->
             <div class="fo-card-body">
+                <div class="fo-type-grid" id="typeGrid"></div>
+            </div>
+        </section>
 
-                <!-- ====== SECTION 1: OBSERVER DETAILS ====== -->
-                <section class="fo-section">
-                    <h2 class="fo-section-title">1. Observer Details</h2>
-                    <div class="fo-grid fo-grid-4">
+        <!-- Screen 2. The type's own fields and nothing else. -->
+        <section class="fo-card fo-screen" id="screenForm" hidden>
+            <div class="fo-card-header fo-card-header--split">
+                <div>
+                    <h1 class="fo-card-title" id="formTypeTitle"></h1>
+                    <p class="fo-card-sub" id="formMeta"></p>
+                </div>
+                <div class="fo-zone-block">
+                    <button type="button" class="fo-zone-chip" id="zoneChip"></button>
+                    <span class="fo-helper" id="zoneHelp"></span>
+                </div>
+            </div>
+            <div class="fo-card-body" id="typeFields">
+
+                <div class="fo-type-panel" id="panelWildlife" hidden>
+                    <div class="fo-species-list" id="wildlifeRows"></div>
+                    <button type="button" class="fo-btn fo-btn-outline fo-add-row" id="btnAddSpecies">Add a species</button>
+                </div>
+
+                <div class="fo-type-panel" id="panelVegetation" hidden>
+                    <fieldset class="fo-fieldset">
+                        <legend class="fo-legend">Point intercept: what is under your toe?</legend>
+                        <p class="fo-helper">One tap every two paces. The percentage is worked out from the taps, so you never estimate it.</p>
+                        <div class="fo-tap-grid" id="tapGrid"></div>
+                        <p class="fo-tap-total" id="tapTotal" aria-live="polite"></p>
+                    </fieldset>
+                    <div class="fo-grid fo-grid-2">
                         <div class="fo-field">
-                            <label class="fo-label">Officer Name <span class="fo-required">*</span></label>
-                            <div class="fo-input-wrap">
-                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-person"/></svg>
-                                <input type="text" id="officerName" class="fo-input" placeholder="Auto-filled from session" readonly>
-                            </div>
-                        </div>
-                        <div class="fo-field">
-                            <label class="fo-label">Institution <span class="fo-required">*</span></label>
-                            <div class="fo-input-wrap">
-                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-domain"/></svg>
-                                <input type="text" id="institutionName" class="fo-input" placeholder="Auto-filled from session" readonly>
-                            </div>
-                        </div>
-                        <div class="fo-field">
-                            <label class="fo-label">Date <span class="fo-required">*</span></label>
-                            <div class="fo-input-wrap">
-                                <input type="date" id="obsDate" class="fo-input fo-input-date" required>
-                            </div>
-                            <span class="fo-error" id="obsDateError">Date is required</span>
-                        </div>
-                        <div class="fo-field">
-                            <label class="fo-label">Time <span class="fo-required">*</span></label>
-                            <div class="fo-input-wrap">
-                                <input type="time" id="obsTime" class="fo-input fo-input-date" required>
-                            </div>
-                            <span class="fo-error" id="obsTimeError">Time is required</span>
+                            <label class="fo-label" for="grassHeight">Mean grass height, cm</label>
+                            <input type="number" step="any" min="0" id="grassHeight" class="fo-input" placeholder="8">
                         </div>
                     </div>
-                </section>
+                    <fieldset class="fo-fieldset">
+                        <legend class="fo-legend">Grass species in the sward</legend>
+                        <div class="fo-sward-list" id="swardRows"></div>
+                        <button type="button" class="fo-btn fo-btn-outline fo-add-row" id="btnAddSward">Set the dominant species</button>
+                    </fieldset>
+                </div>
 
-                <!-- ====== SECTION 2: OBSERVATION DETAILS ====== -->
-                <section class="fo-section">
-                    <h2 class="fo-section-title">2. Observation Details</h2>
-                    <div class="fo-grid fo-grid-4">
+                <div class="fo-type-panel" id="panelWater" hidden>
+                    <div class="fo-grid fo-grid-2">
                         <div class="fo-field">
-                            <label class="fo-label">Common Name <span class="fo-required">*</span></label>
-                            <div class="fo-input-wrap">
-                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-pets"/></svg>
-                                <input type="text" id="commonName" class="fo-input" placeholder="Zebra" required list="commonNameOptions">
-                            </div>
-                            <span class="fo-error" id="commonNameError">Common name is required</span>
+                            <label class="fo-label" for="waterLevel">Level, percent of full</label>
+                            <input type="number" min="0" max="100" step="any" id="waterLevel" class="fo-input" placeholder="20">
                         </div>
                         <div class="fo-field">
-                            <label class="fo-label">Scientific Name <span class="fo-required">*</span></label>
-                            <div class="fo-input-wrap">
-                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-nature"/></svg>
-                                <input type="text" id="scientificName" class="fo-input fo-input-italic" placeholder="Equus quagga" required list="scientificNameOptions">
-                            </div>
-                            <span class="fo-error" id="scientificNameError">Scientific name is required</span>
+                            <label class="fo-label" for="waterFlow">Water is</label>
+                            <select id="waterFlow" class="fo-input">
+                                <option value="">Not recorded</option>
+                                <option value="flowing">Moving</option>
+                                <option value="still">Still</option>
+                            </select>
                         </div>
                         <div class="fo-field">
-                            <label class="fo-label">Count <span class="fo-required">*</span></label>
-                            <div class="fo-input-wrap fo-count-wrap">
-                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-counter_1"/></svg>
-                                <button type="button" class="fo-stepper-btn" id="countMinus" aria-label="Decrease">−</button>
-                                <input type="number" id="populationCount" class="fo-input fo-count-input" value="1" min="1" required>
-                                <button type="button" class="fo-stepper-btn" id="countPlus" aria-label="Increase">+</button>
-                            </div>
-                            <span class="fo-error" id="populationCountError">Count is required</span>
+                            <label class="fo-label" for="waterAppearance">Appearance</label>
+                            <select id="waterAppearance" class="fo-input">
+                                <option value="">Not recorded</option>
+                                <option value="clear">Clear</option>
+                                <option value="turbid">Turbid</option>
+                                <option value="green">Green</option>
+                                <option value="brown">Brown</option>
+                            </select>
                         </div>
                         <div class="fo-field">
-                            <label class="fo-label">Activity</label>
-                            <div class="fo-input-wrap">
-                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-directions_run"/></svg>
-                                <select id="activity" class="fo-input">
-                                    <option value="">Select activity...</option>
-                                    <option value="Feeding">Feeding</option>
-                                    <option value="Resting">Resting</option>
-                                    <option value="Moving">Moving</option>
-                                    <option value="Breeding">Breeding</option>
-                                    <option value="Foraging">Foraging</option>
-                                    <option value="Vocalizing">Vocalizing</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
+                            <label class="fo-label" for="waterBank">Bank</label>
+                            <select id="waterBank" class="fo-input">
+                                <option value="">Not recorded</option>
+                                <option value="vegetated">Vegetated</option>
+                                <option value="trampled">Trampled</option>
+                                <option value="eroded">Eroded</option>
+                            </select>
                         </div>
                     </div>
-                </section>
-
-                <!-- ====== SECTION 3: LOCATION & ECOSYSTEM ====== -->
-                <section class="fo-section">
-                    <h2 class="fo-section-title">3. Location & Ecosystem</h2>
-
-                    <!-- Row 1: Province, Country, City -->
-                    <div class="fo-grid fo-grid-3">
-                        <div class="fo-field">
-                            <label class="fo-label">Province / State <span class="fo-required">*</span></label>
-                            <div class="fo-input-wrap">
-                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-location_on"/></svg>
-                                <input type="text" id="provinceState" class="fo-input" value="Copperbelt Province" readonly>
-                            </div>
-                        </div>
-                        <div class="fo-field">
-                            <label class="fo-label">Country</label>
-                            <div class="fo-input-wrap">
-                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-public"/></svg>
-                                <input type="text" id="country" class="fo-input" value="Zambia" readonly>
-                            </div>
-                        </div>
-                        <div class="fo-field">
-                            <label class="fo-label">City</label>
-                            <div class="fo-input-wrap">
-                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-location_city"/></svg>
-                                <input type="text" id="city" class="fo-input" placeholder="Kitwe (optional)">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Row 2: Focus Area, Habitat Type -->
-                    <div class="fo-grid fo-grid-3">
-                        <div class="fo-field">
-                            <label class="fo-label">Focus Area <span class="fo-required">*</span></label>
-                            <div class="fo-input-wrap">
-                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-nature_people"/></svg>
-                                <select id="focusArea" class="fo-input" required>
-                                    <option value="">Select focus area...</option>
-                                    <!-- Fallback only: options are rebuilt from the site registry
-                                         by field-officer.js. Values must match sites.name exactly,
-                                         which is also what observations.focus_area stores. -->
-                                    <option value="The CBU Nature Park">The CBU Nature Park</option>
-                                    <option value="CBU Campus">CBU Campus</option>
-                                </select>
-                            </div>
-                            <span class="fo-error" id="focusAreaError">Focus area is required</span>
-                        </div>
-                        <div class="fo-field">
-                            <label class="fo-label">Habitat Type <span class="fo-required">*</span></label>
-                            <div class="fo-input-wrap">
-                                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-forest"/></svg>
-                                <select id="habitatType" class="fo-input" required>
-                                    <option value="">Select habitat...</option>
-                                    <option value="Miombo Woodland">Miombo Woodland</option>
-                                    <option value="Urban">Urban</option>
-                                </select>
-                            </div>
-                            <span class="fo-error" id="habitatTypeError">Habitat type is required</span>
-                        </div>
-                        <div class="fo-field fo-field-gps">
-                            <label class="fo-label">GPS Coordinates</label>
-                            <div class="fo-gps-row">
-                                <div class="fo-input-wrap fo-gps-input">
-                                    <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-explore"/></svg>
-                                    <input type="number" step="any" id="latitude" class="fo-input" placeholder="latitude">
-                                </div>
-                                <div class="fo-input-wrap fo-gps-input">
-                                    <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-explore"/></svg>
-                                    <input type="number" step="any" id="longitude" class="fo-input" placeholder="longitude">
-                                </div>
-                                <button type="button" class="fo-gps-btn" id="gpsCaptureBtn" aria-label="Capture GPS" title="Capture Current GPS Location">
-                                    <svg class="material-symbols-outlined" id="gpsIcon" aria-hidden="true"><use href="#i-my_location"/></svg>
-                                </button>
-                            </div>
-                            <span class="fo-helper">Click compass icon to capture current GPS</span>
-                        </div>
-                    </div>
-
-                </section>
-
-                <!-- ====== SECTION 4: VERIFICATION & NOTES ====== -->
-                <section class="fo-section">
-                    <div class="fo-notes-header">
-                        <h2 class="fo-section-title">4. Verification & Notes</h2>
-                    </div>
-                    <div class="fo-location-row">
-                        <div class="fo-left-col">
-                            <div class="fo-field">
-                                <label class="fo-label">Location Description</label>
-                                <div class="fo-input-wrap fo-textarea-wrap">
-                                    <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-map"/></svg>
-                                    <textarea id="localityDescription" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Describe the specific location, landmarks, or track markers..."></textarea>
-                                </div>
-                            </div>
-                            <div class="fo-field fo-field--stacked">
-                                <label class="fo-label">Field Notes</label>
-                                <div class="fo-input-wrap fo-textarea-wrap">
-                                    <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-stylus_note"/></svg>
-                                    <textarea id="fieldNotes" class="fo-input fo-textarea fo-textarea-tall" rows="6" placeholder="Behavior details, health status, weather conditions, or any additional observations..."></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="fo-right-col">
-                            <div class="fo-field fo-instructions-panel">
-                                <h3 class="fo-instructions-title">Instructions to Field Officers</h3>
-                                <ul class="fo-instructions-list">
-                                    <li>Ensure GPS coordinates are captured before submitting.</li>
-                                    <li>Verify species identification before recording.</li>
-                                    <li>Provide accurate count estimates, you can use the stepper or type manually.</li>
-                                    <li>Include a detailed location description with landmarks.</li>
-                                    <li>Record notable behavior, health status, or weather conditions in Field Notes.</li>
-                                    <li>All fields marked with <span class="fo-required">*</span> are mandatory.</li>
-                                </ul>
-                                <div class="fo-verification-status">
-                                    Status: <span class="fo-status-text" id="statusText">Pending</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- ====== ACTIONS ====== -->
-                <div class="fo-actions">
-                    <button type="button" class="fo-btn fo-btn-outline" id="btnCancel">Cancel</button>
-                    <div class="fo-actions-right">
-                        <button type="submit" class="fo-btn fo-btn-primary">Submit Observation</button>
+                    <div class="fo-field">
+                        <label class="fo-label">Odour or foam</label>
+                        <button type="button" class="fo-toggle" id="waterOdour" aria-pressed="false">None seen</button>
                     </div>
                 </div>
 
-            </div><!-- /fo-card-body -->
-        </form>
-    </main>
+                <div class="fo-type-panel" id="panelSoil" hidden>
+                    <div class="fo-grid fo-grid-3">
+                        <div class="fo-field">
+                            <label class="fo-label" for="soilSurface">Ground surface</label>
+                            <select id="soilSurface" class="fo-input">
+                                <option value="">Not recorded</option>
+                                <option value="intact">Intact</option>
+                                <option value="crusted">Crusted</option>
+                                <option value="cracked">Cracked</option>
+                                <option value="loose">Loose</option>
+                            </select>
+                        </div>
+                        <div class="fo-field">
+                            <label class="fo-label" for="soilCompaction">Compaction, by hand</label>
+                            <select id="soilCompaction" class="fo-input">
+                                <option value="">Not recorded</option>
+                                <option value="soft">Soft</option>
+                                <option value="firm">Firm</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                        <div class="fo-field">
+                            <label class="fo-label" for="soilErosion">Erosion</label>
+                            <select id="soilErosion" class="fo-input">
+                                <option value="">Not recorded</option>
+                                <option value="none">None</option>
+                                <option value="sheet">Sheet</option>
+                                <option value="rills">Rills</option>
+                                <option value="gullies">Gullies</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Species suggestions (#47). A datalist, not a closed picker: the officer
-         must stay free to record a species that is not in the registry, because
-         a correctly-entered new species is still a valid record. These only
-         offer the known names so a match is easy when one exists. -->
-    <datalist id="commonNameOptions"></datalist>
-    <datalist id="scientificNameOptions"></datalist>
+                <div class="fo-field fo-field--stacked">
+                    <label class="fo-label" for="zoneNote">Anything odd in this zone? Optional</label>
+                    <textarea id="zoneNote" class="fo-input" rows="3" placeholder="Two of the zebras were on the far bank."></textarea>
+                </div>
+
+            </div>
+            <div class="fo-actions">
+                <button type="button" class="fo-btn fo-btn-outline" id="btnLeaveWalk">Leave this walk</button>
+                <div class="fo-actions-right">
+                    <button type="button" class="fo-btn fo-btn-primary" id="btnDoneZone">Done with this zone</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Screen 3. Tapping a species row reopens it, which is how seeing more
+             animals edits the record instead of adding a second one. -->
+        <section class="fo-card fo-screen" id="screenProgress" hidden>
+            <div class="fo-card-header">
+                <h1 class="fo-card-title" id="progressTitle">This walk so far</h1>
+                <p class="fo-card-sub" id="progressMeta"></p>
+            </div>
+            <div class="fo-card-body">
+                <div class="fo-zone-list" id="zoneList"></div>
+            </div>
+            <div class="fo-actions">
+                <button type="button" class="fo-btn fo-btn-outline" id="btnAnotherZone">Add another zone</button>
+                <div class="fo-actions-right">
+                    <button type="button" class="fo-btn fo-btn-primary" id="btnEndSurvey">End survey</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Screen 4. Duration is derived from the two times, never typed, so it
+             cannot disagree with them. -->
+        <section class="fo-card fo-screen" id="screenEnd" hidden>
+            <div class="fo-card-header">
+                <h1 class="fo-card-title">End this walk</h1>
+                <p class="fo-card-sub" id="endMeta"></p>
+            </div>
+            <div class="fo-card-body">
+                <div class="fo-grid fo-grid-2">
+                    <div class="fo-field">
+                        <label class="fo-label" for="endDistance">Distance walked, km. Optional</label>
+                        <div class="fo-input-wrap">
+                            <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-directions_run"/></svg>
+                            <input type="number" step="any" min="0" id="endDistance" class="fo-input" placeholder="1.8">
+                        </div>
+                    </div>
+                    <div class="fo-field">
+                        <label class="fo-label">Rained on this walk?</label>
+                        <button type="button" class="fo-toggle" id="rainFlag" aria-pressed="false">Not rained on</button>
+                        <span class="fo-helper">One tap. The rainfall figure itself comes from the dataset for this place and date.</span>
+                    </div>
+                </div>
+                <div class="fo-summary" id="endSummary"></div>
+            </div>
+            <div class="fo-actions">
+                <button type="button" class="fo-btn fo-btn-outline" id="btnBackToProgress">Back</button>
+                <div class="fo-actions-right">
+                    <button type="button" class="fo-btn fo-btn-primary" id="btnConfirmEnd">End survey</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="fo-card fo-screen" id="screenDone" hidden>
+            <div class="fo-card-header">
+                <h1 class="fo-card-title" id="doneTitle"></h1>
+            </div>
+            <div class="fo-card-body">
+                <p class="fo-done-text" id="doneText"></p>
+            </div>
+            <div class="fo-actions">
+                <div class="fo-actions-right">
+                    <button type="button" class="fo-btn fo-btn-primary" id="btnNewWalk">Start another walk</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Zone picker. A dialog rather than a select, because the officer needs to
+             see which zones this walk has already covered. -->
+        <dialog class="fo-dialog" id="zoneDialog" aria-labelledby="zoneDialogTitle">
+            <h2 class="fo-dialog-title" id="zoneDialogTitle">Which zone are you in?</h2>
+            <p class="fo-dialog-text" id="zoneDialogText"></p>
+            <div class="fo-zone-options" id="zoneOptions"></div>
+            <div class="fo-actions">
+                <button type="button" class="fo-btn fo-btn-outline" id="btnZoneCancel">Cancel</button>
+            </div>
+        </dialog>
+
+        <!-- Species picker with its escape hatch. Group taxa such as "Unidentified
+             bird" are in the registry, so an unsure sighting has an identity that
+             groups rather than drifting as a typed name. -->
+        <dialog class="fo-dialog" id="speciesDialog" aria-labelledby="speciesDialogTitle">
+            <h2 class="fo-dialog-title" id="speciesDialogTitle">What did you see?</h2>
+            <p class="fo-dialog-text">Search the park inventory. If it is not listed, type the name and the admin will be told.</p>
+            <div class="fo-input-wrap">
+                <svg class="material-symbols-outlined fo-input-icon" aria-hidden="true"><use href="#i-pets"/></svg>
+                <input type="text" id="speciesSearch" class="fo-input" placeholder="Common or scientific name" aria-label="Search the park inventory" autocomplete="off">
+            </div>
+            <div class="fo-species-matches" id="speciesMatches"></div>
+            <div class="fo-escape-hatch" id="escapeHatch" hidden>
+                <p class="fo-helper" id="escapeHatchText"></p>
+                <button type="button" class="fo-btn fo-btn-outline" id="btnUseTypedName"></button>
+            </div>
+            <div class="fo-actions">
+                <button type="button" class="fo-btn fo-btn-outline" id="btnSpeciesCancel">Cancel</button>
+            </div>
+        </dialog>
+
+        <!-- Count entry. This is the only dialog mode, so the markup ids keep
+             their `confirm` names while the content is a count. -->
+        <dialog class="fo-dialog" id="confirmDialog" aria-labelledby="confirmTitle">
+            <h2 class="fo-dialog-title" id="confirmTitle"></h2>
+            <p class="fo-dialog-text" id="confirmText"></p>
+            <div class="fo-actions">
+                <button type="button" class="fo-btn fo-btn-outline" id="btnConfirmNo">Keep what is there</button>
+                <div class="fo-actions-right">
+                    <button type="button" class="fo-btn fo-btn-primary" id="btnConfirmYes">Use the new count</button>
+                </div>
+            </div>
+        </dialog>
+
+    </main>
 
 <script defer src="../../config.js"></script>
     <script defer src="../../lib/escape.js"></script>
@@ -355,6 +372,7 @@
     <script defer src="../../lib/auth-guard.js"></script>
     <script defer src="../../lib/date.js"></script>
 <script defer src="../../lib/data.js"></script>
+    <script defer src="../../lib/survey.js"></script>
     <script defer src="../../lib/notification-service.js"></script>
     <script defer src="../../lib/supabase-sync.js"></script>
     <script defer src="field-officer.js"></script>
