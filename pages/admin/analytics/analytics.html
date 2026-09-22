@@ -463,7 +463,7 @@
                     </div>
 
                     <div class="report-grid">
-                        <div class="analytics-card report-card">
+                        <div class="analytics-card report-card report-card--wide">
                             <div class="analytics-card-header"><h3>Summary</h3></div>
                             <div class="analytics-card-body">
                                 <div class="report-summary-grid" role="status" aria-live="polite">
@@ -488,28 +488,31 @@
                         </div>
 
                         <div class="analytics-card report-card">
-                            <div class="analytics-card-header"><h3>Diversity by Site</h3></div>
+                            <div class="analytics-card-header"><h3 id="reportDiversityTitle">Overall Diversity</h3></div>
                             <div class="analytics-card-body report-section" id="reportDiversityContainer"></div>
                         </div>
 
                         <div class="analytics-card report-card">
-                            <div class="analytics-card-header"><h3>Population Warnings</h3></div>
+                            <div class="analytics-card-header"><h3>Population Status</h3></div>
                             <div class="analytics-card-body report-section" id="reportWarningsContainer"></div>
                         </div>
 
-                        <div class="analytics-card report-card">
-                            <div class="analytics-card-header"><h3>Species by Habitat</h3></div>
-                            <div class="analytics-card-body report-section" id="reportHabitatContainer"></div>
-                        </div>
-
-                        <div class="analytics-card report-card report-card--wide report-trend-card">
-                            <div class="analytics-card-body">
-                                <div class="report-trend-controls">
-                                    <h3 class="graph-title">Population Trend</h3>
-                                    <select id="reportTrendSpecies" class="report-species-select"></select>
+                        <div class="analytics-card report-card report-card--wide report-charts-card">
+                            <div class="analytics-card-body report-section">
+                                <div class="report-charts-grid">
+                                    <div class="report-chart-panel">
+                                        <h3 class="graph-title">Species by Habitat</h3>
+                                        <div id="reportHabitatContainer"></div>
+                                    </div>
+                                    <div class="report-chart-panel">
+                                        <div class="report-trend-controls">
+                                            <h3 class="graph-title">Population Trend</h3>
+                                            <select id="reportTrendSpecies" class="report-species-select"></select>
+                                        </div>
+                                        <canvas id="reportTrendChart"></canvas>
+                                        <div id="reportTrendNote" class="graph-note"></div>
+                                    </div>
                                 </div>
-                                <canvas id="reportTrendChart"></canvas>
-                                <div id="reportTrendNote" class="graph-note"></div>
                             </div>
                         </div>
 

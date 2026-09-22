@@ -1147,7 +1147,7 @@ textarea.fo-input {
   line-height: 1.5;
 }
 
-.fo-actions {
+.fo-card .fo-actions {
   margin-top: 28px;
   padding: 20px 32px;
   background-color: var(--color-bg-input);
@@ -1165,5 +1165,5 @@ textarea.fo-input {
   .fo-zone-step { grid-template-columns: 1fr; padding: 18px; }
   .fo-record-heading { align-items: start; flex-direction: column; gap: 8px; }
   .fo-record-helper { max-width: none; text-align: left; }
-  .fo-actions { padding: 16px 18px; }
+  .fo-card .fo-actions { padding: 16px 18px; }
 }

@@ -1130,9 +1130,9 @@
     border-left: 1px solid var(--border-color-light);
 }
 
-/* Tablet + Mobile ≤1024px: Summary KPIs stay a clean 2×2 grid
-   (consolidated: was duplicated across the 768-1024 and ≤767 queries) */
-@media (max-width: 1024px) {
+/* Mobile ≤767px: the Summary KPIs become a 2×2 grid. Above this the card is
+   full width, so all four KPIs stay on one row. */
+@media (max-width: 767px) {
     .page-analytics .report-summary-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1182,17 +1182,6 @@
 }
 .page-analytics .report-site-row:last-child {
     border-bottom: none;
-}
-.page-analytics .report-site-name {
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--color-text-main);
-    margin-bottom: 4px;
-}
-.page-analytics .report-site-meta {
-    font-size: 12px;
-    color: var(--color-text-secondary);
-    margin-top: 2px;
 }
 .page-analytics .report-site-caption {
     font-size: 11px;
@@ -1378,15 +1367,20 @@
     max-width: 260px;
 }
 
-/* Report "Population Trend", designed like the Graphs tab card: title in the
-   body (no header bar), chart, note below the chart. */
-.page-analytics .report-trend-card .analytics-card-body {
-    padding: 20px;
+/* Report charts card: "Species by Habitat" and "Population Trend" share one
+   card as two panels, side by side on desktop and stacked below 768px. */
+.page-analytics .report-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
 }
-.page-analytics .report-trend-card .report-trend-controls {
-    margin-bottom: 12px;
+.page-analytics .report-chart-panel {
+    min-width: 0;
 }
-.page-analytics .report-trend-card .graph-title {
+.page-analytics .report-chart-panel > .graph-title {
+    margin: 0 0 12px;
+}
+.page-analytics .report-chart-panel .report-trend-controls .graph-title {
     margin: 0;
 }
 
@@ -1432,10 +1426,6 @@
     color: var(--color-text-muted);
     font-style: italic;
 }
-.page-analytics .report-eco-no-data {
-    font-size: 12px;
-    color: var(--color-text-muted);
-}
 .page-analytics .report-eco-condition {
     display: inline-block;
     font-size: 11px;
@@ -1449,34 +1439,9 @@
 .page-analytics .report-eco-condition.assumed { background: var(--color-bg-header); color: var(--color-text-secondary); }
 .page-analytics .report-eco-condition.nodata,
 .page-analytics .report-eco-condition.stale { background: var(--color-bg-header); color: var(--color-text-muted); }
-.page-analytics .report-eco-status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    margin-left: 8px;
-    padding: 2px 10px;
-    font-size: 12px;
-    font-weight: 500;
-    border-radius: 9999px;
-    line-height: 20px;
-    white-space: nowrap;
-}
-.page-analytics .report-eco-status-badge.up {
-    background: var(--color-success-light);
-    color: var(--color-primary-fg);
-}
-.page-analytics .report-eco-status-badge.down {
-    background: var(--color-danger-light);
-    color: var(--color-danger-fg);
-}
 .page-analytics .report-eco-impact-text {
     display: block;
     margin-top: 6px;
-}
-.page-analytics .report-eco-permanent {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-text-secondary);
 }
 .page-analytics .report-eco-recs {
     margin: 10px 0 0;
@@ -1617,7 +1582,7 @@
 .page-analytics .report-eco-table-wrap,
 .page-analytics .report-eco-table,
 .page-analytics .report-habitat-chart-wrap,
-.page-analytics .report-trend-card .analytics-card-body,
+.page-analytics .report-charts-grid,
 .page-analytics .report-trend-controls {
     min-width: 0;
 }
@@ -1668,5 +1633,9 @@
         letter-spacing: 0.04em;
         color: var(--color-text-secondary);
         margin-bottom: 3px;
+    }
+    /* Charts card: habitat and trend stack instead of sitting side by side */
+    .page-analytics .report-charts-grid {
+        grid-template-columns: minmax(0, 1fr);
     }
 }

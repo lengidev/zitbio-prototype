@@ -1746,9 +1746,17 @@ function buildReportSummary(data) {
   var sorted = data.map(function(o) { return o.timestamp ? new Date(o.timestamp) : null; })
     .filter(function(d) { return d && !isNaN(d.getTime()); })
     .sort(function(a, b) { return a - b; });
-  rangeEl.textContent = sorted.length >= 2
-    ? analyticsShortDate(sorted[0].toISOString()) + ' – ' + analyticsShortDate(sorted[sorted.length - 1].toISOString())
-    : (sorted.length === 1 ? analyticsShortDate(sorted[0].toISOString()) : '—');
+  if (sorted.length >= 2) {
+    var firstLabel = analyticsShortDate(sorted[0].toISOString());
+    // One year covers both ends, so the first date drops it and the range stays
+    // on a single line inside the compact KPI strip.
+    if (sorted[0].getFullYear() === sorted[sorted.length - 1].getFullYear()) {
+      firstLabel = firstLabel.replace(/, \d{4}$/, '');
+    }
+    rangeEl.textContent = firstLabel + ' \u2013 ' + analyticsShortDate(sorted[sorted.length - 1].toISOString());
+  } else {
+    rangeEl.textContent = sorted.length === 1 ? analyticsShortDate(sorted[0].toISOString()) : '\u2014';
+  }
 
   shannonEl.textContent = window.BioAnalytics.shannonDiversityIndex(data).toFixed(3);
 }
@@ -1764,52 +1772,59 @@ function formatReportMonth(ym) {
 function buildReportDiversity(data) {
   var container = document.getElementById('reportDiversityContainer');
   if (!container) return;
-  var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
-  var html = '';
-  if (sites.length === 0) {
-    html = '<p class="report-empty">No sites registered.</p>';
-  } else {
-    sites.forEach(function(site) {
-      var series = window.BioAnalytics.siteComparisonOverTime(data, site.id);
-      html += '<div class="report-site-row">' +
-        '<div class="report-site-name">' + analyticsEscape(site.name) + '</div>';
-      if (series.length === 0) {
-        html += '<div class="report-site-meta">No verified observations in the current filters</div>';
-      } else {
-        // Newest first, so the card reads as a history. The top row is the latest
-        // month and carries the month-over-month delta.
-        var rows = series.slice().reverse();
-        var latest = rows[0];
-        var prior = rows.length > 1 ? rows[1] : null;
-        var delta = 0;
-        var deltaClass = 'flat';
-        var deltaGlyph = '●';
-        var deltaText = '0.000';
-        if (prior) {
-          delta = latest.shannonIndex - prior.shannonIndex;
-          if (delta > 0.001) { deltaClass = 'up'; deltaGlyph = '▲'; deltaText = '+' + (+delta.toFixed(3)); }
-          else if (delta < -0.001) { deltaClass = 'down'; deltaGlyph = '▼'; deltaText = '' + (+delta.toFixed(3)); }
-        }
-        html += '<div class="report-site-caption">Shannon diversity H&prime; by month &mdash; latest highlighted</div>' +
-          '<div class="report-site-timeline">';
-        rows.forEach(function(b, i) {
-          var isLatest = i === 0;
-          html += '<div class="report-month-row' + (isLatest ? ' is-latest' : '') + '">' +
-            '<span class="report-month">' + formatReportMonth(b.month) +
-              (isLatest ? '<span class="report-latest-pill">Latest</span>' : '') + '</span>' +
-            '<span class="report-month-value">H&prime; ' + b.shannonIndex.toFixed(3) + '</span>' +
-            '<span class="report-month-meta">' + b.speciesRichness + ' spp &middot; ' + b.observations + ' obs</span>' +
-            (isLatest && prior
-              ? '<span class="report-month-delta ' + deltaClass + '" title="vs ' + formatReportMonth(prior.month) + '">' +
-                deltaGlyph + ' ' + deltaText + '</span>'
-              : '') +
-            '</div>';
-        });
-        html += '</div>';
-      }
-      html += '</div>';
-    });
+
+  // The title names what the Focus Area filter is showing. The scope label comes
+  // from the registry (short_name), so it can never drift from the filter chip.
+  var titleEl = document.getElementById('reportDiversityTitle');
+  if (titleEl) {
+    var focusArea = (analyticsFilters && analyticsFilters.focusArea) || '';
+    var scope = (focusArea && window.BioData && window.BioData.getSiteLabel)
+      ? window.BioData.getSiteLabel(focusArea, 'short')
+      : '';
+    titleEl.textContent = scope ? scope + ' Diversity' : 'Overall Diversity';
   }
+
+  // Monthly series for the selected scope. The report deliberately does not split
+  // the park into sub-locations: the individual spots are not recorded
+  // consistently enough to compare, so only the scope-wide view is reported.
+  var series = window.BioAnalytics.siteComparisonOverTime(data, null);
+  if (series.length === 0) {
+    container.innerHTML = '<p class="report-empty">No verified observations in the current filters.</p>';
+    return;
+  }
+
+  // Newest first, so the card reads as a history. The top row is the latest
+  // month and carries the month-over-month delta.
+  var rows = series.slice().reverse();
+  var latest = rows[0];
+  var prior = rows.length > 1 ? rows[1] : null;
+  var delta = 0;
+  var deltaClass = 'flat';
+  var deltaGlyph = '\u25cf';
+  var deltaText = '0.000';
+  if (prior) {
+    delta = latest.shannonIndex - prior.shannonIndex;
+    if (delta > 0.001) { deltaClass = 'up'; deltaGlyph = '\u25b2'; deltaText = '+' + (+delta.toFixed(3)); }
+    else if (delta < -0.001) { deltaClass = 'down'; deltaGlyph = '\u25bc'; deltaText = '' + (+delta.toFixed(3)); }
+  }
+
+  var html = '<div class="report-site-row">' +
+    '<div class="report-site-caption">Shannon diversity H&prime; by month (latest highlighted)</div>' +
+    '<div class="report-site-timeline">';
+  rows.forEach(function(b, i) {
+    var isLatest = i === 0;
+    html += '<div class="report-month-row' + (isLatest ? ' is-latest' : '') + '">' +
+      '<span class="report-month">' + formatReportMonth(b.month) +
+        (isLatest ? '<span class="report-latest-pill">Latest</span>' : '') + '</span>' +
+      '<span class="report-month-value">H&prime; ' + b.shannonIndex.toFixed(3) + '</span>' +
+      '<span class="report-month-meta">' + b.speciesRichness + ' spp &middot; ' + b.observations + ' obs</span>' +
+      (isLatest && prior
+        ? '<span class="report-month-delta ' + deltaClass + '" title="vs ' + formatReportMonth(prior.month) + '">' +
+          deltaGlyph + ' ' + deltaText + '</span>'
+        : '') +
+      '</div>';
+  });
+  html += '</div></div>';
   container.innerHTML = html;
 }
 
@@ -1817,40 +1832,15 @@ function buildReportWarnings(data) {
   var container = document.getElementById('reportWarningsContainer');
   if (!container) return;
   var registry = (window.BioData && window.BioData.getSpeciesRegistry) ? window.BioData.getSpeciesRegistry() : [];
-  var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
-  var warnings = window.BioAnalytics.lowPopulationWarnings(data, { speciesRegistry: registry, sites: sites });
-  var active = warnings.filter(function(w) { return w.severity === 'warning' || w.severity === 'critical'; });
-  var html = '';
-  if (active.length === 0) {
-    html = '<p class="report-empty">All species are within their expected population ranges — no warnings.</p>' +
-      (warnings.length === 0 ? '' : '<p class="report-meta">' + warnings.length + ' species/site combination(s) checked against their baselines.</p>');
-  } else {
-    active.forEach(function(w) {
-      var isCritical = w.severity === 'critical';
-      var cls = isCritical ? 'status-flagged' : 'status-pending';
-      var iconName = isCritical ? 'error' : 'warning';
-      var pct = (w.pctOfBaseline != null)
-        ? 'about ' + w.pctOfBaseline + '% of the expected population'
-        : 'well below the expected population';
-      var badge = '<span class="report-warning-badge ' + (isCritical ? 'badge-critical' : 'badge-warning') + '">' +
-        (isCritical ? 'Critical' : 'Warning') + '</span>';
-      var note = isCritical
-        ? 'Critical: the average number recorded per verified sighting is far below the expected population for this species. Verify recent field observations or review the baseline in Settings &rarr; Species Registry.'
-        : 'The average number recorded per verified sighting is below the expected population. Re-check recent field observations, or review the baseline in Settings &rarr; Species Registry.';
-      html += '<div class="report-warning-row ' + cls + '">' +
-        '<svg class="material-symbols-outlined report-warning-icon" aria-hidden="true"><use href="#i-' + iconName + '"/></svg>' +
-        '<div class="report-warning-content">' +
-        '<div class="report-warning-title">' + analyticsEscape(w.speciesName) + ' &middot; ' + analyticsEscape(w.siteName) + badge + '</div>' +
-        '<div class="report-warning-meta">Estimated <strong>' + w.currentCount + '</strong> vs expected <strong>' + w.baseline + '</strong> &mdash; ' + pct + '</div>' +
-        '<div class="report-warning-note">' + note + '</div>' +
-        '</div></div>';
-    });
-  }
-  if (warnings.some(function(w) { return w.baselineSource === 'derived'; })) {
-    html += '<p class="report-meta">Baselines marked "derived" are auto-computed from verified observations &mdash; ' +
-      'set an admin baseline in Settings &rarr; Species Registry for authoritative numbers.</p>';
-  }
-  container.innerHTML = html;
+  var fauna = registry.filter(function(sp) { return sp.taxon_type === 'fauna'; });
+  var rows = fauna.map(function(sp) {
+    var baseline = sp.baseline_count == null ? 'Not set' : String(sp.baseline_count);
+    return '<li><strong>' + analyticsEscape(sp.common_name || sp.scientific_name) + '</strong>: baseline ' + analyticsEscape(baseline) + '</li>';
+  }).join('');
+  container.innerHTML = '<p class="report-empty">Sightings are not a census.</p>' +
+    '<p class="report-meta">A sighting proves an animal was present, not how many there are. The same herd recorded on five days is still one herd, so a park-wide total needs an approved, recent survey covering the whole park: an area searched with nothing found counts as zero, and an area left unsearched stays unknown.</p>' +
+    '<p class="report-meta">Use <a href="../state/state.html">Ecological State</a> for the park population and for non-persistent coupled what-if scenarios.</p>' +
+    (rows ? '<p class="report-meta">Configured fauna baselines:</p><ul class="report-meta">' + rows + '</ul>' : '');
 }
 
 function buildReportHabitats(data) {
@@ -2139,26 +2129,28 @@ function buildReportEcosystem(data) {
     return;
   }
 
-  html += '<p class="report-eco-overview">This section explains the ecological role and environmental impact of each ' +
-    'monitored park species, what happens when a population rises or falls, and management recommendations. It covers ' +
-    s.parkSpeciesCount + ' monitored park species \u2014 ' + ctx.presentCount + ' with live observation data and ' +
-    ctx.treeCount + ' permanent woodland trees assumed present \u2014 across ' + s.observations +
-    ' verified observation(s) (Shannon diversity H\u2032 = ' + s.shannonIndex.toFixed(3) + ').</p>';
+  // The table covers the monitored mammals (fauna); the permanent woodland
+  // trees are habitat context, not something the survey counts per season.
+  var fauna = insights.species.filter(function(r) { return !r.flora; });
+
+  html += '<p class="report-eco-overview">This section covers the park\u2019s monitored mammals: the ecological ' +
+    'role each one plays, what changes in the vegetation and for other wildlife as its numbers rise or fall, ' +
+    'and the management actions the current data supports.</p>';
 
   // The impact text follows the species' actual state: up / down / healthy / assumed.
-  if (insights.species.length) {
+  if (fauna.length) {
     html += '<h4 class="report-eco-section-title">Species roles &amp; environmental impact</h4>';
     html += '<div class="report-eco-table-wrap"><table class="report-eco-table"><thead><tr>' +
-      '<th>Species</th><th>Ecological role</th><th>Environmental impact</th><th>Population status</th>' +
+      '<th>Species</th><th>Ecological role</th><th>Environmental impact</th>' +
       '</tr></thead><tbody>';
-    insights.species.forEach(function(r) {
+    fauna.forEach(function(r) {
       var chip = '';
       var impactText = '';
       if (r.condition === 'up') {
-        chip = '<span class="report-eco-condition up">Population up \u2191</span>';
+        chip = '<span class="report-eco-condition up">Sightings trending up \u2191</span>';
         impactText = r.up;
       } else if (r.condition === 'down') {
-        chip = '<span class="report-eco-condition down">Population down \u2193</span>';
+        chip = '<span class="report-eco-condition down">Sightings trending down \u2193</span>';
         impactText = r.down;
       } else if (r.condition === 'assumed') {
         chip = '<span class="report-eco-condition assumed">Assumed present</span>';
@@ -2173,27 +2165,9 @@ function buildReportEcosystem(data) {
         chip = '<span class="report-eco-condition healthy">Healthy</span>';
         impactText = r.impact;
       }
-      var status;
-      if (r.condition === 'assumed') {
-        status = '<span class="report-eco-permanent">Permanent woodland flora</span>';
-      } else if (!r.present) {
-        status = '<span class="report-eco-no-data">No records yet</span>';
-      } else if (r.condition === 'stale') {
-        status = '<span class="report-eco-no-data">No recent records</span>';
-      } else if (r.estimate != null && r.baseline != null) {
-        // Mirrors the Dashboard badge: estimate vs baseline inside the pill,
-        // with no warning/critical labels.
-        var pct = (r.pctOfBaseline != null) ? r.pctOfBaseline : Math.round((r.estimate / r.baseline) * 100);
-        var tUp = pct >= 100;
-        status = '<span class="report-eco-status-badge ' + (tUp ? 'up' : 'down') + '">' +
-          (tUp ? '\u25b2' : '\u25bc') + ' Est. ' + r.estimate + ' vs expected ' + r.baseline + '</span>';
-      } else {
-        status = '\u2014';
-      }
       html += '<tr><td data-label="Species"><strong>' + analyticsEscape(r.common) + '</strong><div class="report-eco-sci">' + analyticsEscape(r.scientific) + '</div></td>' +
         '<td data-label="Ecological role">' + analyticsEscape(r.role) + '</td>' +
-        '<td data-label="Environmental impact">' + chip + '<span class="report-eco-impact-text">' + analyticsEscape(impactText) + '</span></td>' +
-        '<td data-label="Population status">' + status + '</td></tr>';
+        '<td data-label="Environmental impact">' + chip + '<span class="report-eco-impact-text">' + analyticsEscape(impactText) + '</span></td></tr>';
     });
     html += '</tbody></table></div>';
   }
@@ -2385,14 +2359,7 @@ function buildReportPdfHabitatRows(data) {
 }
 
 function buildReportPdfWarningRows(data) {
-  var registry = (window.BioData && window.BioData.getSpeciesRegistry) ? window.BioData.getSpeciesRegistry() : [];
-  var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
-  var warnings = window.BioAnalytics.lowPopulationWarnings(data, { speciesRegistry: registry, sites: sites });
-  return warnings
-    .filter(function(w) { return w.severity === 'warning' || w.severity === 'critical'; })
-    .map(function(w) {
-      return [w.speciesName, w.siteName, 'estimated ' + w.currentCount + ' vs expected ' + w.baseline + ' (' + w.pctOfBaseline + '%)', w.severity];
-    });
+  return [['Population status', 'Ecological State', 'Requires approved recent census coverage; individual sightings are not population estimates.', 'See Ecological State']];
 }
 
 function buildReportEcosystemPdf(data) {

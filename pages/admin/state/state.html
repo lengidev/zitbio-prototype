@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://hhudwocgyrpgzqoffdqg.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-<title>Monitoring Readiness</title>
+<title>Ecological state</title>
 <link rel="icon" type="image/png" href="../../../assets/favicon/logo-64.png">
 <link rel="stylesheet" href="../../../styles/theme.css">
 <link rel="stylesheet" href="../../../styles/global.css">
@@ -95,9 +95,9 @@
                 <svg class="material-symbols-outlined nav-icon" aria-hidden="true"><use href="#i-analytics"/></svg>
                 <span class="nav-text">Analytics</span>
             </a>
-            <a href="../state/state.html" class="nav-item active" id="navState" data-tooltip="Monitoring Readiness">
+            <a href="../state/state.html" class="nav-item active" id="navState" data-tooltip="Ecological state">
                 <svg class="material-symbols-outlined nav-icon" aria-hidden="true"><use href="#i-verified"/></svg>
-                <span class="nav-text">Monitoring Readiness</span>
+                <span class="nav-text">Ecological state</span>
             </a>
         </div>
         <div class="sidebar-nav-bottom">
@@ -169,29 +169,93 @@
             </div>
         </header>
 
-        <div class="content-area">
+        <!-- Content -->
+                <div class="content-area">
             <div class="state-intro">
-                <h2 class="state-page-title">Monitoring Readiness</h2>
-                <p class="state-lede">This page tests whether wildlife records are current, standardised, and representative enough for a monitoring conclusion. It does not predict ecological carrying capacity.</p>
+                <p class="state-lede">What the park can currently carry, and the origin of every number that answer rests on. A value with no stated origin is reported as missing rather than assumed.</p>
                 <p class="state-asof" id="datasetNote" role="status"></p>
+                <p class="state-warning" id="registerWarning" role="status" hidden></p>
+                <p class="state-pending" id="pendingNote" role="status" hidden></p>
             </div>
-            <section class="state-strip" aria-label="Monitoring readiness summary">
-                <div class="state-tile"><span class="state-tile-label">Standardised walks</span><span class="state-tile-value" id="tileStandardised">0</span><span class="state-tile-note" id="tileStandardisedNote">loading</span></div>
-                <div class="state-tile"><span class="state-tile-label">Zones current</span><span class="state-tile-value" id="tileCurrentZones">0</span><span class="state-tile-note" id="tileCurrentZonesNote">loading</span></div>
-                <div class="state-tile"><span class="state-tile-label">Zones needing a walk</span><span class="state-tile-value" id="tileNeedsWalk">0</span><span class="state-tile-note" id="tileNeedsWalkNote">loading</span></div>
-                <div class="state-tile"><span class="state-tile-label">Legacy records retained</span><span class="state-tile-value" id="tileLegacy">0</span><span class="state-tile-note" id="tileLegacyNote">loading</span></div>
+
+            <section class="state-strip" aria-label="Recorded so far">
+                <div class="state-tile">
+                    <span class="state-tile-label">Surveys recorded</span>
+                    <span class="state-tile-value" id="tileSurveys">0</span>
+                    <span class="state-tile-note" id="tileSurveysNote">loading</span>
+                </div>
+                <div class="state-tile">
+                    <span class="state-tile-label">Observations</span>
+                    <span class="state-tile-value" id="tileObservations">0</span>
+                    <span class="state-tile-note" id="tileObservationsNote">loading</span>
+                </div>
+                <div class="state-tile">
+                    <span class="state-tile-label">Register parameters</span>
+                    <span class="state-tile-value" id="tileParameters">0</span>
+                    <span class="state-tile-note" id="tileParametersNote">loading</span>
+                </div>
+                <div class="state-tile">
+                    <span class="state-tile-label">Placeholder values</span>
+                    <span class="state-tile-value" id="tilePlaceholders">0</span>
+                    <span class="state-tile-note" id="tilePlaceholdersNote">loading</span>
+                </div>
             </section>
-            <section class="state-card" aria-labelledby="readinessHeading">
-                <div class="state-card-header"><h2 class="state-card-title" id="readinessHeading">What to do next</h2><p class="state-card-sub">A zone is current only after a completed wildlife walk with known effort in the last 30 days. Legacy and imported records remain visible, but do not prove standardised coverage.</p></div>
-                <div class="state-card-body" id="readinessBody" aria-live="polite"><p class="state-empty">Loading monitoring readiness...</p></div>
+
+            <section class="state-card" aria-labelledby="capacityHeading">
+                <div class="state-card-header">
+                    <h2 class="state-card-title" id="capacityHeading">Can the park carry what it holds</h2>
+                    <p class="state-card-sub">Assessed one zone at a time, because both the grazable area and the standing forage are properties of a zone. Change a standing count to ask what would happen: nothing that was recorded is altered.</p>
+                </div>
+                <div class="state-card-body" id="capacityBody" aria-live="polite">
+                    <p class="state-empty">Loading the assessment...</p>
+                </div>
             </section>
-            <section class="state-card" aria-labelledby="coverageHeading">
-                <div class="state-card-header"><h2 class="state-card-title" id="coverageHeading">Zone coverage</h2><p class="state-card-sub">The monitoring denominator is the completed walk, not the number of animal records it produced. A walk with no sightings still counts as evidence that the zone was searched.</p></div>
-                <div class="state-card-body"><div class="state-table-wrap"><table class="state-table" aria-label="Wildlife monitoring coverage by zone"><thead><tr><th scope="col">Zone</th><th scope="col">Last standardised walk</th><th scope="col">Status</th><th scope="col">Next action</th></tr></thead><tbody id="coverageBody"></tbody></table></div></div>
+
+            <section class="state-card" aria-labelledby="couplingHeading">
+                <div class="state-card-header">
+                    <h2 class="state-card-title" id="couplingHeading">How one species affects another</h2>
+                    <p class="state-card-sub">A direction and a named mechanism. A magnitude appears only where a source supplied one, and its absence is shown rather than hidden.</p>
+                </div>
+                <div class="state-card-body">
+                    <div class="state-table-wrap">
+                        <table class="state-table" aria-label="Species relationships">
+                            <thead>
+                                <tr>
+                                    <th scope="col">From</th>
+                                    <th scope="col">Direction</th>
+                                    <th scope="col">Affects</th>
+                                    <th scope="col">Mechanism</th>
+                                    <th scope="col">Origin</th>
+                                </tr>
+                            </thead>
+                            <tbody id="couplingBody"></tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
-            <section class="state-card" aria-labelledby="recordsHeading">
-                <div class="state-card-header"><h2 class="state-card-title" id="recordsHeading">How to interpret these records</h2><p class="state-card-sub">Dashboard totals and readiness indicators use the same database. They answer different questions.</p></div>
-                <div class="state-card-body"><p class="state-note"><strong>Dashboard:</strong> what has been recorded, including observation totals and recent activity. <strong>Monitoring Readiness:</strong> whether those records can support a current, zone-level monitoring statement.</p><p class="state-note"><strong>Research prototype:</strong> capacity scenarios remain available for method demonstration only; their prototype values cannot create operational alerts or conclusions.</p><p class="state-note"><a class="state-prototype-link" href="../sandbox/sandbox.html">Open the research prototype sandbox</a></p></div>
+
+            <section class="state-card" aria-labelledby="walksHeading">
+                <div class="state-card-header">
+                    <h2 class="state-card-title" id="walksHeading">Walks recorded</h2>
+                    <p class="state-card-sub">Every survey type with the readings it produced. Three of these four types were written and never read back until now.</p>
+                </div>
+                <div class="state-card-body">
+                    <div class="state-table-wrap">
+                        <table class="state-table" aria-label="Recorded surveys">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Where</th>
+                                    <th scope="col">Officer</th>
+                                    <th scope="col">When</th>
+                                    <th scope="col">Readings</th>
+                                </tr>
+                            </thead>
+                            <tbody id="walksBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="state-note" id="walksNote"></p>
+                </div>
             </section>
         </div>
     </main>
@@ -207,6 +271,10 @@
 <script defer src="../../../lib/data.js"></script>
 <script defer src="../../../lib/notification-service.js"></script>
     <script defer src="../../../lib/supabase-sync.js"></script>
+    <script defer src="../../../lib/analytics.js"></script>
+    <script defer src="../../../lib/survey.js"></script>
+    <script defer src="../../../lib/ecology.js"></script>
+    <script defer src="../../../lib/capacity.js"></script>
     <script defer src="../../../pages/admin/layout/admin-layout.js"></script>
     <script defer src="state.js"></script>
 
