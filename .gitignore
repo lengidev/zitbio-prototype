@@ -22,6 +22,10 @@ gbif_occurrences.csv
 
 
 supabase/
+!supabase/
+supabase/*
+!supabase/migrations/
+!supabase/migrations/*.sql
 tests/
 scripts/
 

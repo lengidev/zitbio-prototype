@@ -1,0 +1,21 @@
+-- ============================================================================
+-- ZitBIO — Seed Initial Team Accounts (REVISED)
+-- ============================================================================
+-- REVISION (2026-08-22): The original version directly inserted rows into
+-- auth.users. That is NOT supported by Supabase Auth and BROKE /auth/v1/token:
+--   * it used a hardcoded instance_id '00000000-0000-0000-0000-000000000000'
+--     instead of the project ref, and
+--   * it did NOT create the matching auth.identities row that GoTrue requires,
+--     so every login for those accounts returned HTTP 500 "unexpected_failure".
+--
+-- The live accounts created this way were PURGED. Users were then re-created
+-- through the supported path (Dashboard → Authentication → Users → Add user)
+-- which writes the correct instance_id AND the auth.identities row.
+--
+-- DO NOT create users by raw INSERT into auth.users. Always use:
+--   1. Dashboard → Authentication → Users → Add user, OR
+--   2. GoTrue Admin API: POST /auth/v1/admin/users
+--      (requires the service_role key — never in the browser).
+-- ============================================================================
+
+select 1;

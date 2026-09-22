@@ -1,9 +1,17 @@
-/* Ecological state. A read-only surface, so there are no interactive states to
-   define here; every colour comes from a token in styles/theme.css. */
+/* Monitoring readiness. A calm operational surface whose status is driven by
+   completed, standardised walks rather than modelled ecological claims. */
 
 .page-state .state-intro {
   margin-bottom: 20px;
 }
+
+.state-page-title { margin: 0 0 8px; font-size: 24px; letter-spacing: -0.02em; color: var(--color-text-main); }
+.state-readiness-action { margin: 0; padding: 14px 16px; font-size: 15px; font-weight: 600; line-height: 1.45; color: var(--color-text-main); background: var(--color-primary-light); border-left: 3px solid var(--color-primary); border-radius: var(--radius-sm); }
+.state-readiness-status { display: inline-block; padding: 4px 8px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; }
+.state-readiness-status--current { color: var(--color-nav-active-fg); background: var(--color-primary-light); }
+.state-readiness-status--due { color: var(--color-warning-fg); background: var(--color-warning-light); }
+.state-prototype-link { color: var(--color-primary); font-weight: 600; }
+.state-sandbox-input { display: block; width: min(280px, 100%); margin: 8px 0 14px; padding: 10px 12px; color: var(--color-text-main); background: var(--color-bg-white); border: 1px solid var(--border-color); border-radius: var(--radius-sm); }
 
 .state-lede {
   margin: 0;

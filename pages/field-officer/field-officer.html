@@ -121,7 +121,9 @@
              still exists as a walk. -->
         <section class="fo-card fo-screen" id="screenStart">
             <div class="fo-card-header">
-                <h1 class="fo-card-title">What are you doing today?</h1>
+                <p class="fo-eyebrow">ZitBio Field Monitoring</p>
+                <h1 class="fo-card-title">Start a wildlife census</h1>
+                <p class="fo-card-sub">Use one repeatable walk to record what was seen, what was not detected, and where you searched.</p>
                 <p class="fo-card-sub" id="startIdentity"></p>
             </div>
             <div class="fo-card-body">
@@ -129,26 +131,41 @@
             </div>
         </section>
 
-        <!-- Screen 2. The type's own fields and nothing else. -->
+        <!-- Screen 2. Wildlife is the only approved v1 protocol. -->
         <section class="fo-card fo-screen" id="screenForm" hidden>
             <div class="fo-card-header fo-card-header--split">
                 <div>
+                    <p class="fo-eyebrow">Active field walk</p>
                     <h1 class="fo-card-title" id="formTypeTitle"></h1>
                     <p class="fo-card-sub" id="formMeta"></p>
                 </div>
-                <div class="fo-zone-block">
-                    <button type="button" class="fo-zone-chip" id="zoneChip"></button>
-                    <span class="fo-helper" id="zoneHelp"></span>
-                </div>
             </div>
             <div class="fo-card-body" id="typeFields">
+                <section class="fo-zone-step" aria-labelledby="zoneStepTitle">
+                    <div>
+                        <p class="fo-step-label">1. Locate the observation</p>
+                        <h2 id="zoneStepTitle" class="fo-step-title">Which monitoring zone are you in?</h2>
+                        <p class="fo-step-copy">Choose the zone before recording sightings. ZitBio will not guess a location when GPS is unavailable.</p>
+                    </div>
+                    <div class="fo-zone-block">
+                        <button type="button" class="fo-zone-chip" id="zoneChip"></button>
+                        <span class="fo-helper" id="zoneHelp"></span>
+                    </div>
+                </section>
 
                 <div class="fo-type-panel" id="panelWildlife" hidden>
+                    <div class="fo-record-heading">
+                        <div>
+                            <p class="fo-step-label">2. Record observations</p>
+                            <h2 class="fo-step-title">What did you find?</h2>
+                        </div>
+                        <p class="fo-record-helper">Add a sighting, or record a species that was searched for but not detected.</p>
+                    </div>
                     <div class="fo-species-list" id="wildlifeRows"></div>
-                    <button type="button" class="fo-btn fo-btn-outline fo-add-row" id="btnAddSpecies">Add a species</button>
+                    <button type="button" class="fo-btn fo-btn-primary fo-record-action" id="btnAddSpecies">Record a sighting</button>
                 </div>
 
-                <div class="fo-type-panel" id="panelVegetation" hidden>
+                <div class="fo-type-panel" id="panelVegetation" hidden aria-hidden="true">
                     <fieldset class="fo-fieldset">
                         <legend class="fo-legend">Point intercept: what is under your toe?</legend>
                         <p class="fo-helper">One tap every two paces. The percentage is worked out from the taps, so you never estimate it.</p>
@@ -168,7 +185,7 @@
                     </fieldset>
                 </div>
 
-                <div class="fo-type-panel" id="panelWater" hidden>
+                <div class="fo-type-panel" id="panelWater" hidden aria-hidden="true">
                     <div class="fo-grid fo-grid-2">
                         <div class="fo-field">
                             <label class="fo-label" for="waterLevel">Level, percent of full</label>
@@ -208,7 +225,7 @@
                     </div>
                 </div>
 
-                <div class="fo-type-panel" id="panelSoil" hidden>
+                <div class="fo-type-panel" id="panelSoil" hidden aria-hidden="true">
                     <div class="fo-grid fo-grid-3">
                         <div class="fo-field">
                             <label class="fo-label" for="soilSurface">Ground surface</label>
@@ -243,15 +260,16 @@
                 </div>
 
                 <div class="fo-field fo-field--stacked">
-                    <label class="fo-label" for="zoneNote">Anything odd in this zone? Optional</label>
-                    <textarea id="zoneNote" class="fo-input" rows="3" placeholder="Two of the zebras were on the far bank."></textarea>
+                    <label class="fo-label" for="zoneNote">Field note <span>Optional</span></label>
+                    <textarea id="zoneNote" class="fo-input" rows="3" placeholder="Add context that may help someone interpret this walk later."></textarea>
+                    <p class="fo-helper">For example: a herd was on the far bank, visibility was poor, or access to a path was blocked.</p>
                 </div>
 
             </div>
             <div class="fo-actions">
-                <button type="button" class="fo-btn fo-btn-outline" id="btnLeaveWalk">Leave this walk</button>
+                <button type="button" class="fo-btn fo-btn-outline fo-btn-danger" id="btnLeaveWalk">Cancel walk</button>
                 <div class="fo-actions-right">
-                    <button type="button" class="fo-btn fo-btn-primary" id="btnDoneZone">Done with this zone</button>
+                    <button type="button" class="fo-btn fo-btn-primary" id="btnDoneZone">Save this zone</button>
                 </div>
             </div>
         </section>

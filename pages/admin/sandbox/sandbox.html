@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="../../../lib/theme-init.js"></script><title>Research Prototype Sandbox</title>
+  <link rel="icon" type="image/png" href="../../../assets/favicon/logo-64.png">
+  <link rel="stylesheet" href="../../../styles/theme.css"><link rel="stylesheet" href="../../../styles/global.css"><link rel="stylesheet" href="../../../styles/layout.css"><link rel="stylesheet" href="../state/state.css">
+</head>
+<body class="page-state auth-pending">
+  <div class="app-boot" role="status"><span class="app-boot-mark" aria-hidden="true"></span><p class="app-boot-text">Verifying your access…</p></div>
+  <main class="main-content" style="margin-left:0;max-width:980px;margin-inline:auto">
+    <header class="top-header"><div><h1 class="header-title">Research Prototype Sandbox</h1></div><a class="state-prototype-link" href="../state/state.html">Back to Monitoring Readiness</a></header>
+    <div class="content-area">
+      <div class="state-intro"><h2 class="state-page-title">Scenario demonstration only</h2><p class="state-lede">This is a transparent method demonstration, not a park assessment. It never writes to ZitBio records and cannot create operational alerts.</p></div>
+      <section class="state-card"><div class="state-card-header"><h2 class="state-card-title">Why no capacity result is shown</h2><p class="state-card-sub">ZitBio currently lacks validated park GIS, forage, soil, water, and repeat population data. The earlier capacity values are prototype placeholders and must not be presented as a conclusion.</p></div><div class="state-card-body"><p class="state-readiness-action">Use this space in a lecturer demonstration to explain the future model inputs and their provenance—not to claim that a zone is over or under capacity.</p></div></section>
+      <section class="state-card"><div class="state-card-header"><h2 class="state-card-title">Future scenario input</h2><p class="state-card-sub">This temporary input illustrates how a future model would accept a hypothesis without changing official data.</p></div><div class="state-card-body"><label for="scenarioCount">Hypothetical zebra count</label><input id="scenarioCount" type="number" min="0" value="0" class="state-sandbox-input"><p class="state-note" id="scenarioResult">No ecological result is calculated until all required inputs are validated and sourced.</p></div></section>
+    </div>
+  </main>
+  <script defer src="../../../config.js"></script><script defer src="../../../lib/supabase-client.js"></script><script defer src="../../../lib/auth-guard.js"></script><script defer src="../../../pages/admin/layout/admin-layout.js"></script><script defer src="sandbox.js"></script>
+</body>
+</html>

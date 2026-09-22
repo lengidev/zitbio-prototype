@@ -140,7 +140,7 @@
 }
 
 
-/* Date and Time inputs: no Material icon{
+/* Date and Time inputs: no Material icon */
   padding-left: 12px;
 }
 
@@ -980,4 +980,190 @@ textarea.fo-input {
 
 .fo-escape-hatch[hidden] {
   display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Wildlife census form redesign
+   A field officer works through one deliberate sequence: locate → observe →
+   save. The hierarchy avoids both an alarming empty-state and a dashboard-like
+   wall of controls.
+   --------------------------------------------------------------------------- */
+
+.fo-main {
+  max-width: 880px;
+}
+
+.fo-card {
+  overflow: hidden;
+  border-radius: 18px;
+  box-shadow: 0 14px 36px rgba(17, 35, 25, 0.10);
+}
+
+.fo-eyebrow,
+.fo-step-label {
+  margin: 0 0 6px;
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.fo-card-title {
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.fo-card-header {
+  padding: 28px 32px 24px;
+  background: linear-gradient(135deg, var(--color-bg-white), var(--color-primary-light));
+}
+
+.fo-card-body {
+  padding: 28px 32px 32px;
+}
+
+.fo-type-grid {
+  grid-template-columns: 1fr;
+}
+
+.fo-type-btn {
+  min-height: 112px;
+  justify-content: center;
+  padding: 24px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 38%, var(--border-color));
+  background: linear-gradient(120deg, var(--color-primary-light), var(--color-bg-card));
+}
+
+.fo-type-btn::before {
+  content: '01';
+  color: var(--color-primary);
+  font-family: Georgia, serif;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.fo-type-label { font-size: 18px; }
+.fo-type-collects { font-size: 14px; }
+
+.fo-zone-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.85fr);
+  gap: 22px;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 22px;
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+}
+
+.fo-step-title {
+  margin: 0;
+  color: var(--color-text-main);
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.fo-step-copy,
+.fo-record-helper {
+  margin: 7px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.fo-zone-block { align-items: stretch; max-width: none; }
+.fo-zone-block .fo-helper { text-align: left; line-height: 1.4; }
+
+.fo-zone-chip,
+.fo-zone-chip--empty {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  color: var(--color-text-main);
+  background-color: var(--color-bg-white);
+  border: 1px dashed var(--color-primary);
+  border-radius: 10px;
+  text-align: left;
+}
+
+.fo-zone-chip:hover,
+.fo-zone-chip--empty:hover {
+  background-color: var(--color-primary-light);
+  border-style: solid;
+}
+
+.fo-record-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.fo-record-helper { max-width: 300px; text-align: right; }
+.fo-species-list { margin-bottom: 12px; }
+
+.fo-empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 92px;
+  justify-content: center;
+  padding: 18px 20px;
+  color: var(--color-text-secondary);
+  background: repeating-linear-gradient(-45deg, var(--color-bg-input), var(--color-bg-input) 9px, var(--color-bg-white) 9px, var(--color-bg-white) 18px);
+  border: 1px dashed var(--border-color-dark);
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.fo-empty-state strong { color: var(--color-text-main); font-size: 14px; }
+
+.fo-record-action {
+  width: 100%;
+  min-height: 48px;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.fo-field--stacked {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color-light);
+}
+
+.fo-label span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+#zoneNote {
+  min-height: 92px;
+  padding: 12px;
+  line-height: 1.5;
+}
+
+.fo-actions {
+  margin-top: 28px;
+  padding: 20px 32px;
+  background-color: var(--color-bg-input);
+}
+
+.fo-btn-danger:hover {
+  color: var(--color-danger-fg);
+  background-color: var(--color-danger-light);
+  border-color: var(--color-danger);
+}
+
+@media (max-width: 767px) {
+  .fo-card-header, .fo-card-body { padding: 22px 18px; }
+  .fo-card-title { font-size: 21px; }
+  .fo-zone-step { grid-template-columns: 1fr; padding: 18px; }
+  .fo-record-heading { align-items: start; flex-direction: column; gap: 8px; }
+  .fo-record-helper { max-width: none; text-align: left; }
+  .fo-actions { padding: 16px 18px; }
 }

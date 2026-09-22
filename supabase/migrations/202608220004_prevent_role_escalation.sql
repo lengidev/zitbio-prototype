@@ -1,0 +1,26 @@
+-- ============================================================================
+-- ZitBIO — Security Hardening (REVISED)
+-- ============================================================================
+-- Original intent: prevent users from self-escalating their own role to
+-- 'admin' via the RLS-permitted self-service profile update.
+--
+-- REVISION (2026-08-22): The original BEFORE UPDATE trigger relied on
+-- public.is_admin(), which reads auth.uid(). In the Supabase SQL editor there
+-- is NO request context, so auth.uid() is NULL and is_admin() is always false
+-- — that blocked even legitimate admin promotions done via SQL. The trigger
+-- has therefore been REMOVED from the live database.
+--
+-- Role security is still enforced by Row Level Security: only an authenticated
+-- admin may UPDATE the `role` column (policy "Admins update all profiles"),
+-- and a plain field_officer cannot update role via the API at all.
+--
+-- If you re-introduce a trigger, make it bypass when auth.uid() is NULL
+-- (service-role / SQL editor path):  `if auth.uid() is null then return new;`
+-- ============================================================================
+
+-- Dropped live. Kept here as a no-op placeholder so applying the original
+-- migration order does not recreate the blocking trigger.
+-- Reference (original, removed):
+--   create or replace function public.prevent_self_role_change() ...
+--   create trigger prevent_role_change_on_profiles ... before update on public.profiles ...
+select 1;

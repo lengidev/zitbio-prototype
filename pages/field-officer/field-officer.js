@@ -220,7 +220,7 @@
   function renderZoneChip() {
     if (!el.zoneChip) return;
     if (!state.zoneId) {
-      el.zoneChip.textContent = 'No location yet. Pick the zone you are in.';
+      el.zoneChip.textContent = 'Choose a monitoring zone';
       el.zoneChip.classList.add('fo-zone-chip--empty');
     } else {
       var origin = state.zoneSource === 'gps' ? 'from GPS' : 'set by hand';
@@ -230,7 +230,7 @@
     if (el.zoneHelp) {
       el.zoneHelp.textContent = state.position
         ? 'Tap to change the zone.'
-        : 'This device gave no position, so nothing was guessed. Tap to choose the zone.';
+        : 'GPS is unavailable, so choose the zone manually.';
     }
   }
 
@@ -301,12 +301,12 @@
   function renderWildlifeRows() {
     if (!el.wildlifeRows) return;
     if (!state.zoneId) {
-      el.wildlifeRows.innerHTML = '<p class="fo-empty">Pick the zone you are in, then record what you saw there.</p>';
+      el.wildlifeRows.innerHTML = '<div class="fo-empty-state"><strong>Choose a zone first</strong><span>Once the location is confirmed, you can add sightings or record a searched absence.</span></div>';
       return;
     }
     var rows = Survey.zoneOf(state.survey, state.zoneId).wildlife.species;
     if (!rows.length) {
-      el.wildlifeRows.innerHTML = '<p class="fo-empty">Nothing recorded in ' + escapeHtml(zoneLabel(state.zoneId)) + ' yet.</p>';
+      el.wildlifeRows.innerHTML = '<div class="fo-empty-state"><strong>No observations recorded in ' + escapeHtml(zoneLabel(state.zoneId)) + ' yet</strong><span>Use “Record a sighting” to begin this zone.</span></div>';
       return;
     }
 
