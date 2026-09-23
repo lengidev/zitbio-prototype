@@ -178,7 +178,11 @@
 
   function renderTypeGrid() {
     if (!el.typeGrid) return;
-    el.typeGrid.innerHTML = Survey.TYPES.map(function (type) {
+    // Only wildlife census has a complete, cloud-backed submission path in v1.
+    // Keep the other survey models dormant until their workflows are supported.
+    el.typeGrid.innerHTML = Survey.TYPES.filter(function (type) {
+      return type.id === 'wildlife_census';
+    }).map(function (type) {
       return '<button type="button" class="fo-type-btn" data-type="' + escapeHtml(type.id) + '">' +
         '<span class="fo-type-label">' + escapeHtml(type.label) + '</span>' +
         '<span class="fo-type-collects">' + escapeHtml(type.collects) + '</span>' +
