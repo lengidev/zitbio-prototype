@@ -220,7 +220,7 @@
       return '<tr>' +
         '<th scope="row"><strong>' + esc(species.label) + '</strong><small>' + esc(species.scientificName) + '</small></th>' +
         '<td class="eco-baseline"><span class="sr-only">Baseline </span>' + esc(baseline) + '</td>' +
-        '<td><label class="eco-field"><span class="sr-only">Scenario count for ' + esc(species.label) + '</span><input type="number" min="0" step="1" inputmode="numeric" value="' + esc(target) + '" data-eco-target="' + esc(species.key) + '" aria-label="Scenario count for ' + esc(species.label) + '"></label></td>' +
+        '<td><label class="eco-field"><span class="sr-only">Scenario count for ' + esc(species.label) + '</span><input type="number" min="0" step="1" required inputmode="numeric" value="' + esc(target) + '" data-eco-target="' + esc(species.key) + '" aria-label="Scenario count for ' + esc(species.label) + '"></label></td>' +
         '<td data-eco-change="' + esc(species.key) + '">' + changeMarkup(baseline, target) + '</td>' +
         '</tr>';
     }).join('');
@@ -233,11 +233,17 @@
     if (cell) cell.innerHTML = changeMarkup(state.baseline[key], state.draft.counts[key]);
   }
 
-  function renderContext() {
+  function approvedOperationalObservationCount() {
     var observations = (window.BioData && window.BioData.getObservations) ? window.BioData.getObservations() : [];
-    var approved = (observations || []).filter(function (row) {
-      return String(row.verification_status || '').toLowerCase() === 'approved';
+    return (observations || []).filter(function (row) {
+      return String(row.verification_status || '').toLowerCase() === 'approved' &&
+        String(row.source || '').toLowerCase() !== 'gbif' &&
+        String(row.provenance || '').toLowerCase() !== 'external';
     }).length;
+  }
+
+  function renderContext() {
+    var approved = approvedOperationalObservationCount();
     if (!el.dataContext) return;
     el.dataContext.innerHTML = approved
       ? '<strong>Data context</strong><span>' + approved + ' approved operational observation' + (approved === 1 ? '' : 's') + ' available. GBIF records are excluded from this baseline.</span>'
@@ -653,32 +659,68 @@
     if (state.lastResult) renderGraph(state.lastResult);
   }
 
-  function downloadBrief() {
-    var result = state.lastResult;
-    if (!result) return;
-    var lines = [
-      'ZitBio ecosystem scenario brief',
-      'Model: ' + result.modelVersion,
-      'Scenario revision: ' + state.revision,
-      'Context: ' + result.driverLabel,
-      'Estimated whole-park area: ' + (result.estimatedAreaHa == null ? 'not available' : result.estimatedAreaHa + ' ha'),
-      '',
-      'Population inputs:'
-    ];
-    result.speciesChanges.forEach(function (item) { lines.push('- ' + item.label + ': ' + item.from + ' -> ' + item.to + ' (' + percent(item.percent) + ')'); });
-    lines.push('', 'Evidence-supported pathways:');
-    result.pathways.forEach(function (path) { lines.push('- ' + path.text + ': ' + path.status + '. ' + path.mechanism); });
-    lines.push('', 'Unknown magnitudes:');
-    result.unknownMagnitudes.forEach(function (text) { lines.push('- ' + text); });
-    var blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
-    link.href = url;
-    link.download = 'zitbio-ecosystem-scenario.txt';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+  function setBriefBusy(isBusy) {
+    if (!el.brief) return;
+    el.brief.disabled = !!isBusy;
+    el.brief.classList.toggle('is-loading', !!isBusy);
+    el.brief.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+    var label = el.brief.querySelector('.eco-button-label');
+    if (label) label.textContent = isBusy ? 'Generating...' : 'Scenario Brief';
+  }
+
+  function briefMessage(message, type) {
+    if (window.BioToast && typeof window.BioToast.show === 'function') {
+      window.BioToast.show(message, type || 'success');
+    } else if (typeof window.showToast === 'function') {
+      window.showToast(message, type || 'success');
+    }
+  }
+
+  function invalidScenarioInput() {
+    if (!el.speciesControls || !el.speciesControls.querySelector) return null;
+    return el.speciesControls.querySelector('input[data-eco-target]:invalid');
+  }
+
+  function generateScenarioBrief() {
+    if (!state.lastResult) {
+      briefMessage('The scenario is still loading. Try again in a moment.', 'warning');
+      return;
+    }
+    var invalid = invalidScenarioInput();
+    if (invalid) {
+      if (typeof invalid.focus === 'function') invalid.focus();
+      briefMessage('Complete every population value before generating the brief.', 'error');
+      return;
+    }
+    if (!window.BioScenarioBrief || typeof window.BioScenarioBrief.createPdf !== 'function' ||
+        !window.jspdf || typeof window.jspdf.jsPDF !== 'function') {
+      briefMessage('The PDF generator did not load. Check your connection and reload.', 'error');
+      return;
+    }
+
+    setBriefBusy(true);
+    window.setTimeout(function () {
+      try {
+        var session = window.BioData && typeof window.BioData.getSession === 'function'
+          ? window.BioData.getSession()
+          : null;
+        var report = window.BioScenarioBrief.createPdf({
+          jsPDF: window.jspdf.jsPDF,
+          result: state.lastResult,
+          context: state.context,
+          revision: state.revision,
+          defaultAreaHa: model.DEFAULT_AREA_HA,
+          approvedObservationCount: approvedOperationalObservationCount(),
+          generatedBy: session && (session.name || session.email) ? (session.name || session.email) : 'ZitBio administrator'
+        });
+        briefMessage('Scenario Brief generated: ' + report.snapshot.scenarioId, 'success');
+      } catch (error) {
+        console.error('Scenario Brief generation failed', error);
+        briefMessage('The Scenario Brief could not be generated. Please try again.', 'error');
+      } finally {
+        setBriefBusy(false);
+      }
+    }, 0);
   }
 
   function selectFromEvent(event) {
@@ -741,7 +783,7 @@
     if (el.pathScopeRelevant) el.pathScopeRelevant.addEventListener('click', function () { state.pathScope = 'relevant'; renderPathways(); });
     if (el.pathScopeAll) el.pathScopeAll.addEventListener('click', function () { state.pathScope = 'all'; renderPathways(); });
     if (el.pathSearch) el.pathSearch.addEventListener('input', function () { state.pathQuery = el.pathSearch.value || ''; renderPathways(); });
-    if (el.download) el.download.addEventListener('click', downloadBrief);
+    if (el.brief) el.brief.addEventListener('click', generateScenarioBrief);
   }
 
   function cache() {
@@ -752,7 +794,7 @@
       pathways: 'ecoPathways', pathwayStatus: 'ecoPathwayStatus', pathScopeRelevant: 'ecoPathScopeRelevant',
       pathScopeAll: 'ecoPathScopeAll', pathSearch: 'ecoPathSearch', unknowns: 'ecoUnknowns',
       management: 'ecoManagement', evidence: 'ecoEvidence', dataContext: 'ecoDataContext',
-      scenarioStatus: 'ecoScenarioStatus', reset: 'ecoReset', download: 'ecoDownload'
+      scenarioStatus: 'ecoScenarioStatus', reset: 'ecoReset', brief: 'ecoScenarioBrief'
     };
     Object.keys(ids).forEach(function (key) { el[key] = $(ids[key]); });
   }

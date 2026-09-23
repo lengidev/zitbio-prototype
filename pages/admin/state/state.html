@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://hhudwocgyrpgzqoffdqg.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+<script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <title>Ecosystem Scenarios</title>
 <link rel="icon" type="image/png" href="../../../assets/favicon/logo-64.png">
 <link rel="stylesheet" href="../../../styles/theme.css">
@@ -23,7 +24,7 @@
 <link rel="stylesheet" href="../../../components/buttons.css">
 <link rel="stylesheet" href="../../../components/forms.css">
 <link rel="stylesheet" href="../../../components/modals.css">
-    <link rel="stylesheet" href="state.css?v=20260923-2">
+    <link rel="stylesheet" href="state.css?v=20260923-3">
     <link rel="stylesheet" href="../../../components/notifications.css">
     <link rel="stylesheet" href="../../../components/toast.css">
     <link rel="stylesheet" href="../../../components/user-dropdown.css">
@@ -62,6 +63,7 @@
     <symbol id="i-hub" viewBox="0 -960 960 960"><path d="M155-75q-35-35-35-85t35-85q35-35 85-35 14 0 26 3t23 8l57-71q-28-31-39-70t-5-78l-81-27q-17 25-43 40t-58 15q-50 0-85-35T0-580q0-50 35-85t85-35q50 0 85 35t35 85v8l81 28q20-36 53.5-61t75.5-32v-87q-39-11-64.5-42.5T360-840q0-50 35-85t85-35q50 0 85 35t35 85q0 42-26 73.5T510-724v87q42 7 75.5 32t53.5 61l81-28v-8q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-32 0-58.5-15T739-515l-81 27q6 39-5 77.5T614-340l57 70q11-5 23-7.5t26-2.5q50 0 85 35t35 85q0 50-35 85t-85 35q-50 0-85-35t-35-85q0-20 6.5-38.5T624-232l-57-71q-41 23-87.5 23T392-303l-56 71q11 15 17.5 33.5T360-160q0 50-35 85t-85 35q-50 0-85-35Zm-35-465q17 0 28.5-11.5T160-580q0-17-11.5-28.5T120-620q-17 0-28.5 11.5T80-580q0 17 11.5 28.5T120-540Zm148.5 408.5Q280-143 280-160t-11.5-28.5Q257-200 240-200t-28.5 11.5Q200-177 200-160t11.5 28.5Q223-120 240-120t28.5-11.5Zm240-680Q520-823 520-840t-11.5-28.5Q497-880 480-880t-28.5 11.5Q440-857 440-840t11.5 28.5Q463-800 480-800t28.5-11.5ZM480-360q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29Zm268.5 228.5Q760-143 760-160t-11.5-28.5Q737-200 720-200t-28.5 11.5Q680-177 680-160t11.5 28.5Q703-120 720-120t28.5-11.5Zm120-420Q880-563 880-580t-11.5-28.5Q857-620 840-620t-28.5 11.5Q800-597 800-580t11.5 28.5Q823-540 840-540t28.5-11.5ZM480-840ZM120-580Zm360 120Zm360-120ZM240-160Zm480 0Z"/></symbol>
     <symbol id="i-edit_note" viewBox="0 -960 960 960"><path d="M160-400v-80h280v80H160Zm0-160v-80h440v80H160Zm0-160v-80h440v80H160Zm360 560v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q8 9 12.5 20t4.5 22q0 11-4 22.5T863-380L643-160H520Zm300-263-37-37 37 37ZM580-220h38l121-122-18-19-19-18-122 121v38Zm141-141-19-18 37 37-18-19Z"/></symbol>
     <symbol id="i-delete" viewBox="0 -960 960 960"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></symbol>
+    <symbol id="i-file_download" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7ZM5 18v2h14v-2H5Z"/></symbol>
   </svg>
 
   
@@ -179,8 +181,11 @@
                         <p class="page-subtitle">Test a working scenario, review its exact arithmetic, then trace the evidence-supported relationships that may carry change through the park.</p>
                     </div>
                     <div class="eco-page-actions">
-                        <button type="button" class="eco-button eco-button--quiet" id="ecoDownload">Download scenario brief</button>
-                        <a class="eco-button eco-button--quiet" href="../../../output/pdf/zitbio-ecological-model-research.pdf">Research basis PDF</a>
+                        <button type="button" class="eco-button eco-button--quiet eco-button--brief" id="ecoScenarioBrief" title="Generate a PDF from the current scenario" aria-label="Generate and download Scenario Brief PDF">
+                            <svg class="material-symbols-outlined eco-button-icon" aria-hidden="true"><use href="#i-file_download"/></svg>
+                            <span class="eco-button-spinner" aria-hidden="true"></span>
+                            <span class="eco-button-label">Scenario Brief</span>
+                        </button>
                     </div>
                 </div>
 
@@ -305,10 +310,11 @@
     <script defer src="../../../lib/survey.js"></script>
      <script defer src="../../../lib/ecology.js"></script>
      <script defer src="../../../lib/capacity.js"></script>
-     <script defer src="../../../lib/ecosystem-model.js?v=20260923-1"></script>
+     <script defer src="../../../lib/ecosystem-model.js?v=20260923-2"></script>
      <script defer src="../../../pages/admin/layout/admin-layout.js"></script>
      <script defer src="state.js"></script>
-     <script defer src="ecosystem.js?v=20260923-2"></script>
+     <script defer src="scenario-brief.js?v=20260923-1"></script>
+     <script defer src="ecosystem.js?v=20260923-3"></script>
 
 </body>
 </html>

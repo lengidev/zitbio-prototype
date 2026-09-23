@@ -494,6 +494,46 @@
 .eco-button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .eco-button--quiet { min-height: 32px; font-weight: 600; }
 
+.eco-button--brief {
+  gap: 8px;
+  color: var(--color-primary-fg);
+  background: var(--color-primary-lighter);
+  border-color: var(--color-primary);
+}
+
+.eco-button--brief:hover {
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+}
+
+.eco-button--brief:disabled {
+  cursor: wait;
+  opacity: 0.72;
+  transform: none;
+}
+
+.eco-button--brief .eco-button-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.eco-button-spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: eco-button-spin 700ms linear infinite;
+}
+
+.eco-button--brief.is-loading .eco-button-icon { display: none; }
+.eco-button--brief.is-loading .eco-button-spinner { display: block; }
+
+@keyframes eco-button-spin {
+  to { transform: rotate(360deg); }
+}
+
 .eco-badge {
   display: inline-block;
   padding: 2px 6px;
