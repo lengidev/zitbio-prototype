@@ -144,8 +144,8 @@
                 <section class="fo-zone-step" aria-labelledby="zoneStepTitle">
                     <div>
                         <p class="fo-step-label">1. Locate the observation</p>
-                        <h2 id="zoneStepTitle" class="fo-step-title">Which monitoring zone are you in?</h2>
-                        <p class="fo-step-copy">Choose the zone before recording sightings. ZitBio will not guess a location when GPS is unavailable.</p>
+                        <h2 id="zoneStepTitle" class="fo-step-title">Which focus area are you in?</h2>
+                        <p class="fo-step-copy">Choose Nature Park or Campus before recording. ZitBio does not invent park sections that are not in the dataset.</p>
                     </div>
                     <div class="fo-zone-block">
                         <button type="button" class="fo-zone-chip" id="zoneChip"></button>
@@ -260,7 +260,7 @@
                 </div>
 
                 <div class="fo-field fo-field--stacked">
-                    <label class="fo-label" for="zoneNote">Field note <span>Optional</span></label>
+                    <label class="fo-label" for="zoneNote">Focus-area note <span>Optional</span></label>
                     <textarea id="zoneNote" class="fo-input" rows="3" placeholder="Add context that may help someone interpret this walk later."></textarea>
                     <p class="fo-helper">For example: a herd was on the far bank, visibility was poor, or access to a path was blocked.</p>
                 </div>
@@ -269,7 +269,7 @@
             <div class="fo-actions">
                 <button type="button" class="fo-btn fo-btn-outline fo-btn-danger" id="btnLeaveWalk">Cancel walk</button>
                 <div class="fo-actions-right">
-                    <button type="button" class="fo-btn fo-btn-primary" id="btnDoneZone">Save this zone</button>
+                    <button type="button" class="fo-btn fo-btn-primary" id="btnDoneZone">Save this focus area</button>
                 </div>
             </div>
         </section>
@@ -285,7 +285,7 @@
                 <div class="fo-zone-list" id="zoneList"></div>
             </div>
             <div class="fo-actions">
-                <button type="button" class="fo-btn fo-btn-outline" id="btnAnotherZone">Add another zone</button>
+                <button type="button" class="fo-btn fo-btn-outline" id="btnAnotherZone" hidden>Change focus area</button>
                 <div class="fo-actions-right">
                     <button type="button" class="fo-btn fo-btn-primary" id="btnEndSurvey">End survey</button>
                 </div>
@@ -338,10 +338,10 @@
             </div>
         </section>
 
-        <!-- Zone picker. A dialog rather than a select, because the officer needs to
-             see which zones this walk has already covered. -->
+        <!-- Focus-area picker. Section-level park zones are intentionally not
+             offered because the current dataset has no section measurements. -->
         <dialog class="fo-dialog" id="zoneDialog" aria-labelledby="zoneDialogTitle">
-            <h2 class="fo-dialog-title" id="zoneDialogTitle">Which zone are you in?</h2>
+            <h2 class="fo-dialog-title" id="zoneDialogTitle">Which focus area are you in?</h2>
             <p class="fo-dialog-text" id="zoneDialogText"></p>
             <div class="fo-zone-options" id="zoneOptions"></div>
             <div class="fo-actions">

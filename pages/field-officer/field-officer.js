@@ -1,15 +1,11 @@
 /* Field officer survey flow: what are you doing today, that type's form, the
-   zones so far, and the end. The rules live in lib/survey.js; this file only
+   focus area so far, and the end. The rules live in lib/survey.js; this file only
    moves data between that model, the DOM and the sync layer. */
 
 (function () {
   'use strict';
 
   var Survey = window.BioSurvey;
-
-  // How close the officer must be to a zone anchor to be placed in it. This is a
-  // UI tolerance for choosing a zone, not a measurement of anything.
-  var ANCHOR_RADIUS_M = 250;
 
   var el = {};
   var state = {
@@ -45,8 +41,13 @@
 
   function zones() {
     var data = store();
+    if (data && typeof data.getFocusAreaSites === 'function') {
+      return (data.getFocusAreaSites() || []).filter(function (site) { return site && site.id; });
+    }
     var sites = (data && typeof data.getSiteRegistry === 'function') ? (data.getSiteRegistry() || []) : [];
-    return sites.filter(function (site) { return site && site.kind === 'zone'; });
+    return sites.filter(function (site) {
+      return site && (site.kind === 'park' || site.kind === 'campus');
+    });
   }
 
   function zoneById(id) {
@@ -54,16 +55,9 @@
     return found.length ? found[0] : null;
   }
 
-  function parentSiteName(zoneRow) {
-    var data = store();
-    var sites = (data && typeof data.getSiteRegistry === 'function') ? (data.getSiteRegistry() || []) : [];
-    var parent = sites.filter(function (site) { return site.id === zoneRow.parent_site_id; })[0];
-    return parent ? (parent.name || parent.short_name || null) : null;
-  }
-
   function zoneLabel(id) {
     var zone = id ? zoneById(id) : null;
-    if (!zone) return id || 'No zone';
+    if (!zone) return id || 'No focus area';
     return zone.short_name || zone.name || id;
   }
 
@@ -155,31 +149,6 @@
     window.scrollTo(0, 0);
   }
 
-  function metresBetween(a, b) {
-    var R = 6371000;
-    var toRad = function (deg) { return deg * Math.PI / 180; };
-    var dLat = toRad(b.lat - a.lat);
-    var dLng = toRad(b.lng - a.lng);
-    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
-  }
-
-  // The nearest zone anchor wins, and only inside the radius. With no anchor
-  // placed, or no fix from the device, this returns nothing and the officer is
-  // asked instead.
-  function nearestZone() {
-    if (!state.position) return null;
-    var best = null;
-    zones().forEach(function (zone) {
-      if (zone.latitude == null || zone.longitude == null) return;
-      var distance = metresBetween(state.position, { lat: Number(zone.latitude), lng: Number(zone.longitude) });
-      if (distance > ANCHOR_RADIUS_M) return;
-      if (!best || distance < best.distance) best = { zone: zone, distance: distance };
-    });
-    return best ? best.zone : null;
-  }
-
   function capturePosition() {
     return new Promise(function (resolve) {
       if (!navigator.geolocation) return resolve(null);
@@ -220,47 +189,34 @@
   function renderZoneChip() {
     if (!el.zoneChip) return;
     if (!state.zoneId) {
-      el.zoneChip.textContent = 'Choose a monitoring zone';
+      el.zoneChip.textContent = 'Choose a focus area';
       el.zoneChip.classList.add('fo-zone-chip--empty');
     } else {
-      var origin = state.zoneSource === 'gps' ? 'from GPS' : 'set by hand';
-      el.zoneChip.textContent = zoneLabel(state.zoneId) + ' · ' + origin;
+      el.zoneChip.textContent = zoneLabel(state.zoneId);
       el.zoneChip.classList.remove('fo-zone-chip--empty');
     }
     if (el.zoneHelp) {
-      el.zoneHelp.textContent = state.position
-        ? 'Tap to change the zone.'
-        : 'GPS is unavailable, so choose the zone manually.';
+      el.zoneHelp.textContent = 'Tap to change the focus area.';
     }
   }
 
-  function openZoneDialog(suggestedZoneId) {
+  function openZoneDialog() {
     if (!el.zoneDialog || !el.zoneOptions) return;
 
     var covered = {};
     (state.survey ? state.survey.zones : []).forEach(function (zone) { covered[zone.zoneId] = true; });
-    var fromGps = nearestZone();
-    var suggestion = fromGps;
-    if (!suggestion && suggestedZoneId) {
-      suggestion = zones().filter(function (zone) { return zone.id === suggestedZoneId; })[0] || null;
-    }
     var list = zones();
 
     if (!list.length) {
-      el.zoneDialogText.textContent = 'No park zones are set up yet. Ask an admin to add them in Settings.';
+      el.zoneDialogText.textContent = 'No focus areas are available. Ask an admin to check the Nature Park and Campus registry.';
       el.zoneOptions.innerHTML = '';
     } else {
-      el.zoneDialogText.textContent = fromGps
-        ? 'You appear to be at ' + (fromGps.short_name || fromGps.name) + '. Change it if that is wrong.'
-        : (suggestion
-            ? 'This is the only zone left on this walk, so it is highlighted. Change it if that is wrong.'
-            : 'Pick the zone you are standing in.');
+      el.zoneDialogText.textContent = 'Choose the focus area where this walk is taking place.';
       el.zoneOptions.innerHTML = list.map(function (zone) {
-        var isSuggestion = suggestion && suggestion.id === zone.id;
         var isCovered = covered[zone.id];
-        return '<button type="button" class="fo-zone-option' + (isSuggestion ? ' fo-zone-option--suggested' : '') + '"' +
+        return '<button type="button" class="fo-zone-option"' +
           ' data-zone="' + escapeHtml(zone.id) + '">' +
-          '<span class="fo-zone-option-name">' + escapeHtml(zone.name || zone.id) + '</span>' +
+          '<span class="fo-zone-option-name">' + escapeHtml(zone.short_name || zone.name || zone.id) + '</span>' +
           (isCovered ? '<span class="fo-zone-option-note">Already recorded on this walk</span>' : '') +
           '</button>';
       }).join('');
@@ -301,7 +257,7 @@
   function renderWildlifeRows() {
     if (!el.wildlifeRows) return;
     if (!state.zoneId) {
-      el.wildlifeRows.innerHTML = '<div class="fo-empty-state"><strong>Choose a zone first</strong><span>Once the location is confirmed, you can add sightings or record a searched absence.</span></div>';
+      el.wildlifeRows.innerHTML = '<div class="fo-empty-state"><strong>Choose a focus area first</strong><span>Once the location is confirmed, you can add sightings or record a searched absence.</span></div>';
       return;
     }
     var rows = Survey.zoneOf(state.survey, state.zoneId).wildlife.species;
@@ -337,9 +293,9 @@
       // Half a panel is worse than an explanation. The counters used to vanish
       // with no word about why they were not there.
       el.tapGrid.innerHTML = '';
-      if (el.tapTotal) el.tapTotal.textContent = 'Pick the zone you are in, then count what is under your toe.';
+      if (el.tapTotal) el.tapTotal.textContent = 'Pick the focus area first, then count what is under your toe.';
       if (el.grassHeight) el.grassHeight.value = '';
-      if (el.swardRows) el.swardRows.innerHTML = '<p class="fo-empty">Pick the zone you are in first.</p>';
+      if (el.swardRows) el.swardRows.innerHTML = '<p class="fo-empty">Pick the focus area first.</p>';
       return;
     }
     var taps = Survey.zoneOf(state.survey, state.zoneId).vegetation.taps;
@@ -438,8 +394,8 @@
     }
     if (el.progressMeta) {
       el.progressMeta.textContent = summary.zones
-        ? summary.zones + (summary.zones === 1 ? ' zone' : ' zones') + ', recorded by ' + survey.recordedBy
-        : 'No zones recorded yet.';
+        ? summary.zones + (summary.zones === 1 ? ' focus area' : ' focus areas') + ', recorded by ' + survey.recordedBy
+        : 'No focus area recorded yet.';
     }
 
     el.zoneList.innerHTML = survey.zones.map(function (zone) {
@@ -481,7 +437,7 @@
       return '<div class="fo-zone-card">' +
         '<div class="fo-zone-card-head">' +
         '<span class="fo-zone-card-name">' + escapeHtml(zoneLabel(zone.zoneId)) + '</span>' +
-        '<span class="fo-zone-card-origin">' + (zone.zoneSource === 'gps' ? 'from GPS' : 'set by hand') + '</span>' +
+        '<span class="fo-zone-card-origin">focus area</span>' +
         '</div>' +
         '<ul class="fo-zone-card-lines">' + lines + '</ul>' +
         (zone.note ? '<p class="fo-zone-card-note">' + escapeHtml(zone.note) + '</p>' : '') +
@@ -504,7 +460,7 @@
         (soFar == null ? '' : ', ' + minutesText(soFar) + ' so far');
     }
 
-    parts.push('<p>Zones: ' + (summary.zones
+    parts.push('<p>Focus area: ' + (summary.zones
       ? state.survey.zones.map(function (zone) { return escapeHtml(zoneLabel(zone.zoneId)); }).join(', ')
       : 'none recorded') + '</p>');
 
@@ -682,7 +638,7 @@
 
   function saveZone() {
     if (!state.zoneId) {
-      showToast('Pick the zone you are in before saving it.', 'error');
+      showToast('Pick the focus area before saving it.', 'error');
       openZoneDialog();
       return;
     }
@@ -710,23 +666,11 @@
   }
 
   function openZoneForRecording() {
-    var uncovered = zones().filter(function (zone) {
-      return !state.survey.zones.some(function (covered) { return covered.zoneId === zone.id; });
-    });
-    var suggestion = nearestZone();
-
-    // With a fix the zone is placed and the chip says so. Without one the officer
-    // always confirms: silently selecting the only remaining zone and stamping it
-    // "set by hand" claimed a choice nobody made.
-    if (suggestion) {
-      chooseZone(suggestion.id, 'gps');
-      show('screenForm');
-      return;
-    }
-
+    // Focus areas are selected explicitly. GPS never chooses a park section,
+    // because section-level data is not part of the current dataset.
     renderZoneChip();
     renderPanel();
-    openZoneDialog(uncovered.length === 1 ? uncovered[0].id : null);
+    openZoneDialog();
     show('screenForm');
   }
 
@@ -734,33 +678,49 @@
     var survey = state.survey;
     var zone = state.zoneId ? Survey.zoneOf(survey, state.zoneId) : null;
     var zoneRow = zone ? zoneById(zone.zoneId) : null;
+    var focusArea = zoneRow ? (zoneRow.name || zoneRow.short_name || null) : null;
+    var habitatType = zoneRow && zoneRow.habitat_type_default
+      ? zoneRow.habitat_type_default
+      : (window.BioData && window.BioData.getHabitatForFocusArea
+        ? window.BioData.getHabitatForFocusArea(focusArea)
+        : '');
 
-    // Read the park and the habitat off the site record instead of retyping them
-    // here. The old block hard-coded the park, the habitat and the city, and the
-    // observation row then carried them as measured at that spot.
-    // Province and city are constants of this deployment: no site record holds
-    // them yet, and every zone in this park is inside the same two.
+    // Focus area is the supported spatial scope. The section-level zone columns
+    // remain nullable for backwards compatibility, but this UI intentionally
+    // submits no park-section rows because the current dataset has none.
     var context = {
       latitude: state.position ? state.position.lat : null,
       longitude: state.position ? state.position.lng : null,
-      focusArea: zoneRow ? parentSiteName(zoneRow) : null,
-      habitatType: zoneRow ? (zoneRow.habitat_type_default || '') : '',
+      focusArea: focusArea,
+      siteId: zoneRow && zoneRow.kind !== 'zone' ? zoneRow.id : null,
+      habitatType: habitatType,
       administrativeArea: 'Copperbelt Province',
       city: 'Kitwe'
     };
 
+    var observationRows = Survey.toObservationRows(survey, { context: context });
+    // `zone_id` is nullable on observations/readings. Do not write a focus-area
+    // site id into that column: it is reserved for section-level records.
+    observationRows.forEach(function(row) { row.zone_id = null; });
+    var readingRows = survey.zones.map(function (surveyZone) {
+      return Survey.toReadingRow(survey, surveyZone);
+    }).filter(Boolean);
+    readingRows.forEach(function(row) { row.zone_id = null; });
+    var swardRows = survey.surveyType === 'vegetation'
+      ? survey.zones.reduce(function (all, surveyZone) {
+          return all.concat(Survey.toSwardRows(survey, surveyZone));
+        }, [])
+      : [];
+    swardRows.forEach(function(row) { row.zone_id = null; });
+
     return {
       surveyRow: Survey.toSurveyRow(survey),
-      zoneRows: Survey.toSurveyZoneRows(survey),
-      observationRows: Survey.toObservationRows(survey, { context: context }),
-      readingRows: survey.zones.map(function (zone) {
-        return Survey.toReadingRow(survey, zone);
-      }).filter(Boolean),
-      swardRows: survey.surveyType === 'vegetation'
-        ? survey.zones.reduce(function (all, zone) {
-            return all.concat(Survey.toSwardRows(survey, zone));
-          }, [])
-        : []
+      // survey_zones is deliberately empty for focus-area walks. Its database
+      // constraint is for actual section ids, which are not available here.
+      zoneRows: [],
+      observationRows: observationRows,
+      readingRows: readingRows,
+      swardRows: swardRows
     };
   }
 
@@ -843,16 +803,8 @@
 
     capturePosition().then(function (position) {
       state.position = position;
-      var suggestion = nearestZone();
-
-      // Only place the officer if they have not already chosen. A late fix used to
-      // overwrite a hand-picked zone and silently re-file everything already
-      // recorded in that panel under a different zone.
-      if (suggestion && state.zoneId === null) {
-        chooseZone(suggestion.id, 'gps');
-        showToast('You are at ' + (suggestion.short_name || suggestion.name) + '. Change it if that is wrong.');
-        return;
-      }
+      // A late GPS fix never chooses or changes a focus area (state.zoneId === null
+      // is only the pre-selection state). The coordinate is stored as evidence.
       renderZoneChip();
     });
   }
@@ -872,8 +824,7 @@
         var button = event.target.closest('[data-zone]');
         if (!button) return;
         var chosen = button.getAttribute('data-zone');
-        var suggestion = nearestZone();
-        chooseZone(chosen, suggestion && suggestion.id === chosen ? 'gps' : 'manual');
+        chooseZone(chosen, 'manual');
         closeDialog(el.zoneDialog);
       });
     }
@@ -884,7 +835,7 @@
     if (el.btnAddSpecies) {
       el.btnAddSpecies.addEventListener('click', function () {
         if (!state.zoneId) {
-          showToast('Pick the zone first, so the record says where you were.', 'error');
+          showToast('Pick the focus area first, so the record says where you were.', 'error');
           openZoneDialog();
           return;
         }
@@ -896,7 +847,7 @@
       el.btnAddSward.addEventListener('click', function () {
         // Saying nothing when no zone is open made the button look broken.
         if (!state.zoneId) {
-          showToast('Pick the zone first, so the record says where you were.', 'error');
+          showToast('Pick the focus area first, so the record says where you were.', 'error');
           openZoneDialog();
           return;
         }

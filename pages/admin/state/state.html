@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://hhudwocgyrpgzqoffdqg.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-<title>Ecological state</title>
+<title>Ecosystem Scenarios</title>
 <link rel="icon" type="image/png" href="../../../assets/favicon/logo-64.png">
 <link rel="stylesheet" href="../../../styles/theme.css">
 <link rel="stylesheet" href="../../../styles/global.css">
@@ -23,7 +23,7 @@
 <link rel="stylesheet" href="../../../components/buttons.css">
 <link rel="stylesheet" href="../../../components/forms.css">
 <link rel="stylesheet" href="../../../components/modals.css">
-    <link rel="stylesheet" href="state.css">
+    <link rel="stylesheet" href="state.css?v=20260923-2">
     <link rel="stylesheet" href="../../../components/notifications.css">
     <link rel="stylesheet" href="../../../components/toast.css">
     <link rel="stylesheet" href="../../../components/user-dropdown.css">
@@ -59,6 +59,7 @@
     <symbol id="i-flag" viewBox="0 -960 960 960"><path d="M200-120v-680h360l16 80h224v400H520l-16-80H280v280h-80Zm300-440Zm86 160h134v-240H510l-16-80H280v240h290l16 80Z"/></symbol>
     <symbol id="i-person_add" viewBox="0 -960 960 960"><path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80Zm-360-80q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0-80Zm0 400Z"/></symbol>
     <symbol id="i-verified" viewBox="0 -960 960 960"><path d="m344-60-76-128-144-32 14-148-98-112 98-112-14-148 144-32 76-128 136 58 136-58 76 128 144 32-14 148 98 112-98 112 14 148-144 32-76 128-136-58-136 58Zm34-102 102-44 104 44 56-96 110-26-10-112 74-84-74-86 10-112-110-24-58-96-102 44-104-44-56 96-110 24 10 112-74 86 74 84-10 114 110 24 58 96Zm102-318Zm-42 142 226-226-56-58-170 170-86-84-56 56 142 142Z"/></symbol>
+    <symbol id="i-hub" viewBox="0 -960 960 960"><path d="M155-75q-35-35-35-85t35-85q35-35 85-35 14 0 26 3t23 8l57-71q-28-31-39-70t-5-78l-81-27q-17 25-43 40t-58 15q-50 0-85-35T0-580q0-50 35-85t85-35q50 0 85 35t35 85v8l81 28q20-36 53.5-61t75.5-32v-87q-39-11-64.5-42.5T360-840q0-50 35-85t85-35q50 0 85 35t35 85q0 42-26 73.5T510-724v87q42 7 75.5 32t53.5 61l81-28v-8q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-32 0-58.5-15T739-515l-81 27q6 39-5 77.5T614-340l57 70q11-5 23-7.5t26-2.5q50 0 85 35t35 85q0 50-35 85t-85 35q-50 0-85-35t-35-85q0-20 6.5-38.5T624-232l-57-71q-41 23-87.5 23T392-303l-56 71q11 15 17.5 33.5T360-160q0 50-35 85t-85 35q-50 0-85-35Zm-35-465q17 0 28.5-11.5T160-580q0-17-11.5-28.5T120-620q-17 0-28.5 11.5T80-580q0 17 11.5 28.5T120-540Zm148.5 408.5Q280-143 280-160t-11.5-28.5Q257-200 240-200t-28.5 11.5Q200-177 200-160t11.5 28.5Q223-120 240-120t28.5-11.5Zm240-680Q520-823 520-840t-11.5-28.5Q497-880 480-880t-28.5 11.5Q440-857 440-840t11.5 28.5Q463-800 480-800t28.5-11.5ZM480-360q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29Zm268.5 228.5Q760-143 760-160t-11.5-28.5Q737-200 720-200t-28.5 11.5Q680-177 680-160t11.5 28.5Q703-120 720-120t28.5-11.5Zm120-420Q880-563 880-580t-11.5-28.5Q857-620 840-620t-28.5 11.5Q800-597 800-580t11.5 28.5Q823-540 840-540t28.5-11.5ZM480-840ZM120-580Zm360 120Zm360-120ZM240-160Zm480 0Z"/></symbol>
     <symbol id="i-edit_note" viewBox="0 -960 960 960"><path d="M160-400v-80h280v80H160Zm0-160v-80h440v80H160Zm0-160v-80h440v80H160Zm360 560v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q8 9 12.5 20t4.5 22q0 11-4 22.5T863-380L643-160H520Zm300-263-37-37 37 37ZM580-220h38l121-122-18-19-19-18-122 121v38Zm141-141-19-18 37 37-18-19Z"/></symbol>
     <symbol id="i-delete" viewBox="0 -960 960 960"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></symbol>
   </svg>
@@ -95,9 +96,9 @@
                 <svg class="material-symbols-outlined nav-icon" aria-hidden="true"><use href="#i-analytics"/></svg>
                 <span class="nav-text">Analytics</span>
             </a>
-            <a href="../state/state.html" class="nav-item active" id="navState" data-tooltip="Ecological state">
-                <svg class="material-symbols-outlined nav-icon" aria-hidden="true"><use href="#i-verified"/></svg>
-                <span class="nav-text">Ecological state</span>
+            <a href="../state/state.html" class="nav-item active" id="navState" data-tooltip="Ecosystem Scenarios">
+                <svg class="material-symbols-outlined nav-icon" aria-hidden="true"><use href="#i-hub"/></svg>
+                <span class="nav-text">Ecosystem Scenarios</span>
             </a>
         </div>
         <div class="sidebar-nav-bottom">
@@ -171,92 +172,121 @@
 
         <!-- Content -->
                 <div class="content-area">
-            <div class="state-intro">
-                <p class="state-lede">What the park can currently carry, and the origin of every number that answer rests on. A value with no stated origin is reported as missing rather than assumed.</p>
-                <p class="state-asof" id="datasetNote" role="status"></p>
-                <p class="state-warning" id="registerWarning" role="status" hidden></p>
-                <p class="state-pending" id="pendingNote" role="status" hidden></p>
-            </div>
-
-            <section class="state-strip" aria-label="Recorded so far">
-                <div class="state-tile">
-                    <span class="state-tile-label">Surveys recorded</span>
-                    <span class="state-tile-value" id="tileSurveys">0</span>
-                    <span class="state-tile-note" id="tileSurveysNote">loading</span>
-                </div>
-                <div class="state-tile">
-                    <span class="state-tile-label">Observations</span>
-                    <span class="state-tile-value" id="tileObservations">0</span>
-                    <span class="state-tile-note" id="tileObservationsNote">loading</span>
-                </div>
-                <div class="state-tile">
-                    <span class="state-tile-label">Register parameters</span>
-                    <span class="state-tile-value" id="tileParameters">0</span>
-                    <span class="state-tile-note" id="tileParametersNote">loading</span>
-                </div>
-                <div class="state-tile">
-                    <span class="state-tile-label">Placeholder values</span>
-                    <span class="state-tile-value" id="tilePlaceholders">0</span>
-                    <span class="state-tile-note" id="tilePlaceholdersNote">loading</span>
-                </div>
-            </section>
-
-            <section class="state-card" aria-labelledby="capacityHeading">
-                <div class="state-card-header">
-                    <h2 class="state-card-title" id="capacityHeading">Can the park carry what it holds</h2>
-                    <p class="state-card-sub">Assessed one zone at a time, because both the grazable area and the standing forage are properties of a zone. Change a standing count to ask what would happen: nothing that was recorded is altered.</p>
-                </div>
-                <div class="state-card-body" id="capacityBody" aria-live="polite">
-                    <p class="state-empty">Loading the assessment...</p>
-                </div>
-            </section>
-
-            <section class="state-card" aria-labelledby="couplingHeading">
-                <div class="state-card-header">
-                    <h2 class="state-card-title" id="couplingHeading">How one species affects another</h2>
-                    <p class="state-card-sub">A direction and a named mechanism. A magnitude appears only where a source supplied one, and its absence is shown rather than hidden.</p>
-                </div>
-                <div class="state-card-body">
-                    <div class="state-table-wrap">
-                        <table class="state-table" aria-label="Species relationships">
-                            <thead>
-                                <tr>
-                                    <th scope="col">From</th>
-                                    <th scope="col">Direction</th>
-                                    <th scope="col">Affects</th>
-                                    <th scope="col">Mechanism</th>
-                                    <th scope="col">Origin</th>
-                                </tr>
-                            </thead>
-                            <tbody id="couplingBody"></tbody>
-                        </table>
+                <div class="eco-page-header">
+                    <div class="content-header">
+                        <p class="eco-kicker">Qualitative decision support</p>
+                        <h2 class="page-title">Ecosystem Scenarios</h2>
+                        <p class="page-subtitle">Test a working scenario, review its exact arithmetic, then trace the evidence-supported relationships that may carry change through the park.</p>
+                    </div>
+                    <div class="eco-page-actions">
+                        <button type="button" class="eco-button eco-button--quiet" id="ecoDownload">Download scenario brief</button>
+                        <a class="eco-button eco-button--quiet" href="../../../output/pdf/zitbio-ecological-model-research.pdf">Research basis PDF</a>
                     </div>
                 </div>
-            </section>
 
-            <section class="state-card" aria-labelledby="walksHeading">
-                <div class="state-card-header">
-                    <h2 class="state-card-title" id="walksHeading">Walks recorded</h2>
-                    <p class="state-card-sub">Every survey type with the readings it produced. Three of these four types were written and never read back until now.</p>
+                <div class="eco-context-strip">
+                    <p class="state-asof" id="ecoDataContext" role="status"></p>
+                    <p class="eco-method-note"><strong>Interpretation boundary</strong><span>This prototype calculates scenario arithmetic exactly, but reports ecological responses as evidence-bounded directions—not invented magnitudes or forecasts.</span></p>
                 </div>
-                <div class="state-card-body">
-                    <div class="state-table-wrap">
-                        <table class="state-table" aria-label="Recorded surveys">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Type</th>
-                                    <th scope="col">Where</th>
-                                    <th scope="col">Officer</th>
-                                    <th scope="col">When</th>
-                                    <th scope="col">Readings</th>
-                                </tr>
-                            </thead>
-                            <tbody id="walksBody"></tbody>
-                        </table>
-                    </div>
-                    <p class="state-note" id="walksNote"></p>
+
+                <nav class="eco-workflow" aria-label="Scenario workflow">
+                    <a href="#eco-define"><span>01</span><strong>Define scenario</strong><small>Choose conditions and populations</small></a>
+                    <a href="#eco-results"><span>02</span><strong>Review response</strong><small>Read synchronized model outputs</small></a>
+                    <a href="#eco-explore"><span>03</span><strong>Explore relationships</strong><small>Inspect variables and pathways</small></a>
+                </nav>
+
+                <main class="eco-workspace" aria-label="Ecosystem scenario model">
+                    <section class="eco-section eco-section--define" id="eco-define" aria-labelledby="ecoControlsHeading">
+                        <div class="eco-section-heading">
+                            <div><p class="eco-section-number">01 · Define scenario</p><h3 id="ecoControlsHeading">Working conditions</h3></div>
+                            <p>Baseline values are registered reference data. Only the scenario column is editable, and changes stay in this browser session.</p>
+                        </div>
+
+                        <div class="eco-configuration-grid">
+                            <div class="eco-condition-panel" aria-labelledby="ecoConditionsHeading">
+                                <h4 id="ecoConditionsHeading">Environment &amp; habitat</h4>
+                                <p class="eco-group-note">These values set context for the qualitative network and density arithmetic.</p>
+                                <div class="eco-settings-row">
+                                    <label class="eco-select-field" for="ecoDriver"><span>Season</span><select id="ecoDriver"><option value="none">No seasonal adjustment</option><option value="rainy">Rainy (Nov to Apr)</option><option value="coolDry">Cool dry (May to Aug)</option><option value="hotDry">Hot dry (Sep to Oct/Nov)</option></select><small>Scenario choice; not a live weather reading</small></label>
+                                    <label class="eco-select-field" for="ecoArea"><span>Whole-park area</span><span class="eco-input-unit"><input id="ecoArea" type="number" min="0" step="0.1" value="6.6" inputmode="decimal"><b>ha</b></span><small>Prototype estimate; not a surveyed boundary</small></label>
+                                </div>
+                            </div>
+
+                            <div class="eco-population-panel" aria-labelledby="ecoPopulationHeading">
+                                <div class="eco-group-heading"><div><h4 id="ecoPopulationHeading">Wildlife populations</h4><p class="eco-group-note">Registered 2023 reference compared with the working scenario.</p></div><span class="eco-live-label"><i aria-hidden="true"></i>Live calculation</span></div>
+                                <div id="ecoSpeciesControls" class="eco-species-controls"></div>
+                            </div>
+                        </div>
+
+                        <div class="eco-scenario-footer">
+                            <span id="ecoScenarioStatus" class="eco-control-status" role="status" aria-live="polite"></span>
+                            <button type="button" class="eco-button eco-button--quiet" id="ecoReset">Reset scenario</button>
+                        </div>
+                    </section>
+
+                    <section class="eco-section eco-section--results" id="eco-results" aria-labelledby="ecoSummaryHeading">
+                        <div class="eco-section-heading eco-section-heading--row">
+                            <div><p class="eco-section-number">02 · Review response</p><h3 id="ecoSummaryHeading">Model response</h3><p id="ecoSummarySub"></p></div>
+                            <span class="eco-model-tag" id="ecoModelTag"></span>
+                        </div>
+                        <div id="ecoSummary" class="eco-summary" aria-live="polite"></div>
+                        <div class="eco-interpretation-grid">
+                            <section aria-labelledby="ecoUnknownHeading"><p class="eco-subsection-kicker">Interpret carefully</p><h4 id="ecoUnknownHeading">What remains unknown</h4><ul id="ecoUnknowns" class="eco-list"></ul></section>
+                            <section aria-labelledby="ecoManagementHeading"><p class="eco-subsection-kicker">Use this scenario</p><h4 id="ecoManagementHeading">Decision guidance</h4><ul id="ecoManagement" class="eco-list"></ul></section>
+                        </div>
+                    </section>
+
+                    <section class="eco-section eco-section--explore" id="eco-explore" aria-labelledby="ecoGraphHeading">
+                        <div class="eco-section-heading">
+                            <div><p class="eco-section-number">03 · Explore relationships</p><h3 id="ecoGraphHeading">Coupled-system explorer</h3></div>
+                            <p>Select a variable or relationship to inspect its role, current qualitative response, mechanism, conditions, and evidence.</p>
+                        </div>
+
+                        <div class="eco-visual-key" aria-label="Diagram legend">
+                            <div class="eco-key-group"><span class="eco-key-title">Variables</span><span><i class="eco-key-swatch eco-key-swatch--environment"></i>Environment</span><span><i class="eco-key-swatch eco-key-swatch--resource"></i>Resources</span><span><i class="eco-key-swatch eco-key-swatch--pressure"></i>Interactions &amp; condition</span><span><i class="eco-key-swatch eco-key-swatch--wildlife"></i>Wildlife inputs</span></div>
+                            <div class="eco-key-group"><span class="eco-key-title">Relationships</span><span><i class="eco-key-line eco-key-line--up"></i>Supports</span><span><i class="eco-key-line eco-key-line--down"></i>Reduces</span><span><i class="eco-key-line eco-key-line--conditional"></i>Conditional</span></div>
+                        </div>
+
+                        <div class="eco-explorer-grid">
+                            <div class="eco-network-pane">
+                                <div class="eco-graph-wrap" id="ecoGraphWrap" role="group" aria-label="Signed interaction network of the park model. Select a variable to inspect it."></div>
+                                <div class="eco-mobile-directory" id="ecoMobileDirectory" aria-label="Model variables"></div>
+                            </div>
+                            <aside class="eco-inspector" id="ecoGraphPanel" aria-live="polite" aria-label="Variable and relationship inspector"></aside>
+                        </div>
+
+                        <section class="eco-pathway-explorer" aria-labelledby="ecoPathwayHeading">
+                            <div class="eco-pathway-heading">
+                                <div><p class="eco-subsection-kicker">Progressive detail</p><h4 id="ecoPathwayHeading">Related pathways</h4><p id="ecoPathwayStatus"></p></div>
+                                <div class="eco-path-tools">
+                                    <div class="eco-segmented" aria-label="Pathway scope"><button type="button" id="ecoPathScopeRelevant" class="is-active" aria-pressed="true">Relevant</button><button type="button" id="ecoPathScopeAll" aria-pressed="false">All active</button></div>
+                                    <label class="eco-path-search"><span class="sr-only">Search active pathways</span><input id="ecoPathSearch" type="search" placeholder="Search pathways"></label>
+                                </div>
+                            </div>
+                            <ol id="ecoPathways" class="eco-path-list" aria-label="Active pathways"></ol>
+                        </section>
+
+                        <details class="eco-evidence"><summary><span><strong>Evidence register</strong><small>Sources supporting the model relationships</small></span><span class="eco-summary-hint">Open register</span></summary><div class="eco-evidence-body"><ul id="ecoEvidence" class="eco-reference-list"></ul><p class="state-note">The full research report distinguishes park-specific, regional, analogous, and estimated evidence.</p></div></details>
+                    </section>
+                </main>
+
+                <!-- Compatibility surface for the existing state-page test harness and
+                     the historical survey/cache renderer. It is deliberately not part
+                     of the visible product surface. -->
+                <div class="state-legacy-support" hidden aria-hidden="true">
+                    <p class="state-asof" id="datasetNote" role="status"></p>
+                    <p class="state-warning" id="registerWarning" role="status" hidden></p>
+                    <p class="state-pending" id="pendingNote" role="status" hidden></p>
+                    <section class="state-strip" aria-label="Recorded so far">
+                        <div class="state-tile"><span class="state-tile-label">Surveys recorded</span><span class="state-tile-value" id="tileSurveys">0</span><span class="state-tile-note" id="tileSurveysNote">loading</span></div>
+                        <div class="state-tile"><span class="state-tile-label">Observations</span><span class="state-tile-value" id="tileObservations">0</span><span class="state-tile-note" id="tileObservationsNote">loading</span></div>
+                        <div class="state-tile"><span class="state-tile-label">Register parameters</span><span class="state-tile-value" id="tileParameters">0</span><span class="state-tile-note" id="tileParametersNote">loading</span></div>
+                        <div class="state-tile"><span class="state-tile-label">Placeholder values</span><span class="state-tile-value" id="tilePlaceholders">0</span><span class="state-tile-note" id="tilePlaceholdersNote">loading</span></div>
+                    </section>
+                    <section class="state-card"><div class="state-card-body" id="capacityBody"><p class="state-empty">Loading the assessment...</p></div></section>
+                    <section class="state-card"><div class="state-card-body"><table class="state-table"><tbody id="couplingBody"></tbody></table></div></section>
+                    <section class="state-card"><div class="state-card-body"><table class="state-table"><tbody id="walksBody"></tbody></table><p class="state-note" id="walksNote"></p></div></section>
                 </div>
-            </section>
         </div>
     </main>
 
@@ -273,10 +303,12 @@
     <script defer src="../../../lib/supabase-sync.js"></script>
     <script defer src="../../../lib/analytics.js"></script>
     <script defer src="../../../lib/survey.js"></script>
-    <script defer src="../../../lib/ecology.js"></script>
-    <script defer src="../../../lib/capacity.js"></script>
-    <script defer src="../../../pages/admin/layout/admin-layout.js"></script>
-    <script defer src="state.js"></script>
+     <script defer src="../../../lib/ecology.js"></script>
+     <script defer src="../../../lib/capacity.js"></script>
+     <script defer src="../../../lib/ecosystem-model.js?v=20260923-1"></script>
+     <script defer src="../../../pages/admin/layout/admin-layout.js"></script>
+     <script defer src="state.js"></script>
+     <script defer src="ecosystem.js?v=20260923-2"></script>
 
 </body>
 </html>

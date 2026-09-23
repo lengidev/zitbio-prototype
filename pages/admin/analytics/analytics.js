@@ -118,13 +118,13 @@ function applyFilters() {
     renderAnalyticsTable();
     var graphsPanel = document.getElementById('tab-graphs');
     var reportPanel = document.getElementById('tab-report');
-    var mapPanel = document.getElementById('tab-map');
     if (graphsPanel && graphsPanel.classList.contains('active') && typeof initGraphsTab === 'function') {
         initGraphsTab();
     }
     if (reportPanel && reportPanel.classList.contains('active') && typeof initReportTab === 'function') {
         initReportTab();
     }
+    var mapPanel = document.getElementById('tab-map');
     if (mapPanel && mapPanel.classList.contains('active') && typeof window.refreshMapMarkers === 'function') {
         window.refreshMapMarkers();
     }
@@ -307,12 +307,16 @@ function populateFocusAreaOptions() {
     var previous = select.value;
     select.innerHTML = '<option value="">All focus areas</option>';
 
-    var registry = window.BioData.getSiteRegistry ? (window.BioData.getSiteRegistry() || []) : [];
-    registry.forEach(function(site) {
-        if (!site || !site.name) return;
+    var options = window.BioData.getFocusAreaOptions
+        ? (window.BioData.getFocusAreaOptions() || [])
+        : (window.BioData.getFocusAreas ? (window.BioData.getFocusAreas() || []).map(function(name) {
+            return { value: name, label: name };
+        }) : []);
+    options.forEach(function(option) {
+        if (!option || !option.value) return;
         var opt = document.createElement('option');
-        opt.value = site.name;
-        opt.textContent = site.short_name || site.name;
+        opt.value = option.value;
+        opt.textContent = option.label || option.value;
         select.appendChild(opt);
     });
 
@@ -951,12 +955,6 @@ if (typeof window !== 'undefined') {
         html2 += '</div>';
         if (items.length > MAX_LISTED) {
             html2 += '<div class="map-popup-detail">+' + (items.length - MAX_LISTED) + ' more</div>';
-        }
-        // Spotting why the pile exists matters more than the pile: an imported
-        // dataset has one coordinate for the whole hotspot, so every record from it
-        // lands on the same pixel. Saying so stops the map looking broken.
-        if (places === 1 && items.every(function(item) { return item.obs.source === 'gbif'; })) {
-            html2 += '<div class="map-popup-detail">Shared GBIF/eBird hotspot coordinate, so these records sit on one point.</div>';
         }
         return html2;
     }
@@ -1651,8 +1649,8 @@ if (typeof window !== 'undefined') {
 
 })();
 
-//  REPORT TAB + GRAPHS TAB
-//  Reuses getAnalyticsFilteredData() so reports and graphs honour the same
+//  REPORT TAB
+//  Reuses getAnalyticsFilteredData() so the report honours the same
 //  date/focus-area/status/species filters as the table. Pending and Flagged
 //  records are excluded: the verified-data rule.
 
@@ -1691,9 +1689,21 @@ function enrichWithRegistryIds(obsList) {
   });
 }
 
-// Default rolling window (months) for charts and the report when no From/To
-// filter is set. Mirrors the dashboard's rolling "This Week" chart so the default
-// view shows recent data instead of every year on record.
+// Reports are scoped to the two supported focus areas. Historical park-section
+// rows remain available for audit history, but they are not current reporting
+// areas and must not appear in summaries or exports.
+function getScopedFocusAreaSites() {
+  var BioData = window.BioData;
+  if (BioData && BioData.getFocusAreaSites) return BioData.getFocusAreaSites() || [];
+  var registry = (BioData && BioData.getSiteRegistry) ? (BioData.getSiteRegistry() || []) : [];
+  return registry.filter(function(site) {
+    if (!site || site.active === false) return false;
+    return /nature park|campus|copperbelt university/i.test(site.name || '');
+  });
+}
+
+// Default rolling window (months) for the report when no From/To filter is set.
+// The default view shows recent data instead of every year on record.
 var DEFAULT_ROLLING_MONTHS = 36;
 
 // An explicit From/To filter wins (filterObservations already applied it);
@@ -1839,7 +1849,7 @@ function buildReportWarnings(data) {
   }).join('');
   container.innerHTML = '<p class="report-empty">Sightings are not a census.</p>' +
     '<p class="report-meta">A sighting proves an animal was present, not how many there are. The same herd recorded on five days is still one herd, so a park-wide total needs an approved, recent survey covering the whole park: an area searched with nothing found counts as zero, and an area left unsearched stays unknown.</p>' +
-    '<p class="report-meta">Use <a href="../state/state.html">Ecological State</a> for the park population and for non-persistent coupled what-if scenarios.</p>' +
+    '<p class="report-meta">Use <a href="../state/state.html">Ecosystem Scenarios</a> for transparent, non-persistent coupled species and environment scenarios.</p>' +
     (rows ? '<p class="report-meta">Configured fauna baselines:</p><ul class="report-meta">' + rows + '</ul>' : '');
 }
 
@@ -1847,7 +1857,6 @@ function buildReportHabitats(data) {
   var container = document.getElementById('reportHabitatContainer');
   if (!container) return;
 
-  // Destroy any previous chart so re-renders (filter changes) don't leak.
   if (reportHabitatChartInstance) { reportHabitatChartInstance.destroy(); reportHabitatChartInstance = null; }
 
   var map = {};
@@ -1881,137 +1890,59 @@ function buildReportHabitats(data) {
   var TOP = 12;
   var top = rows.slice(0, TOP);
   var otherRows = rows.slice(TOP);
-  var otherCount = otherRows.reduce(function(s, r) { return s + r.count; }, 0);
-
-  var HABITAT_COLORS = { 'Miombo Woodland': '#2E7D32', 'Urban': '#1565C0' };
-  var OTHER_COLOR = '#90A4AE';
-  function colorFor(h) { return HABITAT_COLORS[h] || OTHER_COLOR; }
-
-  var labels = top.map(function(r) { return r.common; });
-  var values = top.map(function(r) { return r.count; });
-  var colors = top.map(function(r) { return colorFor(r.habitat); });
-  if (otherCount > 0) {
+  var labels = top.map(function(row) { return row.common; });
+  var values = top.map(function(row) { return row.count; });
+  var colors = top.map(function(row) {
+    return row.habitat === 'Miombo Woodland' ? '#2E7D32' : (row.habitat === 'Urban' ? '#1565C0' : '#90A4AE');
+  });
+  if (otherRows.length) {
     labels.push('Other species (' + otherRows.length + ')');
-    values.push(otherCount);
-    colors.push(OTHER_COLOR);
+    values.push(otherRows.reduce(function(sum, row) { return sum + row.count; }, 0));
+    colors.push('#90A4AE');
   }
-
-  var wrapHeight = Math.max(120, labels.length * 36 + 30);
 
   var html = '';
   html += '<p class="report-habitat-summary">' + rows.length + ' species across ' + habitats.length +
     ' habitat' + (habitats.length === 1 ? '' : 's') + ' · ' + totalIndividuals +
     ' individuals. Showing the top ' + top.length +
     (otherRows.length ? '; the remaining ' + otherRows.length + ' species are combined as "Other".' : '.') + '</p>';
-
-  var legendHtml = habitats.map(function(h) {
-    return '<span class="report-habitat-legend-item"><i class="report-habitat-dot" style="background:' + colorFor(h) + '"></i>' + analyticsEscape(h) + '</span>';
-  }).join('');
-  if (otherCount > 0) {
-    legendHtml += '<span class="report-habitat-legend-item"><i class="report-habitat-dot" style="background:' + OTHER_COLOR + '"></i>Other species</span>';
+  html += '<div class="report-habitat-list" role="list">';
+  top.forEach(function(row) {
+    html += '<div class="report-habitat-row" role="listitem">' +
+      '<span><strong>' + analyticsEscape(row.common) + '</strong>' +
+      (row.scientific ? ' <em>' + analyticsEscape(row.scientific) + '</em>' : '') +
+      '</span><span>' + row.count + ' individual' + (row.count === 1 ? '' : 's') +
+      ' · ' + analyticsEscape(row.habitat) + '</span></div>';
+  });
+  if (otherRows.length) {
+    var otherCount = otherRows.reduce(function(s, r) { return s + r.count; }, 0);
+    html += '<p class="report-meta">Other species: ' + otherCount + ' individuals across ' + otherRows.length + ' records.</p>';
   }
-  html += '<div class="report-habitat-legend">' + legendHtml + '</div>';
-  html += '<div class="report-habitat-chart-wrap" style="height:' + wrapHeight + 'px"><canvas id="reportHabitatChart"></canvas></div>';
-
+  html += '<div class="report-habitat-chart-wrap" style="height:' + Math.max(120, labels.length * 36 + 30) + 'px"><canvas id="reportHabitatChart"></canvas></div>';
+  html += '</div>';
   container.innerHTML = html;
 
   if (typeof Chart === 'undefined') return;
   var canvas = document.getElementById('reportHabitatChart');
   if (!canvas) return;
-  var ctx = canvas.getContext('2d');
-
-  // Draw the count at the end of each bar so the chart is readable without
-  // hovering (Chart.js core doesn't render data labels natively).
-  var valueLabelPlugin = {
-    id: 'habitatValueLabels',
-    afterDatasetsDraw: function(chart) {
-      var c = chart.ctx;
-      c.save();
-      c.font = '600 12px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
-      c.fillStyle = '#334155';
-      c.textAlign = 'left';
-      c.textBaseline = 'middle';
-      chart.data.datasets.forEach(function(dataset, di) {
-        var meta = chart.getDatasetMeta(di);
-        meta.data.forEach(function(el, i) {
-          var val = dataset.data[i];
-          if (val == null) return;
-          c.fillText(String(val), el.x + 8, el.y);
-        });
-      });
-      c.restore();
-    }
-  };
-
-  reportHabitatChartInstance = new Chart(ctx, {
+  reportHabitatChartInstance = new Chart(canvas.getContext('2d'), {
     type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Recorded individuals',
-        data: values,
-        backgroundColor: colors,
-        borderColor: colors,
-        borderWidth: 1,
-        borderRadius: 6,
-        barPercentage: 0.6,
-        categoryPercentage: 0.85
-      }]
-    },
+    data: { labels: labels, datasets: [{ label: 'Recorded individuals', data: values, backgroundColor: colors, borderColor: colors, borderWidth: 1, borderRadius: 6 }] },
     options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          displayColors: false,
-          padding: 10,
-          titleFont: { size: 12, weight: '600' },
-          bodyFont: { size: 12 },
-          callbacks: {
-            label: function(context) {
-              var n = context.parsed.x;
-              var base = n + ' individual' + (n === 1 ? '' : 's');
-              var r = top[context.dataIndex];
-              if (r) return base + ' — ' + r.habitat + (r.scientific ? ' · ' + r.scientific : '');
-              return base + ' — combined total for the remaining species';
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          beginAtZero: true,
-          grace: '15%', // headroom for the bar-end value labels
-          grid: { color: '#eef2f6' },
-          ticks: { precision: 0, color: '#64748b', font: { size: 11 } }
-        },
-        y: {
-          grid: { display: false },
-          ticks: { color: '#334155', font: { size: 12, weight: '500' } }
-        }
-      }
-    },
-    plugins: [valueLabelPlugin]
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { grid: { display: false } } }
+    }
   });
 }
 
-/**
- * Push a "Trend line" dataset onto an array of datasets, in place.
- * Shared by the Report and Graphs trend charts.
- */
 function pushTrendLineDataset(datasets, trend) {
   if (trend.fitted && trend.fitted.length > 1) {
     datasets.push({
       label: 'Trend line',
       data: trend.fitted.map(function(f) { return f.value; }),
       borderColor: trend.direction === 'declining' ? '#E53935' : '#8D6E63',
-      borderDash: [5, 5],
-      borderWidth: 2,
-      pointRadius: 0,
-      fill: false,
-      tension: 0
+      borderDash: [5, 5], borderWidth: 2, pointRadius: 0, fill: false, tension: 0
     });
   }
 }
@@ -2036,52 +1967,36 @@ function trendRecencyNote(data) {
 function buildReportTrendChart(data) {
   var canvas = document.getElementById('reportTrendChart');
   if (!canvas || typeof Chart === 'undefined') return;
-
   if (reportTrendChartInstance) { reportTrendChartInstance.destroy(); reportTrendChartInstance = null; }
 
   var select = document.getElementById('reportTrendSpecies');
   var speciesId = select ? select.value : '';
   var noteEl = document.getElementById('reportTrendNote');
-
   var trend = window.BioAnalytics.populationTrend(data, speciesId || null, null);
   var labels = trend.dataPoints.map(function(b) { return b.label; });
   var vals = trend.dataPoints.map(function(b) { return b.value; });
-
   var recencyNote = trendRecencyNote(data);
   if (trend.direction === 'insufficient_data' || vals.length < 2) {
     if (noteEl) noteEl.textContent = (trend.note || 'Insufficient data for a trend — need multiple survey periods.') + recencyNote;
-  } else {
-    if (noteEl) noteEl.textContent = trend.slope.toFixed(3) + ' / period · ' + trend.direction + ' (trend line, not a forecast)' + recencyNote;
+  } else if (noteEl) {
+    noteEl.textContent = trend.slope.toFixed(3) + ' / period · ' + trend.direction + ' (trend line, not a forecast)' + recencyNote;
   }
 
   var ctx = canvas.getContext('2d');
   var gradient = ctx.createLinearGradient(0, 0, 0, 220);
   gradient.addColorStop(0, 'rgba(46, 125, 50, 0.3)');
   gradient.addColorStop(1, 'rgba(46, 125, 50, 0.02)');
-
   var datasets = [{
-    label: 'Observed count',
-    data: vals,
-    borderColor: '#2E7D32',
-    backgroundColor: gradient,
-    fill: true,
-    tension: 0.4,
-    pointRadius: 4,
-    pointBackgroundColor: '#2E7D32'
+    label: 'Observed count', data: vals, borderColor: '#2E7D32', backgroundColor: gradient,
+    fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#2E7D32'
   }];
   pushTrendLineDataset(datasets, trend);
-
   reportTrendChartInstance = new Chart(ctx, {
-    type: 'line',
-    data: { labels: labels, datasets: datasets },
+    type: 'line', data: { labels: labels, datasets: datasets },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: datasets.length > 1 } },
-      scales: {
-        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-        x: { grid: { display: false } }
-      }
+      scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
     }
   });
 }
@@ -2094,7 +2009,7 @@ function buildReportTrendChart(data) {
 function ecosystemReportContext(data) {
   var BioData = window.BioData;
   var registry = (BioData && BioData.getSpeciesRegistry) ? BioData.getSpeciesRegistry() : [];
-  var sites = (BioData && BioData.getSiteRegistry) ? BioData.getSiteRegistry() : [];
+  var sites = getScopedFocusAreaSites();
   var ecology = (BioData && BioData.getSpeciesEcology) ? BioData.getSpeciesEcology() : {};
   var insights = window.BioAnalytics.ecosystemInsights(data, { speciesRegistry: registry, sites: sites, ecology: ecology });
 
@@ -2305,7 +2220,7 @@ function buildReportExecutiveSummary(data) {
   var n = data.length;
   var species = window.BioAnalytics.speciesRichness(data);
   var shannon = window.BioAnalytics.shannonDiversityIndex(data);
-  var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
+  var sites = getScopedFocusAreaSites();
   var siteNames = sites.map(function(s) { return s.name; }).join(' and ');
   var sents = [];
   if (n === 0) {
@@ -2326,7 +2241,7 @@ function buildReportExecutiveSummary(data) {
 }
 
 function buildReportPdfSiteRows(data) {
-  var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
+  var sites = getScopedFocusAreaSites();
   var rows = [];
   sites.forEach(function(site) {
     var series = window.BioAnalytics.siteComparisonOverTime(data, site.id);
@@ -2359,7 +2274,7 @@ function buildReportPdfHabitatRows(data) {
 }
 
 function buildReportPdfWarningRows(data) {
-  return [['Population status', 'Ecological State', 'Requires approved recent census coverage; individual sightings are not population estimates.', 'See Ecological State']];
+  return [['Population status', 'Ecosystem Scenarios', 'Requires approved recent census coverage; individual sightings are not population estimates.', 'See Ecosystem Scenarios']];
 }
 
 function buildReportEcosystemPdf(data) {
@@ -2538,20 +2453,18 @@ function exportReportPdf() {
   doc.save('zitbio-report_' + today.toISOString().split('T')[0] + '.pdf');
 }
 
-//  GRAPHS TAB
-
+// The Graphs tab remains available, but its site series are limited to the two
+// supported focus areas. Retired park-section rows never become chart datasets.
 function buildGraphsCharts(data) {
   var richnessCanvas = document.getElementById('graphRichnessChart');
   var shannonCanvas = document.getElementById('graphShannonChart');
   var trendCanvas = document.getElementById('graphTrendChart');
   if (!richnessCanvas || !shannonCanvas || !trendCanvas || typeof Chart === 'undefined') return;
-
   if (graphRichnessChartInstance) { graphRichnessChartInstance.destroy(); graphRichnessChartInstance = null; }
   if (graphShannonChartInstance) { graphShannonChartInstance.destroy(); graphShannonChartInstance = null; }
   if (graphTrendChartInstance) { graphTrendChartInstance.destroy(); graphTrendChartInstance = null; }
 
-  var sites = (window.BioData && window.BioData.getSiteRegistry) ? window.BioData.getSiteRegistry() : [];
-
+  var sites = getScopedFocusAreaSites();
   var monthSet = {};
   sites.forEach(function(site) {
     window.BioAnalytics.siteComparisonOverTime(data, site.id).forEach(function(b) { monthSet[b.month] = true; });
@@ -2561,33 +2474,20 @@ function buildGraphsCharts(data) {
   function makeLineChart(canvas, datasets, yTitle, opts) {
     opts = opts || {};
     var labels = opts.labels || months;
-    var ctx = canvas.getContext('2d');
-    return new Chart(ctx, {
-      type: 'line',
-      data: { labels: labels, datasets: datasets },
+    return new Chart(canvas.getContext('2d'), {
+      type: 'line', data: { labels: labels, datasets: datasets },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: datasets.length > 1 },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                var val = context.parsed.y;
-                if (val == null) return null;
-                return context.dataset.label + ': ' + val + (opts.tooltipUnit ? ' ' + opts.tooltipUnit : '');
-              }
-            }
-          }
+          tooltip: { callbacks: { label: function(context) {
+            var val = context.parsed.y;
+            return val == null ? null : context.dataset.label + ': ' + val + (opts.tooltipUnit ? ' ' + opts.tooltipUnit : '');
+          } } }
         },
         scales: {
-          y: {
-            beginAtZero: true,
-            title: { display: !!yTitle, text: yTitle },
-            grid: { color: '#f1f5f9' },
-            ticks: opts.integerY ? { precision: 0, stepSize: 1 } : undefined
-          },
+          y: { beginAtZero: true, title: { display: !!yTitle, text: yTitle }, grid: { color: '#f1f5f9' }, ticks: opts.integerY ? { precision: 0, stepSize: 1 } : undefined },
           x: { grid: { display: false } }
         }
       }
@@ -2601,80 +2501,44 @@ function buildGraphsCharts(data) {
     var byMonth = {};
     var color = site.id === 'site_001' ? '#2E7D32' : '#8D6E63';
     series.forEach(function(b) { byMonth[b.month] = b; });
-    richnessDatasets.push({
-      label: site.name,
-      data: months.map(function(m) { return byMonth[m] ? byMonth[m].speciesRichness : null; }),
-      borderColor: color,
-      backgroundColor: color,
-      fill: false,
-      tension: 0.3,
-      spanGaps: true,
-      borderWidth: 2,
-      pointRadius: 5,
-      pointHoverRadius: 7,
-      pointBackgroundColor: color,
-      pointBorderColor: '#ffffff',
-      pointBorderWidth: 2
-    });
-    shannonDatasets.push({
-      label: site.name,
-      data: months.map(function(m) { return byMonth[m] ? byMonth[m].shannonIndex : null; }),
-      borderColor: color,
-      backgroundColor: color,
-      fill: false,
-      tension: 0.3,
-      spanGaps: true,
-      borderWidth: 2,
-      pointRadius: 5,
-      pointHoverRadius: 7,
-      pointBackgroundColor: color,
-      pointBorderColor: '#ffffff',
-      pointBorderWidth: 2
-    });
+    var shared = {
+      label: site.short_name || site.name,
+      borderColor: color, backgroundColor: color, fill: false, tension: 0.3,
+      spanGaps: true, borderWidth: 2, pointRadius: 5, pointHoverRadius: 7,
+      pointBackgroundColor: color, pointBorderColor: '#ffffff', pointBorderWidth: 2
+    };
+    richnessDatasets.push(Object.assign({}, shared, { data: months.map(function(m) { return byMonth[m] ? byMonth[m].speciesRichness : null; }) }));
+    shannonDatasets.push(Object.assign({}, shared, { data: months.map(function(m) { return byMonth[m] ? byMonth[m].shannonIndex : null; }) }));
   });
-
   graphRichnessChartInstance = makeLineChart(richnessCanvas, richnessDatasets, 'Species', { integerY: true, tooltipUnit: 'species' });
   graphShannonChartInstance = makeLineChart(shannonCanvas, shannonDatasets, 'H\u2032');
 
-  // No per-species select here: the shared filter bar already scopes this trend.
   var trend = window.BioAnalytics.populationTrend(data, null, null);
-  var tLabels = trend.dataPoints.map(function(b) { return b.label; });
   var tDatasets = [{
-    label: 'Observed count',
-    data: trend.dataPoints.map(function(b) { return b.value; }),
-    borderColor: '#2E7D32',
-    backgroundColor: 'transparent',
-    fill: false,
-    tension: 0.3,
-    borderWidth: 2,
-    pointRadius: 5,
-    pointHoverRadius: 7,
-    pointBackgroundColor: '#2E7D32',
-    pointBorderColor: '#ffffff',
-    pointBorderWidth: 2
+    label: 'Observed count', data: trend.dataPoints.map(function(b) { return b.value; }),
+    borderColor: '#2E7D32', backgroundColor: 'transparent', fill: false,
+    tension: 0.3, borderWidth: 2, pointRadius: 5, pointHoverRadius: 7,
+    pointBackgroundColor: '#2E7D32', pointBorderColor: '#ffffff', pointBorderWidth: 2
   }];
   pushTrendLineDataset(tDatasets, trend);
-  graphTrendChartInstance = makeLineChart(trendCanvas, tDatasets, 'Count', { labels: tLabels, integerY: true, tooltipUnit: 'individuals' });
-
-  // The trend line needs at least two survey buckets.
+  graphTrendChartInstance = makeLineChart(trendCanvas, tDatasets, 'Count', {
+    labels: trend.dataPoints.map(function(b) { return b.label; }), integerY: true, tooltipUnit: 'individuals'
+  });
   var trendNoteEl = document.getElementById('graphTrendNote');
   if (trendNoteEl) {
-    var gRecencyNote = trendRecencyNote(data);
+    var note = trendRecencyNote(data);
     trendNoteEl.textContent = (trend.direction === 'insufficient_data' || !trend.fitted || trend.fitted.length < 2)
-      ? (trend.note || 'Insufficient data for a trend — need multiple survey periods.') + gRecencyNote
-      : (trend.slope.toFixed(3) + ' / period · ' + trend.direction + ' (trend line, not a forecast)') + gRecencyNote;
+      ? (trend.note || 'Insufficient data for a trend — need multiple survey periods.') + note
+      : (trend.slope.toFixed(3) + ' / period · ' + trend.direction + ' (trend line, not a forecast)') + note;
   }
 }
 
 function getGraphData() {
-    var d = typeof getAnalyticsFilteredData === 'function'
-        ? getAnalyticsFilteredData()
-        : (window.BioData ? window.BioData.getObservations() : []);
-  // Same window rule as the report: an explicit From/To wins, else the recent
-  // rolling window.
+  var d = typeof getAnalyticsFilteredData === 'function'
+    ? getAnalyticsFilteredData()
+    : (window.BioData ? window.BioData.getObservations() : []);
   d = applyAnalyticsDateWindow(d);
   d = enrichWithRegistryIds(d);
-  // Reports/graphs always use verified (Approved) data only.
   return d.filter(function(o) { return o.verification_status === 'Approved'; });
 }
 
@@ -2713,9 +2577,7 @@ function initReportTab() {
     buildReportEcosystem(data);
   }
 
-  // Populate on first mount, or retry while empty: the registry script may not
-  // have hydrated yet.
-  if (!speciesSelect || speciesSelect.options.length <= 1) populateReportSpecies();
+  if (speciesSelect.options.length <= 1) populateReportSpecies();
 
   // Re-render on every activation, but attach listeners only once: stacked
   // handlers would fire twice.
@@ -2735,8 +2597,8 @@ function initReportTab() {
   if (speciesSelect) speciesSelect.addEventListener('change', renderReport);
 }
 
-// Restoring a saved tab goes through .click(), so these listeners fire for
-// Report/Graphs on load too.
+// Restoring a saved tab goes through .click(), so this listener also fires for
+// the Report tab on load.
 (function() {
   var tabs = document.querySelectorAll('.analytics-tab');
   tabs.forEach(function(tab) {

@@ -1,16 +1,11 @@
 // ZitBio: Dashboard Page. KPI cards, recent activity and the weekly chart, all
 // fed from the BioData layer so every page reports the same numbers.
-/**
- * Shared by the initial load and the post-sync refresh so both paths stay
- * identical.
- */
 function renderDashboardStats() {
   if (!window.BioData) return;
   document.getElementById('statTotalUsers').textContent = BioData.totalUsers();
   document.getElementById('statTotalObservations').textContent = BioData.totalObservations();
   document.getElementById('statPendingReviews').textContent = BioData.pendingObservations();
   document.getElementById('statTotalIndividuals').textContent = BioData.totalIndividuals();
-
   var tbody = document.getElementById('recentActivityBody');
   if (!tbody) return;
   var html = '';
@@ -25,11 +20,7 @@ function renderDashboardStats() {
   tbody.innerHTML = html;
 }
 
-// Escapes untrusted activity fields before they reach innerHTML: species names,
-// localities and officer names are all user-entered in the field form.
-function escapeActivity(value) {
-  return window.BioEscape.escapeHtml(value);
-}
+function escapeActivity(value) { return window.BioEscape.escapeHtml(value); }
 
 function computeWeeklyWindow() {
   var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -38,33 +29,29 @@ function computeWeeklyWindow() {
   var now = new Date();
   var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   var windowDays = [];
-
   for (var i = 6; i >= 0; i--) {
     var d = new Date(today);
     d.setDate(today.getDate() - i);
     windowDays.push(d);
     labels.push(dayNames[d.getDay()]);
   }
-
   var allObs = window.BioData ? BioData.getObservations() : [];
-  if (allObs) {
-    allObs.forEach(function(obs) {
-      if (!obs.timestamp) return;
-      var ts = new Date(obs.timestamp);
-      if (isNaN(ts.getTime())) return;
-      for (var w = 0; w < windowDays.length; w++) {
-        if (ts.getFullYear() === windowDays[w].getFullYear() &&
-            ts.getMonth() === windowDays[w].getMonth() &&
-            ts.getDate() === windowDays[w].getDate()) {
-          counts[w]++;
-          break;
-        }
+  (allObs || []).forEach(function(obs) {
+    if (!obs.timestamp) return;
+    var ts = new Date(obs.timestamp);
+    if (isNaN(ts.getTime())) return;
+    for (var w = 0; w < windowDays.length; w++) {
+      if (ts.getFullYear() === windowDays[w].getFullYear() &&
+          ts.getMonth() === windowDays[w].getMonth() &&
+          ts.getDate() === windowDays[w].getDate()) {
+        counts[w]++;
+        break;
       }
-    });
-  }
-
+    }
+  });
   return { labels: labels, counts: counts };
 }
+
 document.addEventListener('DOMContentLoaded', function() {
   if (window.BioData) {
     var session = BioData.getSession();
@@ -73,19 +60,13 @@ document.addEventListener('DOMContentLoaded', function() {
       if (userNameEl) userNameEl.textContent = session.name;
     }
   }
-
   renderDashboardStats();
-
   var ctx = document.getElementById('weeklyChart');
-  if (!ctx) return;
-  if (typeof Chart === 'undefined') return;
-
+  if (!ctx || typeof Chart === 'undefined') return;
   var now = new Date();
-
   var weekly = computeWeeklyWindow();
   var labels = weekly.labels;
   var dataValues = weekly.counts;
-
   var thisWeekTotal = dataValues.reduce(function(a, b) { return a + b; }, 0);
   var priorWeekTotal = 0;
   if (window.BioData) {
@@ -95,23 +76,16 @@ document.addEventListener('DOMContentLoaded', function() {
       fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
       var sevenDaysAgo = new Date(now);
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
       allObs.forEach(function(obs) {
         if (!obs.timestamp) return;
         var d = new Date(obs.timestamp);
-        if (isNaN(d.getTime())) return;
-        if (d >= sevenDaysAgo) return;
-        if (d < fourteenDaysAgo) return;
+        if (isNaN(d.getTime()) || d >= sevenDaysAgo || d < fourteenDaysAgo) return;
         priorWeekTotal++;
       });
     }
   }
-
-  // More sightings can mean better patrol coverage, not a population change.
   var trendBadge = document.getElementById('trendBadge');
   if (trendBadge) {
-    // Absence of sightings is NOT a population decline: when nothing was
-    // recorded this week show a neutral badge instead of a false '▼ 100%'.
     if (thisWeekTotal === 0) {
       trendBadge.className = 'trend-badge flat';
       trendBadge.innerHTML = 'No sightings this week';
@@ -127,51 +101,29 @@ document.addEventListener('DOMContentLoaded', function() {
       trendBadge.innerHTML = arrow + ' ' + absPct + '% vs last week';
     }
   }
-
   var gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
   gradient.addColorStop(0, 'rgba(46, 125, 50, 0.3)');
   gradient.addColorStop(1, 'rgba(46, 125, 50, 0.02)');
-
   window.dashChart = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Observation records',
-        data: dataValues,
-        fill: true,
-        backgroundColor: gradient,
-        borderColor: '#2E7D32',
-        borderWidth: 2,
-        tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: '#2E7D32',
-        pointBorderColor: '#ffffff',
-        pointBorderWidth: 2,
-        pointHoverRadius: 6,
-        pointHoverBackgroundColor: '#2E7D32',
-        pointHoverBorderColor: '#ffffff',
-        pointHoverBorderWidth: 2
-      }]
-    },
+    data: { labels: labels, datasets: [{
+      label: 'Observation records', data: dataValues, fill: true,
+      backgroundColor: gradient, borderColor: '#2E7D32', borderWidth: 2,
+      tension: 0.4, pointRadius: 4, pointBackgroundColor: '#2E7D32',
+      pointBorderColor: '#ffffff', pointBorderWidth: 2,
+      pointHoverRadius: 6, pointHoverBackgroundColor: '#2E7D32',
+      pointHoverBorderColor: '#ffffff', pointHoverBorderWidth: 2
+    }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#ffffff',
-          titleColor: '#2C3E50',
-          bodyColor: '#7F8C8D',
-          borderColor: '#e5e7eb',
-          borderWidth: 1,
-          cornerRadius: 8,
-          padding: 10,
+          backgroundColor: '#ffffff', titleColor: '#2C3E50', bodyColor: '#7F8C8D',
+          borderColor: '#e5e7eb', borderWidth: 1, cornerRadius: 8, padding: 10,
           boxPadding: 4,
           callbacks: {
-            title: function(items) {
-              return items[0].label;
-            },
+            title: function(items) { return items[0].label; },
             label: function(item) {
               var val = item.parsed.y;
               return val + ' record' + (val !== 1 ? 's' : '');
@@ -180,40 +132,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       },
       scales: {
-        x: {
-          grid: { display: false },
-          ticks: {
-            font: { size: 12 },
-            color: '#7F8C8D'
-          }
-        },
-        y: {
-          beginAtZero: true,
-          grid: {
-            color: '#f1f5f9',
-            drawBorder: false
-          },
-          ticks: {
-            font: { size: 11 },
-            color: '#7F8C8D',
-            precision: 0
-          }
-        }
+        x: { grid: { display: false }, ticks: { font: { size: 12 }, color: '#7F8C8D' } },
+        y: { beginAtZero: true, grid: { color: '#f1f5f9', drawBorder: false }, ticks: { font: { size: 11 }, color: '#7F8C8D', precision: 0 } }
       },
-      interaction: {
-        intersect: false,
-        mode: 'index'
-      }
+      interaction: { intersect: false, mode: 'index' }
     }
   });
 });
 
-// Re-render after Supabase sync seeds cloud data.
 if (typeof window !== 'undefined') {
   window.addEventListener('biodata:synced', function() {
     renderDashboardStats();
-
-    // Update the existing chart instance in place, from the refreshed cache.
     if (window.dashChart && window.BioData) {
       var weekly = computeWeeklyWindow();
       window.dashChart.data.labels = weekly.labels;

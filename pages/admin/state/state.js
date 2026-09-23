@@ -59,7 +59,11 @@
   }
 
   function zones() {
-    return registry('site').filter(function (site) { return site && site.kind === 'zone'; });
+    // Retired section rows remain available for historical joins, but they are
+    // not part of the current operational focus-area dataset.
+    return registry('site').filter(function (site) {
+      return site && site.kind === 'zone' && site.active !== false;
+    });
   }
 
   function zoneLabel(zoneId) {

@@ -511,7 +511,7 @@ function viewRecordById(id) {
     
     var displayId = obs.observation_id ? obs.observation_id.replace('obs_', 'OBS-') : '—';
     document.getElementById('fldRecordId').textContent = displayId;
-    document.getElementById('fldRecordStatus').textContent = (obs.source === 'gbif') ? 'Imported' : 'Active';
+    document.getElementById('fldRecordStatus').textContent = 'Active';
 
     // Cancel any active edit mode, and any half-made decision, so reopening a
     // record never inherits the previous one's in-progress state.
@@ -824,6 +824,17 @@ function makeFieldsEditable(enable) {
     if (!obs) return;
     var loc = obs.location || {};
 
+    var focusAreaOptions = getFocusAreaOptions();
+    if (loc.focus_area && window.BioData && window.BioData.isFocusArea && !window.BioData.isFocusArea(loc.focus_area)) {
+        // Keep an older record's value visible without making it a new selectable
+        // focus area. Saving requires the editor to choose Nature Park or Campus.
+        focusAreaOptions.push({
+            value: loc.focus_area,
+            label: 'Legacy value: ' + loc.focus_area,
+            disabled: true
+        });
+    }
+
     var editableFields = [
         { id: 'fldPopulation', type: 'number', value: obs.count },
         { id: 'fldActivity', type: 'select', value: obs.activity || '', options: ['', 'Feeding', 'Resting', 'Moving', 'Breeding', 'Foraging', 'Vocalizing', 'Other'] },
@@ -833,7 +844,7 @@ function makeFieldsEditable(enable) {
         { id: 'fldProvince', type: 'select', value: loc.administrative_area || '', options: getProvinceOptions() },
         { id: 'fldCity', type: 'text', value: loc.city || '' },
         { id: 'fldHabitat', type: 'select', value: loc.habitat_type || '', options: getHabitatOptions() },
-        { id: 'fldProtectedArea', type: 'text', value: loc.focus_area || '' },
+        { id: 'fldProtectedArea', type: 'select', value: loc.focus_area || '', options: focusAreaOptions },
         { id: 'fldGps', type: 'text', value: formatCoords(loc.latitude, loc.longitude) },
         { id: 'fldLocality', type: 'textarea', value: loc.locality_description || '' },
         { id: 'fldFieldNotes', type: 'textarea', value: obs.field_notes || '' }
@@ -851,10 +862,13 @@ function makeFieldsEditable(enable) {
                 select.className = 'edit-select';
                 select.id = field.id + '-edit';
                 field.options.forEach(function(opt) {
+                    var optionValue = typeof opt === 'string' ? opt : opt.value;
+                    var optionLabel = typeof opt === 'string' ? (opt || 'Select...') : (opt.label || opt.value || 'Select...');
                     var optEl = document.createElement('option');
-                    optEl.value = opt;
-                    optEl.textContent = opt || 'Select...';
-                    if (opt === field.value) optEl.selected = true;
+                    optEl.value = optionValue;
+                    optEl.textContent = optionLabel;
+                    if (typeof opt === 'object' && opt.disabled) optEl.disabled = true;
+                    if (optionValue === field.value) optEl.selected = true;
                     select.appendChild(optEl);
                 });
                 el.style.display = 'none';
@@ -921,6 +935,17 @@ function getHabitatOptions() {
     var types = (window.BioData && window.BioData.HABITAT_TYPES) ||
         ['Miombo Woodland', 'Urban'];
     return [''].concat(types);
+}
+
+function getFocusAreaOptions() {
+    if (window.BioData && window.BioData.getFocusAreaOptions) {
+        return [{ value: '', label: 'Select focus area' }].concat(window.BioData.getFocusAreaOptions());
+    }
+    return [
+        { value: '', label: 'Select focus area' },
+        { value: 'The CBU Nature Park', label: 'Nature Park' },
+        { value: 'CBU Campus', label: 'Campus' }
+    ];
 }
 
 function saveChanges() {

@@ -911,11 +911,6 @@ textarea.fo-input {
   border-color: var(--color-primary);
 }
 
-.fo-zone-option--suggested {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary-light);
-}
-
 .fo-zone-option-name {
   font-size: 14px;
   font-weight: 600;

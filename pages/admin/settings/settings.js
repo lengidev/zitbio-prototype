@@ -352,7 +352,12 @@ function registryToken(value) {
 function buildRegistryModel() {
   if (!window.BioData || !window.BioData.getSpeciesRegistry) return null;
 
-  var sites = window.BioData.getSiteRegistry ? (window.BioData.getSiteRegistry() || []) : [];
+  // Baseline overrides are scoped to the two supported focus areas. The full
+  // site registry can contain legacy survey sections, but those are not part of
+  // the current dataset and must not appear as editable focus areas here.
+  var sites = window.BioData.getFocusAreaSites
+    ? (window.BioData.getFocusAreaSites() || [])
+    : (window.BioData.getSiteRegistry ? (window.BioData.getSiteRegistry() || []) : []);
   var registry = window.BioData.getSpeciesRegistry() || [];
   var verified = window.BioData.getVerifiedObservations() || [];
 
