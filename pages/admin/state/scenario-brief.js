@@ -91,6 +91,71 @@
     return 'ECO-' + stableHash(payload);
   }
 
+  function copySourceRef(source) {
+    return source ? { id: safeText(source.id), tier: safeText(source.tier), label: safeText(source.label) } : null;
+  }
+
+  function copyLeg(leg) {
+    return {
+      route: safeText(leg.route),
+      depth: Number(leg.depth || 0),
+      driver: safeText(leg.driver),
+      driverLabel: safeText(leg.driverLabel),
+      driverShort: safeText(leg.driverShort),
+      via: (leg.via || []).map(safeText),
+      why: safeText(leg.why),
+      conditions: safeText(leg.conditions),
+      source: copySourceRef(leg.source)
+    };
+  }
+
+  /*
+   * The hypotheticals are copied whole rather than re-derived, so the brief and
+   * the inspector cannot describe one state two different ways.
+   */
+  function copyHypothetical(item) {
+    return {
+      key: safeText(item.key),
+      label: safeText(item.label),
+      short: safeText(item.short || item.label),
+      state: safeText(item.state),
+      direction: safeText(item.direction || ''),
+      inherited: item.inherited ? { key: safeText(item.inherited.key), label: safeText(item.inherited.label), short: safeText(item.inherited.short || item.inherited.label) } : null,
+      camps: (item.camps || []).map(function (camp) {
+        return {
+          direction: safeText(camp.direction),
+          drivers: (camp.drivers || []).map(safeText),
+          legs: (camp.legs || []).map(copyLeg)
+        };
+      }),
+      branches: (item.branches || []).map(function (branch) {
+        return {
+          edge: safeText(branch.edge),
+          conditions: safeText(branch.conditions),
+          options: (branch.options || []).map(function (option) {
+            return {
+              when: safeText(option.when),
+              direction: safeText(option.direction),
+              because: safeText(option.because),
+              source: copySourceRef(option.source)
+            };
+          })
+        };
+      }),
+      because: (item.because || []).map(copyLeg),
+      drivers: (item.drivers || []).map(safeText),
+      holds: (item.holds || []).map(safeText),
+      settles: item.settles ? {
+        observable: safeText(item.settles.observable),
+        how: safeText(item.settles.how),
+        readings: (item.settles.readings || []).map(function (reading) {
+          return { reading: safeText(reading.reading), direction: safeText(reading.direction || ''), then: safeText(reading.then) };
+        }),
+        source: copySourceRef(item.settles.source)
+      } : null
+    };
+  }
+
   function buildSnapshot(options) {
     options = options || {};
     var result = options.result;
@@ -120,7 +185,11 @@
         trigger: safeText(item.trigger),
         action: safeText(item.action),
         rationale: safeText(item.rationale),
-        evidenceIds: (item.evidenceIds || []).map(safeText)
+        evidenceIds: (item.evidenceIds || []).map(safeText),
+        decides: safeText(item.decides || ''),
+        outcomes: (item.outcomes || []).map(function (outcome) {
+          return { when: safeText(outcome.when), direction: safeText(outcome.direction || ''), then: safeText(outcome.then || '') };
+        })
       };
     });
     if (!recommendations.length) {
@@ -190,6 +259,7 @@
         return a.depth - b.depth || a.text.localeCompare(b.text);
       }),
       recommendations: recommendations,
+      hypotheticals: (result.hypotheticals || []).map(copyHypothetical),
       unknownMagnitudes: (result.unknownMagnitudes || []).map(safeText),
       evidence: evidence,
       context: context
@@ -220,6 +290,37 @@
     if (status === 'uncertain') return 'Uncertain direction';
     if (status === 'conditional') return 'Conditional';
     return status.charAt(0).toUpperCase() + status.slice(1);
+  }
+
+  function directionPhrase(direction) {
+    if (direction === 'up' || direction === 'increases') return 'the response rises';
+    if (direction === 'down' || direction === 'decreases') return 'the response falls';
+    return 'the response does not change';
+  }
+
+  function branchPhrase(direction) {
+    if (direction === 'up') return 'it rises';
+    if (direction === 'down') return 'it falls';
+    return 'it does not change';
+  }
+
+  function lowerFirst(text) {
+    return text ? text.charAt(0).toLowerCase() + text.slice(1) : text;
+  }
+
+  function joinWords(values) {
+    if (!values || !values.length) return '';
+    if (values.length === 1) return values[0];
+    return values.slice(0, -1).join(', ') + ' and ' + values[values.length - 1];
+  }
+
+  /* Outcomes arrive structured, so the reading sentence is phrased once here and
+     the same words appear whether the reader is looking at the card or the app. */
+  function outcomeText(outcome) {
+    var when = String(outcome.when || '');
+    if (when) when = when.charAt(0).toLowerCase() + when.slice(1);
+    if (outcome.then) return 'if ' + when + ', ' + outcome.then;
+    return 'if ' + when + ', ' + directionPhrase(outcome.direction);
   }
 
   function dateTimeLabel(iso) {
@@ -382,6 +483,79 @@
       y += 5;
     }
 
+    /* A fork card is the inspector's hypothetical block in print: the worlds the
+       state allows, then the reading that would close the question. */
+    function hypothesisCard(item) {
+      var state = item.state === 'conditional' ? 'CONDITIONAL' : 'UNDECIDED';
+      var bullets = [];
+      if (item.state === 'undecided') {
+        item.camps.forEach(function (camp) {
+          var verb = camp.direction === 'increases' ? 'rises' : 'falls';
+          var leg = camp.legs[0];
+          var why = leg ? ' ' + leg.why : '';
+          /* A short name and a plain phrase keep the sentence readable; the full
+             label and the step-by-step route stay in the response table and in
+             Appendix A, where they are identifiers rather than prose. */
+          var via = leg && leg.via && leg.via.length ? ' Reaches it through ' + joinWords(leg.via.map(lowerFirst)) + '.' : '';
+          bullets.push('If ' + camp.drivers.join(' and ') + ' dominates: ' + lowerFirst(item.short) + ' ' + verb + '.' + why + via);
+        });
+        if (item.inherited) {
+          bullets.push('One question rather than several: every route passes through ' + lowerFirst(item.inherited.short) + ', so the reading that settles that settles this too.');
+        }
+      } else {
+        item.branches.forEach(function (branch) {
+          branch.options.forEach(function (option) {
+            bullets.push('If ' + option.when + ': ' + branchPhrase(option.direction) + '. ' + option.because);
+          });
+        });
+      }
+      var notes = [];
+      if (item.settles) {
+        notes.push('What would settle it: ' + item.settles.observable + '. ' + item.settles.how);
+        item.settles.readings.forEach(function (reading) {
+          notes.push(reading.reading + ': ' + reading.then + '.');
+        });
+      }
+      var headingLines = wrappedLines(item.label + '  |  ' + state, contentW - 24, 9, 'bold');
+      var bulletLines = bullets.map(function (text) { return wrappedLines(text, contentW - 46, 9, 'normal'); });
+      var noteLines = notes.map(function (text) { return wrappedLines(text, contentW - 34, 8.5, 'italic'); });
+      var height = 16 + headingLines.length * 11 + 6;
+      bulletLines.forEach(function (lines) { height += lines.length * 11 + 5; });
+      if (noteLines.length) {
+        height += 5;
+        noteLines.forEach(function (lines) { height += lines.length * 10 + 4; });
+      }
+      height += 8;
+      ensure(height + 8);
+
+      color('setFillColor', COLORS.amberPale);
+      color('setDrawColor', COLORS.line);
+      doc.roundedRect(marginX, y, contentW, height, 5, 5, 'FD');
+      color('setFillColor', COLORS.amber);
+      doc.rect(marginX, y, 3, height, 'F');
+
+      var cardY = y + 14;
+      setFont(8, 'bold', COLORS.amber);
+      doc.text(headingLines, marginX + 12, cardY);
+      cardY += headingLines.length * 11 + 5;
+      bulletLines.forEach(function (lines) {
+        color('setFillColor', COLORS.amber);
+        doc.circle(marginX + 16, cardY - 3, 1.6, 'F');
+        setFont(9, 'normal', COLORS.ink);
+        doc.text(lines, marginX + 26, cardY);
+        cardY += lines.length * 11 + 5;
+      });
+      if (noteLines.length) {
+        cardY += 2;
+        noteLines.forEach(function (lines) {
+          setFont(8.5, 'italic', COLORS.muted);
+          doc.text(lines, marginX + 16, cardY);
+          cardY += lines.length * 10 + 4;
+        });
+      }
+      y += height + 8;
+    }
+
     function recommendationCard(item, evidenceById) {
       var triggerLines = wrappedLines(item.trigger, contentW - 108, 8.5, 'bold');
       var actionLines = wrappedLines(item.action, contentW - 24, 10, 'bold');
@@ -392,7 +566,11 @@
       var evidenceLines = sourceNames.length
         ? wrappedLines('Evidence: ' + sourceNames.join('; '), contentW - 24, 8, 'normal')
         : ['Evidence: model limitation / local measurement gap'];
-      var height = 22 + triggerLines.length * 11 + actionLines.length * 13 + rationaleLines.length * 12 + evidenceLines.length * 10 + 16;
+      var decideLines = item.decides ? wrappedLines('What it decides: ' + item.decides + '.', contentW - 24, 8.5, 'italic') : [];
+      var outcomeLines = (item.outcomes || []).length
+        ? wrappedLines('Readings: ' + item.outcomes.map(outcomeText).join('; ') + '.', contentW - 24, 8, 'normal')
+        : [];
+      var height = 22 + triggerLines.length * 11 + actionLines.length * 13 + rationaleLines.length * 12 + evidenceLines.length * 10 + decideLines.length * 10 + outcomeLines.length * 10 + 16;
       ensure(height + 10);
 
       var fill = item.priority === 'high' ? COLORS.redPale : (item.priority === 'medium' ? COLORS.amberPale : COLORS.pale);
@@ -414,7 +592,17 @@
       cardY += actionLines.length * 13 + 5;
       setFont(9, 'normal', COLORS.ink);
       doc.text(rationaleLines, marginX + 14, cardY);
-      cardY += rationaleLines.length * 12 + 6;
+      cardY += rationaleLines.length * 12 + 5;
+      if (decideLines.length) {
+        setFont(8.5, 'italic', COLORS.ink);
+        doc.text(decideLines, marginX + 14, cardY);
+        cardY += decideLines.length * 10 + 3;
+      }
+      if (outcomeLines.length) {
+        setFont(8, 'normal', COLORS.ink);
+        doc.text(outcomeLines, marginX + 14, cardY);
+        cardY += outcomeLines.length * 10 + 3;
+      }
       setFont(8, 'italic', COLORS.muted);
       doc.text(evidenceLines, marginX + 14, cardY);
       y += height + 10;
@@ -488,6 +676,7 @@
       section: section,
       table: table,
       bulletList: bulletList,
+      hypothesisCard: hypothesisCard,
       recommendationCard: recommendationCard,
       pathwayCard: pathwayCard,
       sourceEntry: sourceEntry,
@@ -582,6 +771,27 @@
         [230, 130, 139]
       );
       writer.paragraph('These responses describe supported directions in the signed network. They do not quantify the size, probability or timing of change.', { size: 9, lineHeight: 13, style: 'italic', color: COLORS.muted });
+      var openForks = snapshot.hypotheticals.filter(function (item) { return item.state !== 'settled'; });
+      var settledReadings = snapshot.hypotheticals.filter(function (item) { return item.state === 'settled'; });
+      if (openForks.length) {
+        writer.paragraph('Undecided and conditional responses, and what would settle them', { size: 11, lineHeight: 15, style: 'bold', color: COLORS.ink, gap: 8 });
+        writer.paragraph('A question mark is not a missing number. It is a fork the network cannot close on its own, so each one is stated with the field reading that would close it.', { size: 9, lineHeight: 13, style: 'italic', color: COLORS.muted });
+        openForks.forEach(function (item) { writer.hypothesisCard(item); });
+      }
+      if (settledReadings.length) {
+        writer.paragraph('What would change the settled readings', { size: 11, lineHeight: 15, style: 'bold', color: COLORS.ink, gap: 8 });
+        writer.table(
+          ['Component', 'Response', 'Reads differently if'],
+          settledReadings.map(function (item) {
+            var condition = item.drivers.length
+              ? item.drivers.join(' or ') + ' moves the other way'
+              : 'an opposing influence appears';
+            if (item.branches.length) condition += '; a conditional relationship also points here';
+            return [item.label, statusLabel(item.direction), condition];
+          }),
+          [170, 96, 233]
+        );
+      }
     }
 
     writer.section('Recommended field and management actions', '03 / Decision guidance');

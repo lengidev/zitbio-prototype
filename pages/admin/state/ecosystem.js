@@ -88,6 +88,12 @@
     { key: 'impala', x: 760, y: 449, w: 126, label: 'Impala' }
   ];
 
+  /* The graph box is where a reader first meets a variable, so the inspector
+     rows use the same label they can see on the graph rather than the longer
+     register name. */
+  var NODE_LABELS = {};
+  GRAPH_NODES.forEach(function (node) { NODE_LABELS[node.key] = node.label; });
+
   var EDGE_KEYS = {};
   (model.EDGES || []).forEach(function (edge) { EDGE_KEYS[edge.from + '>' + edge.to] = true; });
 
@@ -200,9 +206,84 @@
     return effect ? effect.status : 'unchanged';
   }
 
+  /* Card copy stays in plain words: an inspector answers one variable or one
+     relationship, so it can afford to spell a state out. statusLabel() and
+     statusSymbol() stay the terse vocabulary shared by the graph, the pathway
+     list and the PDF export, which have no room to explain themselves. */
+  var PANEL_STATUS_WORDS = {
+    increases: 'Rises',
+    decreases: 'Falls',
+    uncertain: 'Direction uncertain',
+    conditional: 'Depends on a condition',
+    unchanged: 'No change in this scenario'
+  };
+
+  function panelStatusLabel(status) {
+    return PANEL_STATUS_WORDS[status] || PANEL_STATUS_WORDS.unchanged;
+  }
+
+  /* The role words in COMPONENT_META name the model's plumbing. Where a value
+     comes from is the question a reader actually has. */
+  var PANEL_ROLE_WORDS = {
+    'Scenario driver': 'Set by the season you choose',
+    'Derived variable': 'Calculated from other variables',
+    'Scenario input': 'You set this number'
+  };
+
+  function panelRoleLabel(role) {
+    return PANEL_ROLE_WORDS[role] || role;
+  }
+
+  /* The reason behind each state, so the response cell never repeats the badge
+     word sitting directly above it. */
+  var PANEL_RESPONSE_WORDS = {
+    increases: { summary: 'All active paths agree', detail: 'This variable rises in the scenario you set.' },
+    decreases: { summary: 'All active paths agree', detail: 'This variable falls in the scenario you set.' },
+    uncertain: { summary: 'Active paths disagree', detail: 'One active path raises it and one lowers it. The model cannot rank two influences without measured strengths.' },
+    conditional: { summary: 'A condition is missing', detail: 'Whether this variable rises or falls depends on a condition this scenario does not measure.' },
+    unchanged: { summary: 'Nothing moves it', detail: 'No active pathway moves this variable in the scenario you set.' }
+  };
+
+  function panelResponseWords(status) {
+    return PANEL_RESPONSE_WORDS[status] || PANEL_RESPONSE_WORDS.unchanged;
+  }
+
+  /* A relationship row carries two different facts, so both get their own
+     name: the registered claim, true in every scenario, and what the
+     relationship did in this one. */
+  function registeredDirectionWord(direction) {
+    if (direction === 'up') return 'supports';
+    if (direction === 'down') return 'reduces';
+    return 'can go either way';
+  }
+
+  function scenarioStateWord(info) {
+    if (!info) return 'not active';
+    return info.status === 'unchanged' ? 'no change passed' : 'active';
+  }
+
+  /* Shared closing cell: every qualitative card answers "how much" the same
+     way, which is also the one place the direction-only limit is stated. */
+  function howMuchHtml() {
+    return '<div><dt>How much</dt><dd>Not estimated<small>The model reports direction only: up, down, or no change.</small></dd></div>';
+  }
+
+  function nodeLabel(key) {
+    return NODE_LABELS[key] || model.COMPONENTS[key] || key;
+  }
+
+  /* "Tier C" is a provenance grade, not a confidence statement. A title keeps
+     the definition one hover away instead of spending a line of the card. */
+  function tierNote(source) {
+    if (!source) return '';
+    if (source.tier === 'A') return 'Tier A: recorded in this park or in the CBU register.';
+    if (source.tier === 'B') return 'Tier B: regional evidence from a comparable site, not this park.';
+    return 'Tier C: evidence from a comparable African system or from method literature, not measured in this park.';
+  }
+
   function sourceBadge(source) {
     if (!source) return '<span class="eco-badge eco-badge--assumption">No source attached</span>';
-    return '<span class="eco-badge">Tier ' + esc(source.tier) + ' · ' + esc(source.label) + '</span>';
+    return '<span class="eco-badge" title="' + esc(tierNote(source)) + '">Tier ' + esc(source.tier) + ' · ' + esc(source.label) + '</span>';
   }
 
   function changeMarkup(from, to) {
@@ -448,9 +529,104 @@
     return '<div class="eco-inspector-relationships">' + rows.slice(0, 6).map(function (edge) {
       var edgeKey = edgeKeyOf(edge);
       var info = result.edgeStates && result.edgeStates[edgeKey];
-      var current = info ? statusLabel(info.status) : 'Inactive in this scenario';
-      return '<button type="button" data-edge="' + esc(edgeKey) + '"><span><b>' + esc(model.COMPONENTS[edge.from] || edge.from) + '</b><i aria-hidden="true">→</i><b>' + esc(model.COMPONENTS[edge.to] || edge.to) + '</b></span><small>' + esc(current) + '</small></button>';
+      return '<button type="button" data-edge="' + esc(edgeKey) + '">' +
+        '<span><b>' + esc(nodeLabel(edge.from)) + '</b><i aria-hidden="true">→</i><b>' + esc(nodeLabel(edge.to)) + '</b></span>' +
+        '<small>Registered: ' + esc(registeredDirectionWord(edge.direction)) + ' · In this scenario: ' + esc(scenarioStateWord(info)) + '</small></button>';
     }).join('') + (rows.length > 6 ? '<p>' + (rows.length - 6) + ' more direct relationships are available in the full pathway view.</p>' : '') + '</div>';
+  }
+
+  /* A state badge says what the model concluded, but not which worlds that
+     conclusion allows. This block renders the model's hypotheticals: the two
+     directions a '?' is compatible with, or the reading that would change a
+     settled '+' or '-'. */
+  function directionWord(status) {
+    if (status === 'increases') return 'rises';
+    if (status === 'decreases') return 'falls';
+    return 'shows no change';
+  }
+
+  function branchWord(direction) {
+    if (direction === 'up') return 'it rises';
+    if (direction === 'down') return 'it falls';
+    return 'it does not change';
+  }
+
+  function sourceTag(source) {
+    return source ? '<em>' + esc(source.label) + '</em>' : '';
+  }
+
+  function lowerFirst(text) {
+    return text ? text.charAt(0).toLowerCase() + text.slice(1) : text;
+  }
+
+  function joinWords(values) {
+    if (!values || !values.length) return '';
+    if (values.length === 1) return values[0];
+    return values.slice(0, -1).join(', ') + ' and ' + values[values.length - 1];
+  }
+
+  function branchItemsHtml(branches) {
+    return (branches || []).map(function (branch) {
+      return branch.options.map(function (option) {
+        return '<li><strong>If ' + esc(option.when) + ': ' + esc(branchWord(option.direction)) + '.</strong>' +
+          '<span>' + esc(option.because) + ' ' + sourceTag(option.source) + '</span></li>';
+      }).join('');
+    }).join('');
+  }
+
+  function settleHtml(settles, settled) {
+    if (!settles) return '';
+    return '<p class="eco-hypothesis-settle"><strong>' + (settled ? 'How to check it:' : 'What would settle it:') + '</strong> ' +
+      esc(settles.observable) + '. ' + esc(settles.how) + '</p>' +
+      '<ul class="eco-hypothesis-readings">' + settles.readings.map(function (reading) {
+        return '<li>' + esc(reading.reading) + ': ' + esc(reading.then) + '.</li>';
+      }).join('') + '</ul>';
+  }
+
+  function hypotheticalHtml(key, result) {
+    var item = null;
+    ((result && result.hypotheticals) || []).forEach(function (entry) { if (entry.key === key) item = entry; });
+    if (!item) return '';
+    var html = '';
+    if (item.state === 'undecided') {
+      html += '<p class="eco-hypothesis-lead">Two active pathways point in opposite directions:</p>' +
+        '<ul class="eco-hypotheses">' + item.camps.map(function (camp) {
+          var details = camp.legs.slice(0, 2).map(function (leg) {
+            var via = leg.via && leg.via.length ? '<span>Reaches it through ' + esc(joinWords(leg.via.map(lowerFirst))) + '.</span>' : '';
+            return '<span>' + esc(leg.why) + ' ' + sourceTag(leg.source) + '</span>' + via;
+          }).join('');
+          var strength = camp.drivers.length > 1 ? ' are the stronger influences' : ' is the stronger influence';
+          return '<li><strong>If ' + esc(camp.drivers.join(' and ')) + strength + ': ' + esc(lowerFirst(item.short)) + ' ' +
+            esc(directionWord(camp.direction)) + '.</strong>' + details + '</li>';
+        }).join('') + '</ul>';
+      if (item.inherited) {
+        html += '<p class="eco-hypothesis-note">One question rather than several: every route here passes through ' +
+          esc(lowerFirst(item.inherited.short || item.inherited.label)) + ', so the reading that settles that settles this too.</p>';
+      }
+    } else if (item.state === 'conditional') {
+      html += '<p class="eco-hypothesis-lead">Two directions are possible, depending on a condition this scenario does not measure:</p>' +
+        '<ul class="eco-hypotheses">' + branchItemsHtml(item.branches) + '</ul>';
+    } else {
+      html += '<p class="eco-hypothesis-lead">What would change this reading:</p>';
+      if (item.because.length) {
+        html += '<ul class="eco-hypotheses">' + item.because.slice(0, 3).map(function (leg) {
+          return '<li><strong>' + esc(leg.driverShort) + ' <i aria-hidden="true">→</i> ' + esc(item.short) + '</strong>' +
+            '<span>' + esc(leg.why) + ' ' + sourceTag(leg.source) + '</span></li>';
+        }).join('') + '</ul>';
+      }
+      if (item.drivers.length) {
+        html += '<p class="eco-hypothesis-note">Every active pathway agrees, so this reads the other way only if ' +
+          esc(item.drivers.join(' or ')) + ' moves the other way.</p>';
+      }
+      if (item.holds.length) {
+        html += '<p class="eco-hypothesis-note">Recorded conditions and caveats: ' + esc(item.holds.join(' ')) + '</p>';
+      }
+      if (item.branches.length) {
+        html += '<p class="eco-hypothesis-lead">A conditional relationship also points here:</p>' +
+          '<ul class="eco-hypotheses">' + branchItemsHtml(item.branches) + '</ul>';
+      }
+    }
+    return html + settleHtml(item.settles, item.state === 'settled');
   }
 
   function nodePanelHtml(key, result) {
@@ -458,12 +634,18 @@
     var meta = COMPONENT_META[key] || { category: 'pressure', role: 'Model variable', unit: 'Direction only', description: '' };
     var change = speciesChange(key, result);
     var status = nodeStatus(key, result);
-    var statusText = statusLabel(status);
+    var statusText = panelStatusLabel(status);
     var values = comparisonHtml(change);
     if (key === 'rainfall') {
-      values = '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Scenario signal</dt><dd>' + esc(result.driverLabel) + '</dd></div><div><dt>Network state</dt><dd>' + esc(statusText) + '</dd></div></dl>';
+      values = '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Scenario signal</dt><dd>' + esc(result.driverLabel) + '</dd></div>' + howMuchHtml() + '</dl>';
     } else if (!change) {
-      values = '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Model response</dt><dd>' + esc(statusText) + '</dd></div><div><dt>Magnitude</dt><dd>Not quantified</dd></div></dl>';
+      var response = panelResponseWords(status);
+      /* The badge above already names the state, so these cells explain it:
+         why the model answered this way, and how far the answer goes. */
+      values = '<dl class="eco-inspector-values eco-inspector-values--two">' +
+        '<div><dt>Why</dt><dd>' + esc(response.summary) + '<small>' + esc(response.detail) + '</small></dd></div>' +
+        howMuchHtml() +
+        '</dl>';
     }
     var sources = [];
     if (change && change.source) sources.push(change.source);
@@ -473,12 +655,12 @@
     (model.EDGES || []).forEach(function (edge) {
       if ((edge.from === key || edge.to === key) && edge.source && !sources.some(function (source) { return source.id === edge.source.id; })) sources.push(edge.source);
     });
-    return '<div class="eco-inspector-head"><p>' + esc(CATEGORY_LABELS[meta.category]) + '</p><h4>' + esc(label) + '</h4><div><span class="eco-role-label">' + esc(meta.role) + '</span><span class="eco-status-text eco-status-text--' + statusClassFor(status) + '">' + esc(statusText) + '</span></div></div>' +
+    return '<div class="eco-inspector-head"><p>' + esc(CATEGORY_LABELS[meta.category]) + '</p><h4>' + esc(label) + '</h4><div><span class="eco-role-label">' + esc(panelRoleLabel(meta.role)) + '</span><span class="eco-status-text eco-status-text--' + statusClassFor(status) + '">' + esc(statusText) + '</span></div></div>' +
       values +
       '<section><h5>What this variable represents</h5><p>' + esc(meta.description) + '</p></section>' +
       ((key === 'forage' || key === 'competition') ? '<section><h5>Scenario basis</h5>' + scenarioBasisHtml(key, result, status) + '</section>' : '') +
       '<section><h5>Direct relationships</h5>' + directRelationshipsHtml(key, result) + '</section>' +
-      '<section><h5>Data &amp; interpretation</h5><p>Unit: ' + esc(meta.unit) + '. ' + (change ? 'The population comparison is exact for the values entered.' : 'The response is qualitative; no unsupported magnitude is calculated.') + '</p><div class="eco-inspector-sources">' + sources.slice(0, 3).map(sourceBadge).join('') + '</div></section>';
+      '<section><h5>Data &amp; interpretation</h5>' + (change ? '<p>The population comparison is exact for the values entered.</p>' : '') + hypotheticalHtml(key, result) + '<div class="eco-inspector-sources">' + sources.slice(0, 3).map(sourceBadge).join('') + '</div></section>';
   }
 
   function edgePanelHtml(key, result) {
@@ -487,15 +669,15 @@
     if (!edge) return '<p class="eco-empty">Relationship not found.</p>';
     var info = result.edgeStates && result.edgeStates[key];
     var status = info ? info.status : 'unchanged';
-    var direction = edge.direction === 'up' ? 'Supports' : (edge.direction === 'down' ? 'Reduces' : 'Conditional direction');
-    return '<div class="eco-inspector-head"><p>Ecological relationship</p><h4>' + esc(model.COMPONENTS[edge.from] || edge.from) + ' <span aria-hidden="true">→</span> ' + esc(model.COMPONENTS[edge.to] || edge.to) + '</h4><div><span class="eco-role-label">' + esc(direction) + '</span><span class="eco-status-text eco-status-text--' + statusClassFor(status) + '">' + esc(info ? statusLabel(status) : 'Inactive in this scenario') + '</span></div></div>' +
+    var direction = edge.direction === 'up' ? 'Supports' : (edge.direction === 'down' ? 'Reduces' : 'Can go either way');
+    return '<div class="eco-inspector-head"><p>Ecological relationship</p><h4>' + esc(model.COMPONENTS[edge.from] || edge.from) + ' <span aria-hidden="true">→</span> ' + esc(model.COMPONENTS[edge.to] || edge.to) + '</h4><div><span class="eco-role-label">' + esc(direction) + '</span><span class="eco-status-text eco-status-text--' + statusClassFor(status) + '">' + esc(info ? panelStatusLabel(status) : 'Not active in this scenario') + '</span></div></div>' +
       '<section><h5>Mechanism</h5><p>' + esc(edge.mechanism) + '</p></section>' +
       '<section><h5>Conditions</h5><p>' + esc(edge.conditions) + '</p></section>' +
       '<section><h5>Evidence</h5><div class="eco-inspector-sources">' + sourceBadge(edge.source) + '</div></section>';
   }
 
   function pathPanelHtml(path) {
-    return '<div class="eco-inspector-head"><p>Ecological pathway</p><h4>' + esc(path.text) + '</h4><div><span class="eco-role-label">' + (path.directOrIndirect === 'direct' ? 'Direct relationship' : path.depth + '-step pathway') + '</span><span class="eco-status-text eco-status-text--' + statusClassFor(path.status) + '">' + esc(statusLabel(path.status)) + '</span></div></div>' +
+    return '<div class="eco-inspector-head"><p>Ecological pathway</p><h4>' + esc(path.text) + '</h4><div><span class="eco-role-label">' + (path.directOrIndirect === 'direct' ? 'Direct relationship' : path.depth + '-step pathway') + '</span><span class="eco-status-text eco-status-text--' + statusClassFor(path.status) + '">' + esc(panelStatusLabel(path.status)) + '</span></div></div>' +
       '<section><h5>Final mechanism in this path</h5><p>' + esc(path.mechanism) + '</p></section>' +
       '<section><h5>Conditions</h5><p>' + esc(path.conditions) + '</p></section>' +
       '<section><h5>Evidence for final relationship</h5><div class="eco-inspector-sources">' + sourceBadge(path.source) + '</div></section>';
