@@ -15,15 +15,37 @@
     position: null,
     speciesDraft: null,
     rainedOn: false,
-    sending: false
+    sending: false,
+    // The walk's own measurement. `track` accumulates accepted GPS fixes, `gps`
+    // records why it might be empty, and `ticking` is the one-second clock the
+    // screens read from.
+    track: null,
+    watchId: null,
+    gps: 'idle',
+    ticking: null,
+    distanceTouched: false
   };
 
   function $(id) { return document.getElementById(id); }
 
   function pad2(n) { return n < 10 ? '0' + n : String(n); }
 
-  function minutesText(value) {
-    return value + (value === 1 ? ' minute' : ' minutes');
+  // Seconds are reported, not rounded to whole minutes. A walk that started
+  // forty seconds ago used to read "0 minutes so far", which looks like a broken
+  // clock while the officer is standing on the path.
+  function elapsedWords(seconds) {
+    if (seconds == null || seconds < 0) return '';
+    if (seconds < 60) return seconds + ' s';
+    if (seconds < 3600) return Math.floor(seconds / 60) + ' min ' + pad2(seconds % 60) + ' s';
+    return Math.floor(seconds / 3600) + ' h ' + pad2(Math.floor((seconds % 3600) / 60)) + ' min';
+  }
+
+  // Button and label text: every word starts with a capital, as the rest of the
+  // page does.
+  function titleWords(value) {
+    return String(value == null ? '' : value).split(' ').map(function (word) {
+      return word ? word.charAt(0).toUpperCase() + word.slice(1) : word;
+    }).join(' ');
   }
 
   function escapeHtml(value) {
@@ -149,21 +171,171 @@
     window.scrollTo(0, 0);
   }
 
-  function capturePosition() {
-    return new Promise(function (resolve) {
-      if (!navigator.geolocation) return resolve(null);
-      navigator.geolocation.getCurrentPosition(
-        function (pos) {
-          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
-        },
-        function () {
-          // No fix means no position. Generating one would put a fabricated
-          // measurement into the record, which is worse than an absent one.
-          resolve(null);
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
-      );
-    });
+  // The walk is measured while it is open. This page used to take one fix at the
+  // start and call it a position, which cannot say how far anybody walked, and
+  // it also asked for that fix separately from the walk itself.
+  function startTracking() {
+    state.track = Survey.createTrack();
+    state.position = null;
+    state.gps = 'idle';
+    if (!navigator.geolocation) {
+      state.gps = 'unsupported';
+      return;
+    }
+    state.watchId = navigator.geolocation.watchPosition(
+      function (fix) {
+        state.gps = 'active';
+        var result = Survey.addTrackPoint(state.track, {
+          lat: fix.coords.latitude,
+          lng: fix.coords.longitude,
+          accuracy: fix.coords.accuracy,
+          at: fix.timestamp || Date.now()
+        });
+        // The first accepted fix is the walk's position. A refused one is never
+        // used for it: a fabricated coordinate in the record is worse than an
+        // absent one.
+        if (result.added && !state.position) {
+          state.position = {
+            lat: state.track.points[state.track.points.length - 1].lat,
+            lng: state.track.points[state.track.points.length - 1].lng,
+            accuracy: fix.coords.accuracy
+          };
+        }
+        renderDistanceNote();
+        renderLiveMeta();
+      },
+      function () {
+        // Denied, or no signal. The field stays manual, and the officer is told
+        // which of those it is instead of being shown a zero.
+        state.gps = 'blocked';
+        renderDistanceNote();
+        renderLiveMeta();
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+    );
+  }
+
+  function stopTracking() {
+    if (state.watchId != null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(state.watchId);
+    }
+    state.watchId = null;
+  }
+
+  // Metres, the same unit as `surveys.distance_m`, so what the officer reads and
+  // what gets written are the same number rather than two of them.
+  function measuredMetres() {
+    return Math.round(Survey.trackDistanceM(state.track));
+  }
+
+  // How good the fixes were, not how good the walk was. Null when no accepted
+  // fix carried an accuracy at all, which is different from an accurate one.
+  function measuredAccuracyM() {
+    return Survey.trackAccuracyM(state.track);
+  }
+
+  function accuracySuffix() {
+    var accuracy = measuredAccuracyM();
+    return accuracy == null ? '' : ' (\u00b1' + accuracy + ' m)';
+  }
+
+  function distanceSegment() {
+    return measuredMetres() > 0
+      ? ' \u00b7 ' + measuredMetres() + ' m measured' + accuracySuffix()
+      : '';
+  }
+
+  function themeName() {
+    return (document.documentElement.getAttribute('data-theme') || 'light') === 'dark' ? 'dark' : 'light';
+  }
+
+  // The menu row IS the state: the switch and aria-checked both follow the
+  // palette, so the row cannot claim dark mode over a light page.
+  function renderThemeToggle() {
+    if (!el.themeToggle) return;
+    var dark = themeName() === 'dark';
+    el.themeToggle.setAttribute('aria-checked', dark ? 'true' : 'false');
+    el.themeToggle.setAttribute('aria-label', dark ? 'Dark mode is on' : 'Dark mode is off');
+  }
+
+  // The same preference, storage key and switch component the admin sidebar
+  // uses, through lib/theme-init.js, so the choice carries between pages.
+  function toggleTheme() {
+    var next = themeName() === 'dark' ? 'light' : 'dark';
+    if (window.BioTheme && typeof window.BioTheme.set === 'function') {
+      window.BioTheme.set(next);
+    } else {
+      document.documentElement.setAttribute('data-theme', next);
+    }
+    renderThemeToggle();
+  }
+
+  function elapsedSeconds() {
+    if (!state.survey) return null;
+    var start = Date.parse(state.survey.startedAt);
+    var end = state.survey.endedAt ? Date.parse(state.survey.endedAt) : Date.now();
+    if (isNaN(start) || isNaN(end)) return null;
+    return Math.max(0, Math.round((end - start) / 1000));
+  }
+
+  // One place builds the three timing lines, so the walk's clock reads the same
+  // on every screen. It is called on a one-second interval, which is what stops
+  // the figure freezing at whatever it was when the screen was drawn.
+  function renderLiveMeta() {
+    if (!state.survey) return;
+    var seconds = elapsedSeconds();
+    var line = 'Started ' + formatClock(state.survey.startedAt) +
+      (seconds == null ? '' : ' \u00b7 walking ' + elapsedWords(seconds));
+    var distance = distanceSegment();
+
+    if (el.formMeta) el.formMeta.textContent = line + distance;
+    if (el.endMeta) el.endMeta.textContent = line;
+    if (el.progressMeta) {
+      var summary = Survey.summary(state.survey);
+      var where = summary.zones
+        ? summary.zones + (summary.zones === 1 ? ' focus area' : ' focus areas')
+        : 'No focus area recorded yet';
+      var walking = seconds == null ? '' : ' \u00b7 walking ' + elapsedWords(seconds);
+      el.progressMeta.textContent = where + walking + distance + ' \u00b7 recorded by ' + state.survey.recordedBy;
+    }
+  }
+
+  function startTicking() {
+    if (state.ticking) return;
+    state.ticking = setInterval(renderLiveMeta, 1000);
+  }
+
+  function stopTicking() {
+    if (state.ticking) {
+      clearInterval(state.ticking);
+      state.ticking = null;
+    }
+  }
+
+  // Says where a distance would come from, because an empty field means two very
+  // different things: no movement, or no permission.
+  function renderDistanceNote() {
+    if (!el.distanceHelp) return;
+    var metres = measuredMetres();
+
+    if (state.gps === 'unsupported' || state.gps === 'blocked') {
+      el.distanceHelp.textContent = 'Location is off for this page, so the walk is not being measured. Type the distance in metres, or leave it empty.';
+      return;
+    }
+    if (!metres) {
+      el.distanceHelp.textContent = 'Measuring from GPS while the walk is open. Leave it empty if you would rather not.';
+      return;
+    }
+    el.distanceHelp.textContent = state.distanceTouched
+      ? 'Your figure. The walk measured ' + metres + ' m' + accuracySuffix() + '.'
+      : metres + ' m measured from GPS while the walk was open' + accuracySuffix() + '. Correct it if you know better.';
+  }
+
+  // A measured distance is offered, never imposed: the officer's own figure wins
+  // the moment they type one.
+  function prefillDistance() {
+    if (!el.endDistance || state.distanceTouched || !measuredMetres()) return;
+    el.endDistance.value = String(measuredMetres());
   }
 
   function applySessionIdentity() {
@@ -184,7 +356,7 @@
       return type.id === 'wildlife_census';
     }).map(function (type) {
       return '<button type="button" class="fo-type-btn" data-type="' + escapeHtml(type.id) + '">' +
-        '<span class="fo-type-label">' + escapeHtml(type.label) + '</span>' +
+        '<span class="fo-type-label">' + escapeHtml(titleWords(type.label)) + '</span>' +
         '<span class="fo-type-collects">' + escapeHtml(type.collects) + '</span>' +
         '</button>';
     }).join('');
@@ -310,7 +482,7 @@
         '<span class="fo-tap-name">' + labels[name] + '</span>' +
         '<span class="fo-tap-count">' + taps[name] + '</span>' +
         '<div class="fo-tap-buttons">' +
-        '<button type="button" class="fo-tap-add" data-tap-plus="' + name + '">Under my toe</button>' +
+        '<button type="button" class="fo-tap-add" data-tap-plus="' + name + '">Under My Toe</button>' +
         '<button type="button" class="fo-stepper-btn" data-tap-minus="' + name + '" aria-label="One fewer ' + labels[name] + '">−</button>' +
         '</div></div>';
     }).join('');
@@ -396,11 +568,8 @@
     if (el.progressTitle) {
       el.progressTitle.textContent = Survey.typeFor(survey.surveyType).label + ' on ' + formatDay(survey.startedAt);
     }
-    if (el.progressMeta) {
-      el.progressMeta.textContent = summary.zones
-        ? summary.zones + (summary.zones === 1 ? ' focus area' : ' focus areas') + ', recorded by ' + survey.recordedBy
-        : 'No focus area recorded yet.';
-    }
+    // The clock and the measured distance live in one place, and tick.
+    renderLiveMeta();
 
     el.zoneList.innerHTML = survey.zones.map(function (zone) {
       var lines = '';
@@ -458,10 +627,9 @@
       // Measured from now, not from `endedAt`: the survey is still open at this
       // point, so reading the end time gave a blank where the officer most wants
       // to know how long they have been out.
-      var startedMs = Date.parse(state.survey.startedAt);
-      var soFar = isNaN(startedMs) ? null : Math.round((Date.now() - startedMs) / 60000);
-      el.endMeta.textContent = 'Started ' + formatClock(state.survey.startedAt) +
-        (soFar == null ? '' : ', ' + minutesText(soFar) + ' so far');
+      prefillDistance();
+      renderDistanceNote();
+      renderLiveMeta();
     }
 
     parts.push('<p>Focus area: ' + (summary.zones
@@ -564,7 +732,7 @@
         '<label class="fo-checkbox"><input type="checkbox" id="draftAbsent"> I searched and saw none</label>' +
         '<span class="fo-helper">A zone you searched and found empty is recorded as none seen, which is a different fact from leaving it out.</span>';
     }
-    if (el.btnConfirmYes) el.btnConfirmYes.textContent = 'Record it';
+    if (el.btnConfirmYes) el.btnConfirmYes.textContent = 'Record It';
     if (el.btnConfirmNo) el.btnConfirmNo.textContent = 'Cancel';
     el.confirmDialog.setAttribute('data-mode', 'count');
     if (typeof el.confirmDialog.showModal === 'function') el.confirmDialog.showModal();
@@ -738,10 +906,27 @@
     var where = survey.zones.map(function (zone) { return zoneLabel(zone.zoneId); }).join(' and ') || 'no zone';
     var what = Survey.typeFor(survey.surveyType).label.toLowerCase();
 
+    var typed = el.endDistance ? String(el.endDistance.value).trim() : '';
+    var distanceM = null;
+    var distanceAccuracyM = null;
+    if (typed !== '') {
+      var metres = parseFloat(typed);
+      if (!isFinite(metres) || metres < 0) {
+        showToast('Distance must be a number of metres, or left empty.', 'error');
+        return;
+      }
+      // The field and `surveys.distance_m` are both metres, so this is a straight
+      // read. The accuracy travels with the figure only while the figure is the
+      // GPS one: a typed number is the officer's, not the satellite's.
+      distanceM = Math.round(metres);
+      distanceAccuracyM = state.distanceTouched ? null : Survey.trackAccuracyM(state.track);
+    }
+
     try {
       Survey.endSurvey(survey, {
         endedAt: nowIso(),
-        distanceM: el.endDistance && el.endDistance.value !== '' ? el.endDistance.value : null,
+        distanceM: distanceM,
+        distanceAccuracyM: distanceAccuracyM,
         rainfallOfficerFlag: state.rainedOn
       });
     } catch (err) {
@@ -760,11 +945,14 @@
 
     state.sending = true;
     window.BioSync.submitSurvey(buildPayload()).then(function () {
+      // The walk is written, so nothing about it is still being measured.
+      stopTracking();
+      stopTicking();
       if (el.doneTitle) el.doneTitle.textContent = 'Walk recorded';
       if (el.doneText) {
         el.doneText.textContent = 'A ' + what + ' covering ' + where + ', recorded by ' +
           survey.recordedBy + ' on ' + formatDay(survey.startedAt) +
-          (summary.durationMinutes == null ? '' : ', ' + minutesText(summary.durationMinutes)) + '.';
+          (summary.durationSeconds == null ? '' : ', ' + elapsedWords(summary.durationSeconds)) + '.';
       }
       show('screenDone');
     }).catch(function (err) {
@@ -775,7 +963,7 @@
       // Saying so was a lie in a field app where a reload is one tap away.
       showToast('The walk was not sent: ' +
         (err && err.message ? err.message : 'unknown error') +
-        '. It is still open on this screen, so try End survey again.', 'error');
+        '. It is still open on this screen, so try End Survey again.', 'error');
     });
   }
 
@@ -795,22 +983,22 @@
     state.zoneId = null;
     state.zoneSource = null;
     state.rainedOn = false;
+    state.distanceTouched = false;
+    if (el.endDistance) el.endDistance.value = '';
+    if (el.rainFlag) el.rainFlag.checked = false;
 
     var type = Survey.typeFor(surveyType);
-    if (el.formTypeTitle) el.formTypeTitle.textContent = type.label;
-    if (el.formMeta) {
-      el.formMeta.textContent = 'Started ' + formatClock(state.survey.startedAt) + ', recorded by ' + state.survey.recordedBy;
-    }
+    if (el.formTypeTitle) el.formTypeTitle.textContent = titleWords(type.label);
+
+    // Timed and measured from this moment, on every screen, for as long as the
+    // walk is open.
+    startTracking();
+    startTicking();
+    renderLiveMeta();
+    renderDistanceNote();
 
     renderZoneChip();
     openZoneForRecording();
-
-    capturePosition().then(function (position) {
-      state.position = position;
-      // A late GPS fix never chooses or changes a focus area (state.zoneId === null
-      // is only the pre-selection state). The coordinate is stored as evidence.
-      renderZoneChip();
-    });
   }
 
   function wireEvents() {
@@ -944,10 +1132,47 @@
     }
 
     if (el.rainFlag) {
-      el.rainFlag.addEventListener('click', function () {
-        state.rainedOn = !state.rainedOn;
-        setToggle(el.rainFlag, state.rainedOn, 'Rained on this walk', 'Not rained on');
+      el.rainFlag.addEventListener('change', function () {
+        state.rainedOn = !!el.rainFlag.checked;
       });
+    }
+
+    if (el.endDistance) {
+      el.endDistance.addEventListener('input', function () {
+        // Typing a figure is a decision, so the GPS reading stops being offered
+        // over the top of it.
+        state.distanceTouched = el.endDistance.value !== '';
+        renderDistanceNote();
+      });
+    }
+
+    if (el.themeToggle) {
+      el.themeToggle.addEventListener('click', toggleTheme);
+      // The shared menu wiring only knows the help and logout actions, so this
+      // row answers the keyboard itself rather than looking inert.
+      el.themeToggle.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggleTheme();
+        }
+      });
+      renderThemeToggle();
+
+      // The palette can also change from another tab, through the same storage
+      // key. A row reading "off" over a dark page is worse than no row at all,
+      // so the switch follows the shared preference rather than only its own
+      // clicks.
+      if (window.BioTheme && window.BioTheme.STORAGE_KEY) {
+        window.addEventListener('storage', function (event) {
+          if (event.key !== window.BioTheme.STORAGE_KEY) return;
+          if (event.newValue === 'dark' || event.newValue === 'light') {
+            window.BioTheme.apply(event.newValue);
+          } else {
+            window.BioTheme.apply(window.BioTheme.current());
+          }
+          renderThemeToggle();
+        });
+      }
     }
 
     if (el.btnDoneZone) el.btnDoneZone.addEventListener('click', saveZone);
@@ -955,8 +1180,11 @@
 
     if (el.btnLeaveWalk) {
       el.btnLeaveWalk.addEventListener('click', function () {
+        stopTracking();
+        stopTicking();
         state.survey = null;
         state.zoneId = null;
+        state.track = null;
         show('screenStart');
       });
     }
@@ -972,12 +1200,16 @@
 
     if (el.btnNewWalk) {
       el.btnNewWalk.addEventListener('click', function () {
+        stopTracking();
+        stopTicking();
         state.survey = null;
         state.zoneId = null;
         state.position = null;
+        state.track = null;
         state.rainedOn = false;
+        state.distanceTouched = false;
         if (el.endDistance) el.endDistance.value = '';
-        setToggle(el.rainFlag, false, 'Rained on this walk', 'Not rained on');
+        if (el.rainFlag) el.rainFlag.checked = false;
         show('screenStart');
       });
     }
@@ -1010,8 +1242,8 @@
       'waterBank', 'waterOdour', 'soilSurface', 'soilCompaction', 'soilErosion',
       'zoneNote', 'btnLeaveWalk', 'btnDoneZone', 'progressTitle', 'progressMeta',
       'zoneList', 'btnAnotherZone', 'btnEndSurvey', 'endMeta', 'endDistance',
-      'rainFlag', 'endSummary', 'btnBackToProgress', 'btnConfirmEnd',
-      'doneTitle', 'doneText', 'btnNewWalk',
+      'distanceHelp', 'rainFlag', 'endSummary', 'btnBackToProgress', 'btnConfirmEnd',
+      'doneTitle', 'doneText', 'btnNewWalk', 'themeToggle',
       'zoneDialog', 'zoneDialogText', 'zoneOptions', 'btnZoneCancel',
       'speciesDialog', 'speciesSearch', 'speciesMatches', 'escapeHatch',
       'escapeHatchText', 'btnUseTypedName', 'btnSpeciesCancel',

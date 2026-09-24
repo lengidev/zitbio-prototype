@@ -855,11 +855,39 @@ textarea.fo-input {
   gap: 8px;
   font-size: 14px;
   color: var(--color-text-main);
+  cursor: pointer;
+}
+
+.fo-checkbox input[type="checkbox"] {
+  /* The shared pattern across the app: the OS control, tinted with the theme
+     rather than replaced, so keyboard and screen-reader behaviour is untouched. */
+  accent-color: var(--color-primary);
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  flex: none;
+}
+
+/* An empty helper line is a reserved gap with no content in it. The distance
+   field is the one that fills itself in later. */
+.fo-helper:empty {
+  display: none;
 }
 
 /* Dialogs */
 
 .fo-dialog {
+  /* A <dialog> centres itself with `margin: auto`, and the global
+     `*, *::before, *::after { margin: 0 }` reset removes exactly that, so every
+     dialog in this flow opened in the top-left corner of the window instead of
+     the middle. Restating it here is the whole fix. */
+  margin: auto;
+  /* A long species list must scroll inside the dialog rather than run off the
+     bottom of the screen where its buttons are unreachable. */
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   width: min(520px, calc(100vw - 32px));
   padding: 24px;
   border: 1px solid var(--border-color);
