@@ -24,7 +24,7 @@
 <link rel="stylesheet" href="../../../components/buttons.css">
 <link rel="stylesheet" href="../../../components/forms.css">
 <link rel="stylesheet" href="../../../components/modals.css">
-    <link rel="stylesheet" href="state.css?v=20260925-7">
+    <link rel="stylesheet" href="state.css?v=20260925-13">
     <link rel="stylesheet" href="../../../components/notifications.css">
     <link rel="stylesheet" href="../../../components/toast.css">
     <link rel="stylesheet" href="../../../components/user-dropdown.css">
@@ -183,7 +183,7 @@
                 <div class="content-area">
                 <div class="eco-page-header">
                     <div class="content-header">
-                        <p class="eco-kicker">Qualitative decision support</p>
+                        <p class="eco-kicker">Qualitative Decision Support</p>
                         <h2 class="page-title">Ecosystem Scenarios</h2>
                         <p class="page-subtitle">Test a working scenario, review its exact arithmetic, then trace the evidence-supported relationships that may carry change through the park.</p>
                     </div>
@@ -202,22 +202,22 @@
                 </div>
 
                 <nav class="eco-workflow" aria-label="Scenario workflow">
-                    <a href="#eco-define"><span>01</span><strong>Define scenario</strong><small>Choose conditions and populations</small></a>
-                    <a href="#eco-results"><span>02</span><strong>Review response</strong><small>Read synchronized model outputs</small></a>
-                    <a href="#eco-explore"><span>03</span><strong>Explore relationships</strong><small>Inspect variables and pathways</small></a>
+                    <a href="#eco-define"><span>01</span><strong>Define Scenario</strong><small>Choose conditions and populations</small></a>
+                    <a href="#eco-results"><span>02</span><strong>Review Response</strong><small>Read synchronized model outputs</small></a>
+                    <a href="#eco-explore"><span>03</span><strong>Explore Relationships</strong><small>Inspect variables and pathways</small></a>
                 </nav>
 
                 <main class="eco-workspace" aria-label="Ecosystem scenario model">
                     <section class="eco-section eco-section--define" id="eco-define" aria-labelledby="ecoControlsHeading">
                         <div class="eco-section-heading">
-                            <div><p class="eco-section-number">01 · Define scenario</p><h3 id="ecoControlsHeading">Working conditions</h3></div>
+                            <div><p class="eco-section-number">01 · Define Scenario</p><h3 id="ecoControlsHeading">Working Conditions</h3></div>
                             <p>Baseline values are registered reference data. Only the scenario column is editable, and changes stay in this browser session.</p>
                         </div>
 
                         <div class="eco-configuration-grid">
                             <div class="eco-condition-panel" aria-labelledby="ecoConditionsHeading">
-                                <h4 id="ecoConditionsHeading">Environment &amp; habitat</h4>
-                                <p class="eco-group-note">Season and boundary remain explicit scenario inputs. The demo measurements below resolve the resource outcomes.</p>
+                                <h4 id="ecoConditionsHeading">Environment &amp; Habitat</h4>
+                                <p class="eco-group-note">Season and boundary remain explicit scenario inputs. The measurements below resolve the resource outcomes.</p>
                                 <div class="eco-settings-row">
                                     <label class="eco-select-field" for="ecoDriver"><span>Season context</span><select id="ecoDriver"><option value="none">No separate seasonal modifier</option><option value="rainy">Rainy (Nov to Apr)</option><option value="coolDry">Cool dry (May to Aug)</option><option value="hotDry">Hot dry (Sep to Oct/Nov)</option></select><small>Season changes regrowth and water persistence; the rainfall amount below can intensify or offset it</small></label>
                                     <label class="eco-select-field" for="ecoArea"><span>Whole-park area</span><span class="eco-input-unit"><input id="ecoArea" type="number" min="0" step="0.1" value="6.6" inputmode="decimal"><b>ha</b></span><small>Prototype estimate; not a surveyed boundary</small></label>
@@ -225,59 +225,54 @@
                             </div>
 
                             <div class="eco-population-panel" aria-labelledby="ecoPopulationHeading">
-                                <div class="eco-group-heading"><div><h4 id="ecoPopulationHeading">Wildlife populations</h4><p class="eco-group-note">Registered 2023 reference compared with the working scenario.</p></div><span class="eco-live-label"><i aria-hidden="true"></i>Live calculation</span></div>
+                                <div class="eco-group-heading"><div><h4 id="ecoPopulationHeading">Wildlife Populations</h4><p class="eco-group-note">Registered 2023 reference compared with the working scenario.</p></div><span class="eco-live-label"><i aria-hidden="true"></i>Live Calculation</span></div>
                                 <div id="ecoSpeciesControls" class="eco-species-controls"></div>
                             </div>
                         </div>
 
                         <section class="eco-demo-controls" aria-labelledby="ecoDemoHeading">
-                            <div class="eco-group-heading"><div><h4 id="ecoDemoHeading">Demo evidence inputs</h4><p class="eco-group-note">Choose explicit teaching measurements. Every valid combination resolves to one component state and one management response.</p></div><span class="eco-demo-label">30-day screen</span></div>
+                            <div class="eco-group-heading"><div><h4 id="ecoDemoHeading">Site Measurements</h4><p class="eco-group-note">Choose the measurement set this scenario resolves from. Every valid combination resolves to one component state and one management response.</p></div><span class="eco-demo-label">30-day screen</span></div>
                             <div id="ecoDemoInputs" class="eco-demo-grid"></div>
                             <div id="ecoDemoAssessment" class="eco-demo-assessment" aria-live="polite"></div>
                         </section>
 
                         <section class="eco-water-controls" aria-labelledby="ecoWaterHeading">
-                            <h4 id="ecoWaterHeading">Water quality</h4>
-                            <p class="eco-group-note">Choose a published regional example, a demonstration, or enter sample readings. Blank values remain unmeasured. Changes stay in this scenario.</p>
-                            <label class="eco-select-field" for="ecoWaterSample"><span>Water sample / scenario</span><select id="ecoWaterSample"></select></label>
+                            <h4 id="ecoWaterHeading">Water Quality</h4>
+                            <p class="eco-group-note">Choose the sample this scenario screens. Its readings are displayed, blank readings stay unmeasured, and Water Access and Algal Bloom remain editable so those conditions can still be set.</p>
+                            <label class="eco-select-field" for="ecoWaterSample"><span>Water Sample</span><select id="ecoWaterSample"></select></label>
                             <p id="ecoWaterSource" class="eco-group-note" aria-live="polite"></p>
-                            <div id="ecoWaterReadings" class="eco-water-grid"></div>
                             <div class="eco-water-grid">
-                                <label class="eco-select-field" for="ecoWaterSite"><span>Sample site</span><input id="ecoWaterSite" type="text" maxlength="160" placeholder="Optional site / water point"></label>
-                                <label class="eco-select-field" for="ecoWaterDate"><span>Sample date</span><input id="ecoWaterDate" type="date"></label>
-                                <label class="eco-select-field" for="ecoWaterAvailability"><span>Water access</span><select id="ecoWaterAvailability"><option value="unmeasured">Not assessed</option><option value="adequate">Available at reference level</option><option value="limited">Limited access</option><option value="dry">Water point dry</option></select></label>
-                                <label class="eco-select-field" for="ecoWaterContamination"><span>Contamination indication</span><select id="ecoWaterContamination"><option value="unmeasured">Not assessed</option><option value="notObserved">No indication observed</option><option value="suspected">Suspected contamination</option></select></label>
-                                <label class="eco-select-field" for="ecoWaterBloom"><span>Algal bloom indication</span><select id="ecoWaterBloom"><option value="unmeasured">Not assessed</option><option value="notObserved">No indication observed</option><option value="suspected">Suspected bloom</option></select></label>
+                                <div id="ecoWaterReadings" class="eco-water-readings"></div>
+                                <label class="eco-select-field" for="ecoWaterAvailability"><span>Water Access</span><select id="ecoWaterAvailability"><option value="unmeasured">Not Assessed</option><option value="adequate">Enough Water</option><option value="limited">Limited Water</option><option value="dry">Water Point Dry</option></select><small>Sets how much usable water the herd has in this scenario.</small></label>
+                                <label class="eco-select-field" for="ecoWaterBloom"><span>Algal Bloom</span><select id="ecoWaterBloom"><option value="unmeasured">Not Assessed</option><option value="notObserved">No Bloom Seen</option><option value="suspected">Suspected Bloom</option></select><small>A visible bloom may make the water unsafe to drink.</small></label>
                             </div>
                             <p id="ecoWaterAssessment" class="eco-group-note" aria-live="polite"></p>
                         </section>
                         <div class="eco-scenario-footer">
                             <span id="ecoScenarioStatus" class="eco-control-status" role="status" aria-live="polite"></span>
-                            <button type="button" class="eco-button eco-button--quiet" id="ecoReset">Reset scenario</button>
+                            <button type="button" class="eco-button eco-button--quiet" id="ecoReset">Reset Scenario</button>
                         </div>
                     </section>
 
                     <section class="eco-section eco-section--results" id="eco-results" aria-labelledby="ecoSummaryHeading">
                         <div class="eco-section-heading eco-section-heading--row">
-                            <div><p class="eco-section-number">02 · Review response</p><h3 id="ecoSummaryHeading">Model response</h3><p id="ecoSummarySub"></p></div>
-                            <span class="eco-model-tag" id="ecoModelTag"></span>
+                            <div><p class="eco-section-number">02 · Review Response</p><h3 id="ecoSummaryHeading">Model Response</h3><p id="ecoSummarySub"></p></div>
                         </div>
                         <div id="ecoSummary" class="eco-summary" aria-live="polite"></div>
-                        <div id="ecoComponentResponses" class="eco-component-responses"></div>
                         <div class="eco-interpretation-grid">
-                            <section aria-labelledby="ecoUnknownHeading"><p class="eco-subsection-kicker">Interpret carefully</p><h4 id="ecoUnknownHeading">Demo assumptions &amp; limits</h4><ul id="ecoUnknowns" class="eco-list"></ul></section>
-                            <section aria-labelledby="ecoManagementHeading"><p class="eco-subsection-kicker">Use this scenario</p><h4 id="ecoManagementHeading">Decision guidance</h4><ul id="ecoManagement" class="eco-list"></ul></section>
+                            <section aria-labelledby="ecoUnknownHeading"><p class="eco-subsection-kicker">Interpret Carefully</p><h4 id="ecoUnknownHeading">Scenario Assumptions &amp; Limits</h4><ul id="ecoUnknowns" class="eco-list"></ul></section>
+                            <section aria-labelledby="ecoManagementHeading"><p class="eco-subsection-kicker">Use This Scenario</p><h4 id="ecoManagementHeading">Decision Guidance</h4><ul id="ecoManagement" class="eco-list"></ul></section>
                         </div>
                     </section>
 
                     <section class="eco-section eco-section--explore" id="eco-explore" aria-labelledby="ecoGraphHeading">
                         <div class="eco-section-heading">
-                            <div><p class="eco-section-number">03 · Explore relationships</p><h3 id="ecoGraphHeading">Coupled-system explorer</h3></div>
+                            <div><p class="eco-section-number">03 · Explore Relationships</p><h3 id="ecoGraphHeading">Coupled-System Explorer</h3></div>
                             <p>Select a variable or relationship to inspect its resolved response, mechanism, entered conditions, and evidence.</p>
                         </div>
 
                         <div class="eco-visual-key" aria-label="Diagram legend">
-                            <div class="eco-key-group"><span class="eco-key-title">Variables</span><span><i class="eco-key-swatch eco-key-swatch--environment"></i>Environment</span><span><i class="eco-key-swatch eco-key-swatch--resource"></i>Resources</span><span><i class="eco-key-swatch eco-key-swatch--pressure"></i>Interactions &amp; condition</span><span><i class="eco-key-swatch eco-key-swatch--wildlife"></i>Wildlife inputs</span></div>
+                            <div class="eco-key-group"><span class="eco-key-title">Variables</span><span><i class="eco-key-swatch eco-key-swatch--environment"></i>Environment</span><span><i class="eco-key-swatch eco-key-swatch--resource"></i>Resources</span><span><i class="eco-key-swatch eco-key-swatch--pressure"></i>Interactions &amp; Condition</span><span><i class="eco-key-swatch eco-key-swatch--wildlife"></i>Wildlife Inputs</span></div>
                             <div class="eco-key-group"><span class="eco-key-title">Relationships</span><span><i class="eco-key-line eco-key-line--up"></i>Supports</span><span><i class="eco-key-line eco-key-line--down"></i>Reduces</span><span><i class="eco-key-line eco-key-line--conditional"></i>Resolved by input</span></div>
                         </div>
 
@@ -291,16 +286,16 @@
 
                         <section class="eco-pathway-explorer" aria-labelledby="ecoPathwayHeading">
                             <div class="eco-pathway-heading">
-                                <div><p class="eco-subsection-kicker">Progressive detail</p><h4 id="ecoPathwayHeading">Related pathways</h4><p id="ecoPathwayStatus"></p></div>
+                                <div><p class="eco-subsection-kicker">Progressive Detail</p><h4 id="ecoPathwayHeading">Related Pathways</h4><p id="ecoPathwayStatus"></p></div>
                                 <div class="eco-path-tools">
-                                    <div class="eco-segmented" aria-label="Pathway scope"><button type="button" id="ecoPathScopeRelevant" class="is-active" aria-pressed="true">Relevant</button><button type="button" id="ecoPathScopeAll" aria-pressed="false">All active</button></div>
+                                    <div class="eco-segmented" aria-label="Pathway scope"><button type="button" id="ecoPathScopeRelevant" class="is-active" aria-pressed="true">Relevant</button><button type="button" id="ecoPathScopeAll" aria-pressed="false">All Active</button></div>
                                     <label class="eco-path-search"><span class="sr-only">Search active pathways</span><input id="ecoPathSearch" type="search" placeholder="Search pathways"></label>
                                 </div>
                             </div>
                             <ol id="ecoPathways" class="eco-path-list" aria-label="Active pathways"></ol>
                         </section>
 
-                        <details class="eco-evidence"><summary><span><strong>Evidence register</strong><small>Sources supporting the model relationships</small></span><span class="eco-summary-hint">Open register</span></summary><div class="eco-evidence-body"><ul id="ecoEvidence" class="eco-reference-list"></ul><p class="state-note">The full research report distinguishes park-specific, regional, analogous, and estimated evidence.</p></div></details>
+                        <details class="eco-evidence"><summary><span><strong>Evidence Register</strong><small>Sources supporting the model relationships</small></span><span class="eco-summary-hint">Open Register</span></summary><div class="eco-evidence-body"><ul id="ecoEvidence" class="eco-reference-list"></ul><p class="state-note">The full research report distinguishes park-specific, regional, analogous, and estimated evidence.</p></div></details>
                     </section>
                 </main>
 
@@ -339,13 +334,13 @@
     <script defer src="../../../lib/survey.js"></script>
      <script defer src="../../../lib/ecology.js"></script>
      <script defer src="../../../lib/capacity.js"></script>
-     <script defer src="../../../lib/water-quality.js?v=20260925-6"></script>
-     <script defer src="../../../lib/ecosystem-demo.js?v=20260925-4"></script>
-     <script defer src="../../../lib/ecosystem-model.js?v=20260925-9"></script>
+     <script defer src="../../../lib/water-quality.js?v=20260925-10"></script>
+     <script defer src="../../../lib/ecosystem-demo.js?v=20260925-7"></script>
+     <script defer src="../../../lib/ecosystem-model.js?v=20260925-12"></script>
      <script defer src="../../../pages/admin/layout/admin-layout.js"></script>
      <script defer src="state.js"></script>
-     <script defer src="scenario-brief.js?v=20260925-8"></script>
-     <script defer src="ecosystem.js?v=20260925-14"></script>
+     <script defer src="scenario-brief.js?v=20260925-12"></script>
+     <script defer src="ecosystem.js?v=20260925-20"></script>
 
 </body>
 </html>

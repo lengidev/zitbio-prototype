@@ -743,7 +743,7 @@
     writer.text(snapshot.driverLabel, marginX + 338, metaY + 36);
     writer.setY(metaY + 76);
 
-    writer.section('Scenario at a glance', '01 / Inputs');
+    writer.section('Scenario At A Glance', '01 / Inputs');
     writer.table(
       ['Measure', 'Reference', 'Scenario', 'Change'],
       [[
@@ -760,7 +760,7 @@
           : signed(snapshot.totals.densityTo - snapshot.totals.densityFrom, 2) + ' / ha'
       ], [
         'Usable-area density',
-        'Demo screen',
+        'Scenario screen',
         snapshot.totals.densityPerUsableHa == null ? 'Not available' : formatNumber(snapshot.totals.densityPerUsableHa, 2) + ' / usable ha',
         snapshot.demo ? formatNumber(snapshot.demo.metrics.usableHabitatPercent) + '% habitat' : 'Not used'
       ]],
@@ -774,7 +774,7 @@
       { size: 9.5, lineHeight: 13, color: COLORS.muted, gap: 10 }
     );
 
-    writer.section('Population inputs', 'Baseline compared with scenario');
+    writer.section('Population Inputs', 'Baseline compared with scenario');
     writer.table(
       ['Species', 'Reference', 'Scenario', 'Change', 'Percent'],
       snapshot.speciesChanges.map(function (item) {
@@ -793,10 +793,10 @@
         rainAmount: 'Seasonal rainfall total',
         rainChemistry: 'Rain chemistry'
       };
-      writer.section('Demo evidence inputs', 'Explicit teaching measurements');
-      writer.paragraph('These values resolve the model for demonstration. They are research-grounded presets, not measurements of the CBU park.', { size: 9.5, lineHeight: 14, color: COLORS.muted });
+      writer.section('Site Measurements', 'Values chosen for this scenario');
+      writer.paragraph('These values resolve the model for this scenario. They are potential park measurements chosen for the scenario, not a survey of the CBU park.', { size: 9.5, lineHeight: 14, color: COLORS.muted });
       writer.table(
-        ['Parameter', 'Selected demo value'],
+        ['Parameter', 'Selected Value'],
         [['Season context', snapshot.demo.metrics.seasonLabel]].concat(Object.keys(demoLabels).map(function (key) { return [demoLabels[key], snapshot.demo.selections[key].label]; })),
         [250, 249]
       );
@@ -818,13 +818,14 @@
 
     if (snapshot.waterQuality) {
       var water = snapshot.waterQuality;
-      writer.section('Water quality in this scenario', 'Sample and screening basis');
-      writer.paragraph(water.sampleLabel + ' | ' + water.provenance + (water.site ? ' | ' + water.site : '') + (water.sampledAt ? ' | ' + water.sampledAt : ''), { size: 9.5, lineHeight: 14 });
+      writer.section('Water Quality In This Scenario', 'Sample and screening basis');
+      writer.paragraph(water.sampleLabel + ' | ' + (water.provenanceLabel || water.provenance) + (water.site ? ' | ' + water.site : '') + (water.sampledAt ? ' | ' + water.sampledAt : ''), { size: 9.5, lineHeight: 14 });
       if (water.note) writer.paragraph(water.note, { size: 9, lineHeight: 13, color: COLORS.muted });
+      if (water.overrideNote) writer.paragraph(water.overrideNote, { size: 9, lineHeight: 13, color: COLORS.muted });
       if (water.readings.length) writer.table(['Parameter', 'Entered value', 'Unit'], water.readings.map(function (reading) { return [reading.label, String(reading.value), reading.unit]; }), [250, 125, 124]);
       writer.paragraph('Unmeasured: ' + (water.missing.length ? water.missing.join(', ') : 'none of the displayed numeric inputs') + '.', { size: 9, lineHeight: 13 });
-      var waterConditions = { unmeasured: 'not assessed', notObserved: 'no indication observed', suspected: 'suspected', adequate: 'at reference level', limited: 'limited', dry: 'water point dry' };
-      writer.paragraph('Access: ' + waterConditions[water.availability] + '. Contamination: ' + waterConditions[water.contamination] + '. Bloom: ' + waterConditions[water.bloom] + '.', { size: 9, lineHeight: 13 });
+      var waterConditions = { unmeasured: 'not assessed', notObserved: 'none seen', suspected: 'suspected' };
+      writer.paragraph('Access: ' + (water.availabilityLabel || water.availability) + '. Contamination: ' + waterConditions[water.contamination] + '. Bloom: ' + waterConditions[water.bloom] + '.', { size: 9, lineHeight: 13 });
       writer.paragraph(water.label + '. ' + water.summary, { size: 9.5, lineHeight: 14 });
       writer.paragraph(water.basis, { size: 9, lineHeight: 13, style: 'italic', color: COLORS.muted });
       writer.bulletList(water.gaps);
@@ -834,7 +835,7 @@
       writer.paragraph('Scenario conditions: ' + Object.keys(snapshot.conditions).map(function (key) { return key + ': ' + descriptions[snapshot.conditions[key]]; }).join('; ') + '.', { size: 9, lineHeight: 13 });
     }
 
-    writer.section('Ecosystem response and action', '02 / Model response');
+    writer.section('Ecosystem Response And Action', '02 / Model response');
     if (!snapshot.effects.length) {
       writer.paragraph('No pathways are active because the scenario matches the reference state and no seasonal driver is selected.', { size: 10.5, lineHeight: 15 });
     } else {
@@ -847,7 +848,7 @@
         }),
         [130, 150, 219]
       );
-      writer.paragraph(snapshot.demo ? 'Every component is resolved from the explicit demo inputs. Supporting and opposing pathways remain visible, while the measured-state rule supplies one final node state and one action.' : 'Every component receives an action. Competing pathways retain their possible outcomes; the precautionary action is not a claim that the adverse outcome will occur. Directional agreement is conditional on the entered scenario and does not quantify size, probability or timing.', { size: 9, lineHeight: 13, style: 'italic', color: COLORS.muted });
+      writer.paragraph(snapshot.demo ? 'Every component is resolved from the entered measurements. Supporting and opposing pathways remain visible, while the measured-state rule supplies one final node state and one action.' : 'Every component receives an action. Competing pathways retain their possible outcomes; the precautionary action is not a claim that the adverse outcome will occur. Directional agreement is conditional on the entered scenario and does not quantify size, probability or timing.', { size: 9, lineHeight: 13, style: 'italic', color: COLORS.muted });
       var openForks = snapshot.hypotheticals.filter(function (item) { return item.state !== 'settled'; });
       var settledReadings = snapshot.hypotheticals.filter(function (item) { return item.state === 'settled'; });
       if (openForks.length) {
@@ -871,16 +872,16 @@
       }
     }
 
-    writer.section('Recommended field and management actions', '03 / Decision guidance');
+    writer.section('Recommended Field And Management Actions', '03 / Decision guidance');
     var evidenceById = {};
     snapshot.evidence.forEach(function (source) { evidenceById[source.id] = source; });
     snapshot.recommendations.forEach(function (item) { writer.recommendationCard(item, evidenceById); });
 
-    writer.section('Interpretation limits', 'Read before acting');
+    writer.section('Interpretation Limits', 'Read before acting');
     writer.bulletList(snapshot.unknownMagnitudes);
 
     writer.ensure(170);
-    writer.section(snapshot.demo ? 'Resolved relationship register' : 'Active pathway register', 'Appendix A');
+    writer.section(snapshot.demo ? 'Resolved Relationship Register' : 'Active Pathway Register', 'Appendix A');
     if (!snapshot.pathways.length) {
       writer.paragraph('No pathways are active for this reference scenario.', { size: 10 });
     } else {
@@ -888,12 +889,12 @@
       snapshot.pathways.forEach(function (path, index) { writer.pathwayCard(path, index); });
     }
 
-    writer.section('Research evidence register', 'Appendix B');
+    writer.section('Research Evidence Register', 'Appendix B');
     writer.paragraph('The model uses local, regional, analogous and method evidence. Source tiers describe provenance, not certainty for this park. Links are included for review.', { size: 9.5, lineHeight: 14, color: COLORS.muted });
     snapshot.evidence.forEach(function (source, index) { writer.sourceEntry(source, index); });
 
-    writer.section('Method and use boundary', 'Appendix C');
-    writer.paragraph(snapshot.demo ? 'This brief is a deterministic teaching scenario. Population arithmetic and the displayed forage balance are exact for the entered demo values and stated formula. The presets are not CBU field measurements, and the forage screen is not a calibrated carrying capacity or population forecast.' : 'This brief is a snapshot of one administrator-defined scenario. Population arithmetic is exact for the entered values. Ecological responses are qualitative directions produced by an evidence-linked signed network. The report must not be read as a carrying-capacity calculation, a forecast, or proof that a response has occurred.', { size: 9.5, lineHeight: 14 });
+    writer.section('Method And Use Boundary', 'Appendix C');
+    writer.paragraph(snapshot.demo ? 'This brief is a deterministic scenario. Population arithmetic and the displayed forage balance are exact for the entered values and stated formula. The presets are potential park measurements chosen for the scenario, not a survey of the CBU park, and the forage screen is not a calibrated carrying capacity or population forecast.' : 'This brief is a snapshot of one administrator-defined scenario. Population arithmetic is exact for the entered values. Ecological responses are qualitative directions produced by an evidence-linked signed network. The report must not be read as a carrying-capacity calculation, a forecast, or proof that a response has occurred.', { size: 9.5, lineHeight: 14 });
     writer.paragraph(snapshot.demo ? 'Use the resolved response for presentation and scenario comparison. Replace each preset with repeated local measurements before using the result for a real management decision.' : 'Recommended actions prioritise measurements that can confirm or reject the active pathways. Management decisions should be revisited when field measurements, surveyed boundaries or calibrated intake and resource data become available.', { size: 9.5, lineHeight: 14 });
 
     writer.finishFooters();

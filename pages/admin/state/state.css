@@ -14,18 +14,42 @@
 .eco-demo-assessment span { font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 .eco-demo-assessment strong { display: block; margin: 7px 0 4px; color: var(--color-text-main); font-family: var(--font-mono); font-size: 15px; }
 .eco-water-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 16px 0; }
+/* The readouts are rendered into their own container so the two flag selects can
+   keep static markup, but every cell belongs to one grid. `display: contents`
+   lifts the readouts into the parent grid, which leaves Water Access and Algal
+   Bloom in the cells below Dissolved Oxygen and Turbidity, beside the reference
+   turbidity reading. */
+.eco-water-readings { display: contents; }
 .eco-water-grid input { box-sizing: border-box; width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--border-color-dark); border-radius: var(--radius-sm); color: var(--color-text-main); background: var(--color-bg-white); font: inherit; }
 .eco-water-grid input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .eco-water-grid input:invalid { border-color: var(--color-danger, #b63830); }
+/* The selected sample supplies the readings, so they are shown as values in the
+   same box the inputs used. A reading the sample does not hold is not rendered
+   at all, and a sample with no readings says so in one line. */
+.eco-water-grid .eco-readout-value {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-main);
+  background: var(--color-bg-input);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+.eco-water-grid .eco-water-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-style: italic;
+}
 .eco-model-conditions summary { cursor: pointer; font-weight: 600; }
-.eco-component-responses { margin: 20px 0; }
-.eco-component-responses caption { text-align: left; padding: 12px 0; color: var(--color-text-secondary); font-size: 12px; }
-.eco-component-responses .eco-input-table td { white-space: normal; text-align: left; vertical-align: top; }
-.eco-component-responses .eco-input-table td small { display: block; margin-top: 5px; color: var(--color-text-secondary); }
-.eco-component-responses .eco-input-table thead th { text-align: left; }
-.eco-component-responses .eco-input-table thead th:first-child { width: 24%; }
-.eco-component-responses .eco-input-table thead th:nth-child(2) { width: 26%; text-align: left; }
-.eco-component-responses .eco-input-table thead th:last-child { width: 50%; }
 .eco-response-select { border: 0; padding: 0; background: transparent; color: var(--color-primary-fg); font: inherit; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .eco-response-select:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 4px; }
 @media (max-width: 1023px) { .eco-demo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -800,16 +824,6 @@
   line-height: 1.55;
 }
 
-.eco-model-tag {
-  padding: 5px 8px;
-  color: var(--color-text-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  white-space: nowrap;
-}
-
 .eco-configuration-grid {
   display: grid;
   grid-template-columns: minmax(230px, 0.72fr) minmax(530px, 1.65fr);
@@ -848,6 +862,11 @@
 .page-state .eco-select-field {
   display: grid;
   gap: 7px;
+  /* Grid rows stretch to fill a taller neighbour, which silently inflates a
+     control: a 38px select or readout grows to 49px when the cell beside it
+     carries a note, and drops out of line with the label above it. Pack the rows
+     instead, so every control keeps its own height. */
+  align-content: start;
   color: var(--color-text-main);
   font-size: 12px;
   font-weight: 650;
@@ -1020,7 +1039,10 @@
   display: grid;
   grid-template-columns: minmax(260px, 0.72fr) minmax(520px, 1.65fr);
   gap: 36px;
-  align-items: stretch;
+  /* The metric strip is a row of small tiles, not a column of the same height as
+     the management response beside it. Stretching it turned each tile into a
+     tall empty box, so the row keeps its own content height. */
+  align-items: start;
 }
 
 .eco-outcome-lead {

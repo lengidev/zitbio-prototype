@@ -161,7 +161,7 @@ test('brief uses the same decisions and water inputs; IDs distinguish water and 
 
 test('demo defaults produce a measured-state response and an explicit forage balance', () => {
   const result = evaluate({ demo: demo.defaultInput(), waterQuality: water.sampleInput('demo-reference') });
-  assert.equal(result.modelVersion, 'cbu-demo-decision-v6');
+  assert.equal(result.modelVersion, 'cbu-scenario-decision-v7');
   assert.equal(result.decision.code, 'maintain-demo-balance');
   assert.equal(result.demo.metrics.usableHabitatHa, 6.6);
   assert.equal(result.demo.metrics.availableForageKg, 1650);

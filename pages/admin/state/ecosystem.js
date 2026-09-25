@@ -21,11 +21,11 @@
   var COMPONENT_META = {
     rainfall: {
       category: 'environment', role: 'Climate input', unit: 'mm and season',
-      description: 'An explicit demo rainfall total combined with the selected season to resolve recharge, drawdown and grass-regrowth direction. It is not a live weather measurement.'
+      description: 'An explicit rainfall total combined with the selected season to resolve recharge, drawdown and grass-regrowth direction. It is not a live weather measurement.'
     },
     rainChemistry: {
-      category: 'environment', role: 'Demo input', unit: 'pH',
-      description: 'An explicit rain-chemistry teaching value kept separate from rainfall quantity so acidic deposition cannot be mistaken for low rainfall.'
+      category: 'environment', role: 'Scenario measurement', unit: 'pH',
+      description: 'An explicit rain-chemistry value kept separate from rainfall quantity so acidic deposition cannot be mistaken for low rainfall.'
     },
     forage: {
       category: 'resource', role: 'Derived variable', unit: 'kg dry matter',
@@ -87,9 +87,9 @@
 
   var CATEGORY_LABELS = {
     environment: 'Environment',
-    resource: 'Habitat & resources',
-    pressure: 'Interactions & condition',
-    wildlife: 'Wildlife populations'
+    resource: 'Habitat & Resources',
+    pressure: 'Interactions & Condition',
+    wildlife: 'Wildlife Populations'
   };
 
   var GRAPH_NODES = [
@@ -258,7 +258,7 @@
   var PANEL_ROLE_WORDS = {
     'Scenario driver': 'Set by the season you choose',
     'Climate input': 'Set by season and rainfall',
-    'Demo input': 'You set this value',
+    'Scenario measurement': 'You set this value',
     'Derived variable': 'Calculated from other variables',
     'Scenario input': 'You set this number'
   };
@@ -300,7 +300,7 @@
   /* Shared closing cell: every qualitative card answers "how much" the same
      way, which is also the one place the direction-only limit is stated. */
   function howMuchHtml() {
-    return '<div><dt>How much</dt><dd>Not estimated<small>The model reports direction only: up, down, or no change.</small></dd></div>';
+    return '<div><dt>How Much</dt><dd>Not estimated<small>The model reports direction only: up, down, or no change.</small></dd></div>';
   }
 
   function demoMeasurementHtml(key, result) {
@@ -331,7 +331,7 @@
       primary = component.label;
       detail = 'Water-point access: ' + result.waterQuality.availability;
     }
-    return '<div><dt>Entered / calculated value</dt><dd>' + esc(primary) + '<small>' + esc(detail) + '</small></dd></div>';
+    return '<div><dt>Entered / Calculated Value</dt><dd>' + esc(primary) + '<small>' + esc(detail) + '</small></dd></div>';
   }
 
   function nodeLabel(key) {
@@ -370,16 +370,31 @@
     return '<span class="eco-change eco-change--' + cls + '"><b>' + signed(delta, 0) + '</b><small>' + (pct == null ? 'new value' : percent(pct)) + '</small></span>';
   }
 
+  /* The selected sample supplies the readings, so they are shown as values: the
+     page offers four defined sample states and no free-entry state. Water access
+     and bloom stay editable, because the model resolves those two through the
+     water and usable-water pathways. */
   function renderWaterControls() {
     if (el.waterSample) {
-      el.waterSample.innerHTML = waterModel.SAMPLES.map(function (sample) { return '<option value="' + esc(sample.id) + '">' + esc(sample.label) + '</option>'; }).join('');
+      el.waterSample.innerHTML = waterModel.SAMPLES.filter(function (sample) { return sample.selectable !== false; }).map(function (sample) { return '<option value="' + esc(sample.id) + '">' + esc(sample.label) + '</option>'; }).join('');
       el.waterSample.value = state.draft.water.sampleId;
     }
-    if (el.waterReadings) el.waterReadings.innerHTML = waterModel.FIELDS.map(function (field) {
-      return '<label class="eco-select-field" for="eco-water-' + esc(field.key) + '"><span>' + esc(field.label) + ' (' + esc(field.unit) + ')</span>' +
-        '<input id="eco-water-' + esc(field.key) + '" data-water-reading="' + esc(field.key) + '" type="number" min="' + field.min + '" max="' + field.max + '" step="any" inputmode="decimal" placeholder="Not measured" value="' + esc(state.draft.water[field.key]) + '"></label>';
-    }).join('');
-    [['waterSite', 'site'], ['waterDate', 'sampledAt'], ['waterAvailability', 'availability'], ['waterContamination', 'contamination'], ['waterBloom', 'bloom']].forEach(function (pair) {
+    /* Only readings the selected sample actually holds are shown. The scenario
+       samples carry no copper or suspended solids, and an empty "Not Measured"
+       tile for a measurement this scenario cannot use is noise. */
+    if (el.waterReadings) {
+      var held = waterModel.FIELDS.filter(function (field) {
+        var raw = state.draft.water[field.key];
+        return raw != null && String(raw).trim() !== '';
+      });
+      el.waterReadings.innerHTML = held.length
+        ? held.map(function (field) {
+          return '<div class="eco-select-field"><span>' + esc(field.label) + ' (' + esc(field.unit) + ')</span>' +
+            '<span class="eco-readout-value">' + esc(state.draft.water[field.key]) + '</span></div>';
+        }).join('')
+        : '<p class="eco-water-empty">No readings are held for this sample.</p>';
+    }
+    [['waterAvailability', 'availability'], ['waterBloom', 'bloom']].forEach(function (pair) {
       if (el[pair[0]]) el[pair[0]].value = state.draft.water[pair[1]] || '';
     });
   }
@@ -407,33 +422,20 @@
       '<div><span>Water outlook</span><strong>' + esc(result.demo.components.water.label) + '</strong><small>Season + ' + number(metrics.rainMm, 0) + ' mm + entered access</small></div>';
   }
 
+  /* Access and bloom change the model rather than the sample, so the sample keeps
+     its label and the deviation is reported beside it instead of being hidden. */
   function editWater(key, value) {
     state.draft.water[key] = value;
-    state.draft.water.sampleId = 'custom';
-    if (el.waterSample) el.waterSample.value = 'custom';
     applyScenario();
   }
 
   function renderWaterAssessment(result) {
     var water = result.waterQuality;
-    if (el.waterSource) el.waterSource.innerHTML = '<strong>' + esc(water.sampleLabel) + '</strong> · ' + esc(water.provenance) +
-      (water.site ? ' · ' + esc(water.site) : '') + (water.sampledAt ? ' · ' + esc(water.sampledAt) : '') +
-      (water.source ? ' · <a target="_blank" rel="noopener noreferrer" href="' + esc(water.source.url) + '">Published source, Appendix 9</a>' : '') +
-      (water.note ? '<br>' + esc(water.note) : '');
+    if (el.waterSource) el.waterSource.innerHTML = '<strong>' + esc(water.sampleLabel) + '</strong> · ' + esc(water.provenanceLabel || water.provenance) +
+      (water.note ? '<br>' + esc(water.note) : '') +
+      (water.overrideNote ? '<br>' + esc(water.overrideNote) : '');
     if (el.waterAssessment) el.waterAssessment.innerHTML = '<strong>' + esc(water.label) + '.</strong> ' + esc(water.summary) + '<br>' + esc(water.basis) +
       (water.gaps.length ? '<br>' + water.gaps.map(esc).join(' ') : '');
-  }
-
-  function renderComponentResponses(result) {
-    if (!el.componentResponses) return;
-    if (result.inputErrors.length) { el.componentResponses.innerHTML = ''; return; }
-    el.componentResponses.innerHTML = '<div class="eco-table-wrap"><table class="eco-input-table"><caption>' + (result.demo ? 'Resolved demo states · each result follows the entered teaching measurements' : 'Component responses · actions are separate from ecological certainty') + '</caption>' +
-      '<thead><tr><th scope="col">Component</th><th scope="col">Response</th><th scope="col">Action / basis</th></tr></thead><tbody>' + result.effects.map(function (effect) {
-        var decision = effect.decision;
-        return '<tr><th scope="row"><button type="button" class="eco-response-select" data-node="' + esc(effect.key) + '">' + esc(effect.label) + '</button></th>' +
-          '<td><strong>' + esc(decision.response) + '</strong>' + (result.demo ? '<small>One outcome resolved from the entered values</small>' : '<small>' + esc(decision.possibilities.join(' / ')) + '</small>') + '</td>' +
-          '<td>' + esc(decision.action) + '<small>' + esc(decision.basis) + '</small></td></tr>';
-      }).join('') + '</tbody></table></div>';
   }
 
   function renderSpeciesControls() {
@@ -478,8 +480,11 @@
     var populationCount = result.speciesChanges.filter(function (item) { return item.delta !== 0; }).length;
     var demoDefaults = demoModel.DEFAULTS;
     var demoCount = Object.keys(state.applied.demo || {}).filter(function (key) { return state.applied.demo[key] !== demoDefaults[key]; }).length;
+    /* A hand-set water access or bloom value is a scenario change even when the
+       sample itself is left at the reference state. */
+    var waterChanged = result.waterQuality.sampleId !== 'demo-reference' || (result.waterQuality.overrides || []).length > 0;
     var contextCount = (result.driver !== 'none' ? 1 : 0) + (Number(state.applied.area) !== Number(model.DEFAULT_AREA_HA) ? 1 : 0) +
-      (result.waterQuality.sampleId !== 'demo-reference' ? 1 : 0) + demoCount;
+      (waterChanged ? 1 : 0) + demoCount;
     return {
       total: populationCount + contextCount,
       populationCount: populationCount,
@@ -495,7 +500,6 @@
     if (el.summarySub) {
       el.summarySub.textContent = 'Synchronized with the working scenario · ' + result.driverLabel + (result.estimatedAreaHa == null ? '' : ' · ' + number(result.estimatedAreaHa, 1) + ' ha estimate');
     }
-    if (el.modelTag) el.modelTag.textContent = result.modelVersion;
     var decisionHtml = '<div class="eco-outcome-lead"><span>Management response · ' + esc(result.decision.priority) + ' priority</span><strong>' + esc(result.decision.title) +
       '</strong><p>' + esc(result.decision.action) + '</p><ul class="eco-list">' + result.decision.reasons.map(function (reason) { return '<li>' + esc(reason) + '</li>'; }).join('') + '</ul></div>';
     if (result.inputErrors.length) { el.summary.innerHTML = decisionHtml; return; }
@@ -798,10 +802,10 @@
     var values = comparisonHtml(change);
     if (key === 'rainfall') {
       values = result.demo
-        ? '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Rainfall demo</dt><dd>' + esc(number(result.demo.metrics.rainMm, 0)) + ' mm<small>' + esc(result.driverLabel) + '</small></dd></div><div><dt>Resolved outlook</dt><dd>' + esc(result.demo.components.rainfall.label) + '<small>Season and rainfall evaluated together</small></dd></div></dl>'
-        : '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Scenario signal</dt><dd>' + esc(result.driverLabel) + '</dd></div>' + howMuchHtml() + '</dl>';
+        ? '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Seasonal Rainfall</dt><dd>' + esc(number(result.demo.metrics.rainMm, 0)) + ' mm<small>' + esc(result.driverLabel) + '</small></dd></div><div><dt>Resolved Outlook</dt><dd>' + esc(result.demo.components.rainfall.label) + '<small>Season and rainfall evaluated together</small></dd></div></dl>'
+        : '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Scenario Signal</dt><dd>' + esc(result.driverLabel) + '</dd></div>' + howMuchHtml() + '</dl>';
     } else if (key === 'rainChemistry' && result.demo) {
-      values = '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Rain chemistry</dt><dd>pH ' + esc(number(result.demo.metrics.rainPh, 1)) + '<small>Explicit teaching value</small></dd></div><div><dt>Resolved state</dt><dd>' + esc(result.demo.components.rainChemistry.label) + '<small>Quantity is evaluated separately</small></dd></div></dl>';
+      values = '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Rain Chemistry</dt><dd>pH ' + esc(number(result.demo.metrics.rainPh, 1)) + '<small>Entered scenario value</small></dd></div><div><dt>Resolved State</dt><dd>' + esc(result.demo.components.rainChemistry.label) + '<small>Quantity is evaluated separately</small></dd></div></dl>';
     } else if (!change) {
       var response = panelResponseWords(status);
       /* The badge above already names the state, so these cells explain it:
@@ -827,10 +831,10 @@
     });
     return '<div class="eco-inspector-head"><p>' + esc(CATEGORY_LABELS[meta.category]) + '</p><h4>' + esc(label) + '</h4><div><span class="eco-role-label">' + esc(panelRoleLabel(meta.role)) + '</span><span class="eco-status-text eco-status-text--' + statusClassFor(status) + '">' + esc(statusText) + '</span></div></div>' +
       values +
-      '<section><h5>What this variable represents</h5><p>' + esc(meta.description) + '</p></section>' +
-      ((key === 'forage' || key === 'competition') ? '<section><h5>Scenario basis</h5>' + scenarioBasisHtml(key, result, status) + '</section>' : '') +
-      '<section><h5>Direct relationships</h5>' + directRelationshipsHtml(key, result) + '</section>' +
-      '<section><h5>Data &amp; interpretation</h5>' + (change ? '<p>The population comparison is exact for the values entered. Counts stay fixed in this scenario. <button type="button" class="eco-response-select" data-node="health">Inspect condition support for the herd</button></p>' : '') + hypotheticalHtml(key, result) + '<div class="eco-inspector-sources">' + sources.slice(0, 3).map(sourceBadge).join('') + '</div></section>';
+      '<section><h5>What This Variable Represents</h5><p>' + esc(meta.description) + '</p></section>' +
+      ((key === 'forage' || key === 'competition') ? '<section><h5>Scenario Basis</h5>' + scenarioBasisHtml(key, result, status) + '</section>' : '') +
+      '<section><h5>Direct Relationships</h5>' + directRelationshipsHtml(key, result) + '</section>' +
+      '<section><h5>Data &amp; Interpretation</h5>' + (change ? '<p>The population comparison is exact for the values entered. Counts stay fixed in this scenario. <button type="button" class="eco-response-select" data-node="health">Inspect condition support for the herd</button></p>' : '') + hypotheticalHtml(key, result) + '<div class="eco-inspector-sources">' + sources.slice(0, 3).map(sourceBadge).join('') + '</div></section>';
   }
 
   function edgePanelHtml(key, result) {
@@ -841,7 +845,7 @@
     var status = info ? info.status : 'unchanged';
     var direction = edge.direction === 'up' ? 'Supports' : (edge.direction === 'down' ? 'Reduces' : 'Resolved by entered conditions');
     return '<div class="eco-inspector-head"><p>Ecological relationship</p><h4>' + esc(model.COMPONENTS[edge.from] || edge.from) + ' <span aria-hidden="true">→</span> ' + esc(model.COMPONENTS[edge.to] || edge.to) + '</h4><div><span class="eco-role-label">' + esc(direction) + '</span><span class="eco-status-text eco-status-text--' + statusClassFor(status) + '">' + esc(info ? panelStatusLabel(status) : 'Not active in this scenario') + '</span></div></div>' +
-      (info && info.basis ? '<section><h5>This scenario</h5><p>' + esc(info.basis) + '</p></section>' : '') +
+      (info && info.basis ? '<section><h5>This Scenario</h5><p>' + esc(info.basis) + '</p></section>' : '') +
       '<section><h5>Mechanism</h5><p>' + esc(edge.mechanism) + '</p></section>' +
       '<section><h5>Conditions</h5><p>' + esc(edge.conditions) + '</p></section>' +
       '<section><h5>Evidence</h5><div class="eco-inspector-sources">' + sourceBadge(edge.source) + '</div></section>';
@@ -849,16 +853,16 @@
 
   function pathPanelHtml(path) {
     return '<div class="eco-inspector-head"><p>Ecological pathway</p><h4>' + esc(path.text) + '</h4><div><span class="eco-role-label">' + (path.directOrIndirect === 'direct' ? 'Direct relationship' : path.depth + '-step pathway') + '</span><span class="eco-status-text eco-status-text--' + statusClassFor(path.status) + '">' + esc(panelStatusLabel(path.status)) + '</span></div></div>' +
-      '<section><h5>Final mechanism in this path</h5><p>' + esc(path.mechanism) + '</p></section>' +
+      '<section><h5>Final Mechanism In This Path</h5><p>' + esc(path.mechanism) + '</p></section>' +
       '<section><h5>Conditions</h5><p>' + esc(path.conditions) + '</p></section>' +
-      '<section><h5>Evidence for final relationship</h5><div class="eco-inspector-sources">' + sourceBadge(path.source) + '</div></section>';
+      '<section><h5>Evidence For Final Relationship</h5><div class="eco-inspector-sources">' + sourceBadge(path.source) + '</div></section>';
   }
 
   function renderPanel(result) {
     if (!el.graphPanel) return;
     var selection = state.selected;
     if (!selection) {
-      el.graphPanel.innerHTML = '<div class="eco-inspector-empty"><span aria-hidden="true">◎</span><h4>Select a model variable</h4><p>Choose a variable in the network to inspect its role, current state, direct relationships, and evidence.</p></div>';
+      el.graphPanel.innerHTML = '<div class="eco-inspector-empty"><span aria-hidden="true">◎</span><h4>Select A Model Variable</h4><p>Choose a variable in the network to inspect its role, current state, direct relationships, and evidence.</p></div>';
     } else if (selection.type === 'node') {
       el.graphPanel.innerHTML = nodePanelHtml(selection.key, result);
     } else if (selection.type === 'edge') {
@@ -911,7 +915,7 @@
     if (el.pathScopeAll) {
       el.pathScopeAll.className = state.pathScope === 'all' ? 'is-active' : '';
       el.pathScopeAll.setAttribute('aria-pressed', state.pathScope === 'all' ? 'true' : 'false');
-      el.pathScopeAll.textContent = (demoRelationships ? 'All resolved' : 'All active') + (state.orderedPaths.length ? ' (' + state.orderedPaths.length + ')' : '');
+      el.pathScopeAll.textContent = (demoRelationships ? 'All Resolved' : 'All Active') + (state.orderedPaths.length ? ' (' + state.orderedPaths.length + ')' : '');
     }
     if (!visible.length) {
       el.pathways.innerHTML = '<li class="eco-empty">' + (state.orderedPaths.length ? 'No relationships match this focus and search.' : 'Change a population, season or water condition to activate a relationship.') + '</li>';
@@ -980,7 +984,6 @@
     renderSummary(result);
     renderDemoAssessment(result);
     renderWaterAssessment(result);
-    renderComponentResponses(result);
     if (el.brief) el.brief.disabled = result.inputErrors.length > 0;
     if (result.inputErrors.length) {
       state.orderedPaths = [];
@@ -1121,17 +1124,12 @@
       renderWaterControls();
       applyScenario();
     });
-    if (el.waterReadings) el.waterReadings.addEventListener('input', function (event) {
-      var key = event.target && event.target.getAttribute('data-water-reading');
-      if (key) editWater(key, event.target.value);
-    });
-    [['waterSite', 'site', 'input'], ['waterDate', 'sampledAt', 'change'], ['waterAvailability', 'availability', 'change'], ['waterContamination', 'contamination', 'change'], ['waterBloom', 'bloom', 'change']].forEach(function (pair) {
-      if (el[pair[0]]) el[pair[0]].addEventListener(pair[2], function () { editWater(pair[1], el[pair[0]].value); });
+    [['waterAvailability', 'availability'], ['waterBloom', 'bloom']].forEach(function (pair) {
+      if (el[pair[0]]) el[pair[0]].addEventListener('change', function () { editWater(pair[1], el[pair[0]].value); });
     });
     [['soilCondition', 'soil'], ['bankCondition', 'bank'], ['woodyCondition', 'woody']].forEach(function (pair) {
       if (el[pair[0]]) el[pair[0]].addEventListener('change', function () { state.draft.conditions[pair[1]] = el[pair[0]].value; applyScenario(); });
     });
-    if (el.componentResponses) el.componentResponses.addEventListener('click', selectFromEvent);
     if (el.speciesControls) {
       el.speciesControls.addEventListener('input', function (event) {
         var input = event.target;
@@ -1155,7 +1153,7 @@
       renderSpeciesControls();
       renderDemoControls();
       renderWaterControls();
-      applyScenario('Scenario reset to the evidence-backed demo defaults');
+      applyScenario('Scenario reset to the reference values');
     });
     if (el.graphWrap) {
       el.graphWrap.addEventListener('click', selectFromEvent);
@@ -1193,9 +1191,9 @@
       speciesControls: 'ecoSpeciesControls', area: 'ecoArea', driver: 'ecoDriver',
       demoInputs: 'ecoDemoInputs', demoAssessment: 'ecoDemoAssessment',
       waterSample: 'ecoWaterSample', waterReadings: 'ecoWaterReadings', waterSource: 'ecoWaterSource', waterAssessment: 'ecoWaterAssessment',
-      waterSite: 'ecoWaterSite', waterDate: 'ecoWaterDate', waterAvailability: 'ecoWaterAvailability', waterContamination: 'ecoWaterContamination', waterBloom: 'ecoWaterBloom',
-      soilCondition: 'ecoSoilCondition', bankCondition: 'ecoBankCondition', woodyCondition: 'ecoWoodyCondition', componentResponses: 'ecoComponentResponses',
-      summary: 'ecoSummary', summarySub: 'ecoSummarySub', modelTag: 'ecoModelTag',
+      waterAvailability: 'ecoWaterAvailability', waterBloom: 'ecoWaterBloom',
+      soilCondition: 'ecoSoilCondition', bankCondition: 'ecoBankCondition', woodyCondition: 'ecoWoodyCondition',
+      summary: 'ecoSummary', summarySub: 'ecoSummarySub',
       graphWrap: 'ecoGraphWrap', mobileDirectory: 'ecoMobileDirectory', graphPanel: 'ecoGraphPanel',
       pathways: 'ecoPathways', pathwayStatus: 'ecoPathwayStatus', pathScopeRelevant: 'ecoPathScopeRelevant',
       pathScopeAll: 'ecoPathScopeAll', pathSearch: 'ecoPathSearch', unknowns: 'ecoUnknowns',
