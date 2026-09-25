@@ -1,6 +1,26 @@
 /* Ecological state. A read-only surface, so there are no interactive states to
    define here; every colour comes from a token in styles/theme.css. */
 
+/* Scenario inputs and responses use the existing workspace's spacing/tokens. */
+.eco-water-controls, .eco-model-conditions { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+.eco-water-controls h4 { margin: 0 0 8px; }
+.eco-water-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 16px 0; }
+.eco-water-grid input { box-sizing: border-box; width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--border-color-dark); border-radius: var(--radius-sm); color: var(--color-text-main); background: var(--color-bg-white); font: inherit; }
+.eco-water-grid input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.eco-water-grid input:invalid { border-color: var(--color-danger, #b63830); }
+.eco-model-conditions summary { cursor: pointer; font-weight: 600; }
+.eco-component-responses { margin: 20px 0; }
+.eco-component-responses caption { text-align: left; padding: 12px 0; color: var(--color-text-secondary); font-size: 12px; }
+.eco-component-responses .eco-input-table td { white-space: normal; text-align: left; vertical-align: top; }
+.eco-component-responses .eco-input-table td small { display: block; margin-top: 5px; color: var(--color-text-secondary); }
+.eco-component-responses .eco-input-table thead th { text-align: left; }
+.eco-component-responses .eco-input-table thead th:first-child { width: 24%; }
+.eco-component-responses .eco-input-table thead th:nth-child(2) { width: 26%; text-align: left; }
+.eco-component-responses .eco-input-table thead th:last-child { width: 50%; }
+.eco-response-select { border: 0; padding: 0; background: transparent; color: var(--color-primary-fg); font: inherit; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.eco-response-select:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 4px; }
+@media (max-width: 700px) { .eco-water-grid { grid-template-columns: 1fr; } }
+
 .page-state .state-intro {
   margin-bottom: 20px;
 }

@@ -24,7 +24,7 @@
 <link rel="stylesheet" href="../../../components/buttons.css">
 <link rel="stylesheet" href="../../../components/forms.css">
 <link rel="stylesheet" href="../../../components/modals.css">
-    <link rel="stylesheet" href="state.css?v=20260923-3">
+    <link rel="stylesheet" href="state.css?v=20260924-4">
     <link rel="stylesheet" href="../../../components/notifications.css">
     <link rel="stylesheet" href="../../../components/toast.css">
     <link rel="stylesheet" href="../../../components/user-dropdown.css">
@@ -230,6 +230,31 @@
                             </div>
                         </div>
 
+                        <section class="eco-water-controls" aria-labelledby="ecoWaterHeading">
+                            <h4 id="ecoWaterHeading">Water quality</h4>
+                            <p class="eco-group-note">Choose a published regional example, a demonstration, or enter sample readings. Blank values remain unmeasured. Changes stay in this scenario.</p>
+                            <label class="eco-select-field" for="ecoWaterSample"><span>Water sample / scenario</span><select id="ecoWaterSample"></select></label>
+                            <p id="ecoWaterSource" class="eco-group-note" aria-live="polite"></p>
+                            <div id="ecoWaterReadings" class="eco-water-grid"></div>
+                            <div class="eco-water-grid">
+                                <label class="eco-select-field" for="ecoWaterSite"><span>Sample site</span><input id="ecoWaterSite" type="text" maxlength="160" placeholder="Optional site / water point"></label>
+                                <label class="eco-select-field" for="ecoWaterDate"><span>Sample date</span><input id="ecoWaterDate" type="date"></label>
+                                <label class="eco-select-field" for="ecoWaterAvailability"><span>Water access</span><select id="ecoWaterAvailability"><option value="unmeasured">Not assessed</option><option value="adequate">Available at reference level</option><option value="limited">Limited access</option><option value="dry">Water point dry</option></select></label>
+                                <label class="eco-select-field" for="ecoWaterContamination"><span>Contamination indication</span><select id="ecoWaterContamination"><option value="unmeasured">Not assessed</option><option value="notObserved">No indication observed</option><option value="suspected">Suspected contamination</option></select></label>
+                                <label class="eco-select-field" for="ecoWaterBloom"><span>Algal bloom indication</span><select id="ecoWaterBloom"><option value="unmeasured">Not assessed</option><option value="notObserved">No indication observed</option><option value="suspected">Suspected bloom</option></select></label>
+                            </div>
+                            <p id="ecoWaterAssessment" class="eco-group-note" aria-live="polite"></p>
+                        </section>
+                        <details class="eco-model-conditions">
+                            <summary>Conditions that resolve competing pathways</summary>
+                            <p class="eco-group-note">Select only conditions you can support or want to test. Unmeasured conditions retain their possible outcomes and receive a precautionary action.</p>
+                            <div class="eco-water-grid">
+                                <label class="eco-select-field" for="ecoSoilCondition"><span>Grazing / soil response</span><select id="ecoSoilCondition"><option value="unmeasured">Not measured</option><option value="exposed">Exposed ground / trampling dominates</option><option value="nutrientReturn">Cover retained / nutrient return dominates</option></select></label>
+                                <label class="eco-select-field" for="ecoBankCondition"><span>Water-point banks</span><select id="ecoBankCondition"><option value="unmeasured">Not measured</option><option value="disturbed">Disturbed and connected to water</option><option value="protected">Protected from animal disturbance</option></select></label>
+                                <label class="eco-select-field" for="ecoWoodyCondition"><span>Woody cover / grass relationship</span><select id="ecoWoodyCondition"><option value="unmeasured">Not measured</option><option value="dense">Dense cover competes with grass</option><option value="open">Open cover shelters grass</option></select></label>
+                            </div>
+                        </details>
+
                         <div class="eco-scenario-footer">
                             <span id="ecoScenarioStatus" class="eco-control-status" role="status" aria-live="polite"></span>
                             <button type="button" class="eco-button eco-button--quiet" id="ecoReset">Reset scenario</button>
@@ -242,6 +267,7 @@
                             <span class="eco-model-tag" id="ecoModelTag"></span>
                         </div>
                         <div id="ecoSummary" class="eco-summary" aria-live="polite"></div>
+                        <div id="ecoComponentResponses" class="eco-component-responses"></div>
                         <div class="eco-interpretation-grid">
                             <section aria-labelledby="ecoUnknownHeading"><p class="eco-subsection-kicker">Interpret carefully</p><h4 id="ecoUnknownHeading">What remains unknown</h4><ul id="ecoUnknowns" class="eco-list"></ul></section>
                             <section aria-labelledby="ecoManagementHeading"><p class="eco-subsection-kicker">Use this scenario</p><h4 id="ecoManagementHeading">Decision guidance</h4><ul id="ecoManagement" class="eco-list"></ul></section>
@@ -317,11 +343,12 @@
     <script defer src="../../../lib/survey.js"></script>
      <script defer src="../../../lib/ecology.js"></script>
      <script defer src="../../../lib/capacity.js"></script>
-     <script defer src="../../../lib/ecosystem-model.js?v=20260923-2"></script>
+     <script defer src="../../../lib/water-quality.js?v=20260924-4"></script>
+     <script defer src="../../../lib/ecosystem-model.js?v=20260924-4"></script>
      <script defer src="../../../pages/admin/layout/admin-layout.js"></script>
      <script defer src="state.js"></script>
-     <script defer src="scenario-brief.js?v=20260923-1"></script>
-     <script defer src="ecosystem.js?v=20260923-3"></script>
+     <script defer src="scenario-brief.js?v=20260924-4"></script>
+     <script defer src="ecosystem.js?v=20260924-4"></script>
 
 </body>
 </html>

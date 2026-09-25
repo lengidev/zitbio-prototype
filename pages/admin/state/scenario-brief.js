@@ -29,6 +29,7 @@
   };
 
   function asNumber(value) {
+    if (value == null || value === '') return null;
     var number = Number(value);
     return isFinite(number) ? number : null;
   }
@@ -86,10 +87,20 @@
       result.modelVersion || '',
       result.driver || '',
       result.estimatedAreaHa == null ? 'area:none' : 'area:' + result.estimatedAreaHa,
-      species
+      species,
+      stableJson(result.conditions || {}),
+      stableJson(result.waterQuality ? { values: result.waterQuality.values, sampleId: result.waterQuality.sampleId, provenance: result.waterQuality.provenance, site: result.waterQuality.site, sampledAt: result.waterQuality.sampledAt, contamination: result.waterQuality.contamination, bloom: result.waterQuality.bloom, availability: result.waterQuality.availability } : {})
     ].join('|');
     return 'ECO-' + stableHash(payload);
   }
+
+  function stableJson(value) {
+    if (value == null || typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return '[' + value.map(stableJson).join(',') + ']';
+    return '{' + Object.keys(value).sort().map(function (key) { return JSON.stringify(key) + ':' + stableJson(value[key]); }).join(',') + '}';
+  }
+
+  function copyData(value) { return value == null ? null : JSON.parse(JSON.stringify(value)); }
 
   function copySourceRef(source) {
     return source ? { id: safeText(source.id), tier: safeText(source.tier), label: safeText(source.label) } : null;
@@ -160,6 +171,7 @@
     options = options || {};
     var result = options.result;
     if (!result) throw new Error('A synchronized ecosystem scenario result is required.');
+    if (result.inputErrors && result.inputErrors.length) throw new Error('Correct scenario inputs before exporting a brief.');
 
     var generatedAt = options.generatedAt || new Date().toISOString();
     var defaultArea = asNumber(options.defaultAreaHa);
@@ -208,7 +220,8 @@
     var area = asNumber(result.estimatedAreaHa);
     var changedPopulationCount = speciesChanges.filter(function (item) { return item.delta !== 0; }).length;
     var changedContextCount = (result.driver && result.driver !== 'none' ? 1 : 0) +
-      (defaultArea != null && area !== defaultArea ? 1 : 0);
+      (defaultArea != null && area !== defaultArea ? 1 : 0) + (result.waterQuality && result.waterQuality.hasInput ? 1 : 0) +
+      Object.keys(result.conditions || {}).filter(function (key) { return result.conditions[key] !== 'unmeasured'; }).length;
 
     return {
       scenarioId: scenarioIdFor(result),
@@ -218,6 +231,9 @@
       modelVersion: safeText(result.modelVersion || 'Unknown model'),
       driver: safeText(result.driver || 'none'),
       driverLabel: safeText(result.driverLabel || 'No seasonal adjustment'),
+      waterQuality: copyData(result.waterQuality),
+      conditions: copyData(result.conditions),
+      decision: copyData(result.decision),
       estimatedAreaHa: area,
       defaultAreaHa: defaultArea,
       approvedObservationCount: Math.max(0, Number(options.approvedObservationCount || 0)),
@@ -238,6 +254,7 @@
           key: safeText(effect.key),
           label: safeText(effect.label),
           status: safeText(effect.status),
+          decision: copyData(effect.decision),
           direct: !!effect.direct,
           indirect: !!effect.indirect,
           hasConditionalInfluence: !!effect.hasConditionalInfluence
@@ -287,8 +304,8 @@
 
   function statusLabel(status) {
     if (!status) return 'Unchanged';
-    if (status === 'uncertain') return 'Uncertain direction';
-    if (status === 'conditional') return 'Conditional';
+    if (status === 'uncertain') return 'Competing pressures';
+    if (status === 'conditional') return 'Conditional risk';
     return status.charAt(0).toUpperCase() + status.slice(1);
   }
 
@@ -338,6 +355,7 @@
   }
 
   function summaryText(snapshot) {
+    if (snapshot.decision) return snapshot.decision.title + '. ' + snapshot.decision.action + ' ' + snapshot.decision.basis;
     var first = snapshot.changedInputCount
       ? 'This scenario changes ' + snapshot.changedInputCount + ' input' + (snapshot.changedInputCount === 1 ? '' : 's') +
         ' from the registered reference state.'
@@ -757,20 +775,38 @@
       [169, 82, 82, 82, 84]
     );
 
-    writer.section('Directional ecosystem response', '02 / Model response');
+    if (snapshot.waterQuality) {
+      var water = snapshot.waterQuality;
+      writer.section('Water quality in this scenario', 'Sample and screening basis');
+      writer.paragraph(water.sampleLabel + ' | ' + water.provenance + (water.site ? ' | ' + water.site : '') + (water.sampledAt ? ' | ' + water.sampledAt : ''), { size: 9.5, lineHeight: 14 });
+      if (water.note) writer.paragraph(water.note, { size: 9, lineHeight: 13, color: COLORS.muted });
+      if (water.readings.length) writer.table(['Parameter', 'Entered value', 'Unit'], water.readings.map(function (reading) { return [reading.label, String(reading.value), reading.unit]; }), [250, 125, 124]);
+      writer.paragraph('Unmeasured: ' + (water.missing.length ? water.missing.join(', ') : 'none of the displayed numeric inputs') + '.', { size: 9, lineHeight: 13 });
+      var waterConditions = { unmeasured: 'not assessed', notObserved: 'no indication observed', suspected: 'suspected', adequate: 'at reference level', limited: 'limited', dry: 'water point dry' };
+      writer.paragraph('Access: ' + waterConditions[water.availability] + '. Contamination: ' + waterConditions[water.contamination] + '. Bloom: ' + waterConditions[water.bloom] + '.', { size: 9, lineHeight: 13 });
+      writer.paragraph(water.label + '. ' + water.summary, { size: 9.5, lineHeight: 14 });
+      writer.paragraph(water.basis, { size: 9, lineHeight: 13, style: 'italic', color: COLORS.muted });
+      writer.bulletList(water.gaps);
+    }
+    if (snapshot.conditions) {
+      var descriptions = { unmeasured: 'not measured', exposed: 'exposed ground / trampling dominates', nutrientReturn: 'cover retained / nutrient return dominates', disturbed: 'disturbed banks connected to water', protected: 'banks protected from animal disturbance', dense: 'dense woody cover competes with grass', open: 'open woody cover shelters grass' };
+      writer.paragraph('Scenario conditions: ' + Object.keys(snapshot.conditions).map(function (key) { return key + ': ' + descriptions[snapshot.conditions[key]]; }).join('; ') + '.', { size: 9, lineHeight: 13 });
+    }
+
+    writer.section('Ecosystem response and action', '02 / Model response');
     if (!snapshot.effects.length) {
       writer.paragraph('No pathways are active because the scenario matches the reference state and no seasonal driver is selected.', { size: 10.5, lineHeight: 15 });
     } else {
       writer.table(
-        ['Component', 'Response', 'Path type'],
+        ['Component', 'Response / possible outcomes', 'Action / basis'],
         snapshot.effects.map(function (effect) {
           var pathType = effect.direct && effect.indirect ? 'Direct + indirect' : (effect.direct ? 'Direct' : 'Indirect');
           if (effect.hasConditionalInfluence) pathType += ' + conditional';
-          return [effect.label, statusLabel(effect.status), pathType];
+          return effect.decision ? [effect.label, effect.decision.response + '\n' + effect.decision.possibilities.join(' / '), effect.decision.action + '\n' + effect.decision.basis] : [effect.label, statusLabel(effect.status), pathType];
         }),
-        [230, 130, 139]
+        [130, 150, 219]
       );
-      writer.paragraph('These responses describe supported directions in the signed network. They do not quantify the size, probability or timing of change.', { size: 9, lineHeight: 13, style: 'italic', color: COLORS.muted });
+      writer.paragraph('Every component receives an action. Competing pathways retain their possible outcomes; the precautionary action is not a claim that the adverse outcome will occur. Directional agreement is conditional on the entered scenario and does not quantify size, probability or timing.', { size: 9, lineHeight: 13, style: 'italic', color: COLORS.muted });
       var openForks = snapshot.hypotheticals.filter(function (item) { return item.state !== 'settled'; });
       var settledReadings = snapshot.hypotheticals.filter(function (item) { return item.state === 'settled'; });
       if (openForks.length) {
