@@ -89,6 +89,7 @@
       result.estimatedAreaHa == null ? 'area:none' : 'area:' + result.estimatedAreaHa,
       species,
       stableJson(result.conditions || {}),
+      stableJson(result.demo ? result.demo.input : {}),
       stableJson(result.waterQuality ? { values: result.waterQuality.values, sampleId: result.waterQuality.sampleId, provenance: result.waterQuality.provenance, site: result.waterQuality.site, sampledAt: result.waterQuality.sampledAt, contamination: result.waterQuality.contamination, bloom: result.waterQuality.bloom, availability: result.waterQuality.availability } : {})
     ].join('|');
     return 'ECO-' + stableHash(payload);
@@ -221,7 +222,7 @@
     var changedPopulationCount = speciesChanges.filter(function (item) { return item.delta !== 0; }).length;
     var changedContextCount = (result.driver && result.driver !== 'none' ? 1 : 0) +
       (defaultArea != null && area !== defaultArea ? 1 : 0) + (result.waterQuality && result.waterQuality.hasInput ? 1 : 0) +
-      Object.keys(result.conditions || {}).filter(function (key) { return result.conditions[key] !== 'unmeasured'; }).length;
+      (result.demo ? Object.keys(result.demo.input || {}).length : Object.keys(result.conditions || {}).filter(function (key) { return result.conditions[key] !== 'unmeasured'; }).length);
 
     return {
       scenarioId: scenarioIdFor(result),
@@ -232,6 +233,7 @@
       driver: safeText(result.driver || 'none'),
       driverLabel: safeText(result.driverLabel || 'No seasonal adjustment'),
       waterQuality: copyData(result.waterQuality),
+      demo: copyData(result.demo),
       conditions: copyData(result.conditions),
       decision: copyData(result.decision),
       estimatedAreaHa: area,
@@ -247,7 +249,8 @@
         delta: asNumber(result.totals && result.totals.delta),
         percent: asNumber(result.totals && result.totals.percent),
         densityFrom: asNumber(result.totals && result.totals.densityFrom),
-        densityTo: asNumber(result.totals && result.totals.densityTo)
+        densityTo: asNumber(result.totals && result.totals.densityTo),
+        densityPerUsableHa: asNumber(result.totals && result.totals.densityPerUsableHa)
       },
       effects: (result.effects || []).map(function (effect) {
         return {
@@ -364,7 +367,7 @@
       ' (' + signed(snapshot.totals.delta) + ', ' + percent(snapshot.totals.percent) + ').';
     var network = snapshot.effects.length
       ? ' The evidence network identifies ' + snapshot.effects.length + ' affected component' + (snapshot.effects.length === 1 ? '' : 's') +
-        ' across ' + snapshot.pathways.length + ' active pathway' + (snapshot.pathways.length === 1 ? '' : 's') + '.'
+        ' across ' + snapshot.pathways.length + (snapshot.demo ? ' resolved relationship' : ' active pathway') + (snapshot.pathways.length === 1 ? '' : 's') + '.'
       : ' No ecological pathways are activated until a population or seasonal input changes.';
     return first + total + network + ' Responses are directional and conditional, not forecasts of magnitude or date.';
   }
@@ -755,6 +758,11 @@
         snapshot.totals.densityFrom == null || snapshot.totals.densityTo == null
           ? 'Not available'
           : signed(snapshot.totals.densityTo - snapshot.totals.densityFrom, 2) + ' / ha'
+      ], [
+        'Usable-area density',
+        'Demo screen',
+        snapshot.totals.densityPerUsableHa == null ? 'Not available' : formatNumber(snapshot.totals.densityPerUsableHa, 2) + ' / usable ha',
+        snapshot.demo ? formatNumber(snapshot.demo.metrics.usableHabitatPercent) + '% habitat' : 'Not used'
       ]],
       [150, 110, 110, 129]
     );
@@ -775,6 +783,39 @@
       [169, 82, 82, 82, 84]
     );
 
+    if (snapshot.demo) {
+      var demoLabels = {
+        usableHabitat: 'Usable habitat inside boundary',
+        grassBiomass: 'Standing grass biomass',
+        groundCover: 'Protective ground cover',
+        woodyCover: 'Woody canopy cover',
+        bankDisturbance: 'Water-point bank disturbance',
+        rainAmount: 'Seasonal rainfall total',
+        rainChemistry: 'Rain chemistry'
+      };
+      writer.section('Demo evidence inputs', 'Explicit teaching measurements');
+      writer.paragraph('These values resolve the model for demonstration. They are research-grounded presets, not measurements of the CBU park.', { size: 9.5, lineHeight: 14, color: COLORS.muted });
+      writer.table(
+        ['Parameter', 'Selected demo value'],
+        [['Season context', snapshot.demo.metrics.seasonLabel]].concat(Object.keys(demoLabels).map(function (key) { return [demoLabels[key], snapshot.demo.selections[key].label]; })),
+        [250, 249]
+      );
+      writer.table(
+        ['Calculated screen', 'Result'],
+        [
+          ['Usable habitat', formatNumber(snapshot.demo.metrics.usableHabitatHa, 2) + ' ha'],
+          ['Available forage at 25% allowable use', formatNumber(snapshot.demo.metrics.availableForageKg, 1) + ' kg DM'],
+          ['Herd dry-matter demand', formatNumber(snapshot.demo.metrics.dailyDemandKg, 1) + ' kg DM/day'],
+          ['Thirty-day demand', formatNumber(snapshot.demo.metrics.horizonDemandKg, 1) + ' kg DM'],
+          ['Forage screen', snapshot.demo.metrics.forageDays == null ? 'No herd demand' : formatNumber(snapshot.demo.metrics.forageDays, 1) + ' days'],
+          ['Regrowth outlook', snapshot.demo.metrics.regrowthOutlook],
+          ['Water-availability outlook', snapshot.demo.components.water.label]
+        ],
+        [300, 199]
+      );
+      writer.paragraph('Method: representative body mass x 2% dry matter per day; standing biomass x usable hectares x 25% allowable use. Season and rainfall jointly resolve regrowth and water direction. Management horizon: 30 days.', { size: 9, lineHeight: 13, style: 'italic', color: COLORS.muted });
+    }
+
     if (snapshot.waterQuality) {
       var water = snapshot.waterQuality;
       writer.section('Water quality in this scenario', 'Sample and screening basis');
@@ -789,7 +830,7 @@
       writer.bulletList(water.gaps);
     }
     if (snapshot.conditions) {
-      var descriptions = { unmeasured: 'not measured', exposed: 'exposed ground / trampling dominates', nutrientReturn: 'cover retained / nutrient return dominates', disturbed: 'disturbed banks connected to water', protected: 'banks protected from animal disturbance', dense: 'dense woody cover competes with grass', open: 'open woody cover shelters grass' };
+      var descriptions = { unmeasured: 'not measured', exposed: 'exposed ground / trampling dominates', stable: 'moderate protective ground cover', nutrientReturn: 'cover retained / nutrient return dominates', disturbed: 'disturbed banks connected to water', managed: 'moderate managed bank disturbance', protected: 'banks protected from animal disturbance', dense: 'dense woody cover competes with grass', balanced: 'mixed woody cover with no net grass effect', open: 'open woody cover shelters grass' };
       writer.paragraph('Scenario conditions: ' + Object.keys(snapshot.conditions).map(function (key) { return key + ': ' + descriptions[snapshot.conditions[key]]; }).join('; ') + '.', { size: 9, lineHeight: 13 });
     }
 
@@ -802,11 +843,11 @@
         snapshot.effects.map(function (effect) {
           var pathType = effect.direct && effect.indirect ? 'Direct + indirect' : (effect.direct ? 'Direct' : 'Indirect');
           if (effect.hasConditionalInfluence) pathType += ' + conditional';
-          return effect.decision ? [effect.label, effect.decision.response + '\n' + effect.decision.possibilities.join(' / '), effect.decision.action + '\n' + effect.decision.basis] : [effect.label, statusLabel(effect.status), pathType];
+          return effect.decision ? [effect.label, effect.decision.response + (snapshot.demo ? '\nResolved from entered values' : '\n' + effect.decision.possibilities.join(' / ')), effect.decision.action + '\n' + effect.decision.basis] : [effect.label, statusLabel(effect.status), pathType];
         }),
         [130, 150, 219]
       );
-      writer.paragraph('Every component receives an action. Competing pathways retain their possible outcomes; the precautionary action is not a claim that the adverse outcome will occur. Directional agreement is conditional on the entered scenario and does not quantify size, probability or timing.', { size: 9, lineHeight: 13, style: 'italic', color: COLORS.muted });
+      writer.paragraph(snapshot.demo ? 'Every component is resolved from the explicit demo inputs. Supporting and opposing pathways remain visible, while the measured-state rule supplies one final node state and one action.' : 'Every component receives an action. Competing pathways retain their possible outcomes; the precautionary action is not a claim that the adverse outcome will occur. Directional agreement is conditional on the entered scenario and does not quantify size, probability or timing.', { size: 9, lineHeight: 13, style: 'italic', color: COLORS.muted });
       var openForks = snapshot.hypotheticals.filter(function (item) { return item.state !== 'settled'; });
       var settledReadings = snapshot.hypotheticals.filter(function (item) { return item.state === 'settled'; });
       if (openForks.length) {
@@ -839,11 +880,11 @@
     writer.bulletList(snapshot.unknownMagnitudes);
 
     writer.ensure(170);
-    writer.section('Active pathway register', 'Appendix A');
+    writer.section(snapshot.demo ? 'Resolved relationship register' : 'Active pathway register', 'Appendix A');
     if (!snapshot.pathways.length) {
       writer.paragraph('No pathways are active for this reference scenario.', { size: 10 });
     } else {
-      writer.paragraph('Every active pathway is listed below. Direct pathways appear before longer chains.', { size: 9.5, color: COLORS.muted });
+      writer.paragraph(snapshot.demo ? 'Each active direct relationship is listed once. The network diagram shows how these resolved links connect without multiplying the same evidence into every possible route.' : 'Every active pathway is listed below. Direct pathways appear before longer chains.', { size: 9.5, color: COLORS.muted });
       snapshot.pathways.forEach(function (path, index) { writer.pathwayCard(path, index); });
     }
 
@@ -852,8 +893,8 @@
     snapshot.evidence.forEach(function (source, index) { writer.sourceEntry(source, index); });
 
     writer.section('Method and use boundary', 'Appendix C');
-    writer.paragraph('This brief is a snapshot of one administrator-defined scenario. Population arithmetic is exact for the entered values. Ecological responses are qualitative directions produced by an evidence-linked signed network. The report must not be read as a carrying-capacity calculation, a forecast, or proof that a response has occurred.', { size: 9.5, lineHeight: 14 });
-    writer.paragraph('Recommended actions prioritise measurements that can confirm or reject the active pathways. Management decisions should be revisited when field measurements, surveyed boundaries or calibrated intake and resource data become available.', { size: 9.5, lineHeight: 14 });
+    writer.paragraph(snapshot.demo ? 'This brief is a deterministic teaching scenario. Population arithmetic and the displayed forage balance are exact for the entered demo values and stated formula. The presets are not CBU field measurements, and the forage screen is not a calibrated carrying capacity or population forecast.' : 'This brief is a snapshot of one administrator-defined scenario. Population arithmetic is exact for the entered values. Ecological responses are qualitative directions produced by an evidence-linked signed network. The report must not be read as a carrying-capacity calculation, a forecast, or proof that a response has occurred.', { size: 9.5, lineHeight: 14 });
+    writer.paragraph(snapshot.demo ? 'Use the resolved response for presentation and scenario comparison. Replace each preset with repeated local measurements before using the result for a real management decision.' : 'Recommended actions prioritise measurements that can confirm or reject the active pathways. Management decisions should be revisited when field measurements, surveyed boundaries or calibrated intake and resource data become available.', { size: 9.5, lineHeight: 14 });
 
     writer.finishFooters();
   }

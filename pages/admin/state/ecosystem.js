@@ -10,6 +10,8 @@
   var model = window.BioEcosystem;
   if (!model) return;
   var waterModel = window.BioWaterQuality;
+  var demoModel = model.DEMO || window.BioEcosystemDemo;
+  if (!demoModel) return;
 
   var el = {};
   var PATH_PREVIEW_LIMIT = 7;
@@ -18,47 +20,51 @@
 
   var COMPONENT_META = {
     rainfall: {
-      category: 'environment', role: 'Scenario driver', unit: 'Seasonal signal',
-      description: 'A qualitative rainfall and dryness signal set by the selected season. It is not a live weather measurement.'
+      category: 'environment', role: 'Climate input', unit: 'mm and season',
+      description: 'An explicit demo rainfall total combined with the selected season to resolve recharge, drawdown and grass-regrowth direction. It is not a live weather measurement.'
+    },
+    rainChemistry: {
+      category: 'environment', role: 'Demo input', unit: 'pH',
+      description: 'An explicit rain-chemistry teaching value kept separate from rainfall quantity so acidic deposition cannot be mistaken for low rainfall.'
     },
     forage: {
-      category: 'resource', role: 'Derived variable', unit: 'Direction only',
-      description: 'Available grass and forage represented through supported grazing, rainfall, vegetation, and soil relationships.'
+      category: 'resource', role: 'Derived variable', unit: 'kg dry matter',
+      description: 'Usable grass dry matter calculated from entered habitat area, standing biomass and the stated allowable-use share, then compared with 30-day herd demand.'
     },
     water: {
-      category: 'resource', role: 'Derived variable', unit: 'Direction only',
-      description: 'Water availability represented as a qualitative resource. The park water feature and catchment are not measured here.'
+      category: 'resource', role: 'Derived variable', unit: 'Entered access state',
+      description: 'The selected water-point access state. When it is not entered, climate supplies only the quantity outlook; usable access remains restricted.'
     },
     woody: {
-      category: 'resource', role: 'Derived variable', unit: 'Direction only',
-      description: 'Woody vegetation that may provide browse, shade, or competition with grass depending on local structure.'
+      category: 'resource', role: 'Derived variable', unit: '% canopy cover',
+      description: 'Entered woody canopy cover used to resolve shelter, browse and competition with grass.'
     },
     competition: {
-      category: 'pressure', role: 'Derived variable', unit: 'Direction only',
-      description: 'Pressure created when herbivores overlap in their use of shared forage across space and season.'
+      category: 'pressure', role: 'Derived variable', unit: '30-day resource screen',
+      description: 'Resource pressure resolved from the calculated forage duration and selected usable-water state.'
     },
     soil: {
-      category: 'pressure', role: 'Derived variable', unit: 'Direction only',
-      description: 'Soil condition as supported by vegetation cover and affected conditionally by grazing and trampling.'
+      category: 'pressure', role: 'Derived variable', unit: '% protective cover',
+      description: 'Soil protection resolved from the entered percentage of living vegetation, litter and other ground cover.'
     },
     erosion: {
-      category: 'pressure', role: 'Derived variable', unit: 'Direction only',
-      description: 'Potential erosion pressure associated with exposed ground and runoff; no erosion magnitude is calculated.'
+      category: 'pressure', role: 'Derived variable', unit: 'Screened pressure',
+      description: 'Erosion pressure resolved from ground cover, disturbed bank share and rainfall amount. It is a screening state, not a soil-loss estimate.'
     },
     waterQuality: {
-      category: 'pressure', role: 'Derived variable', unit: 'Direction only',
-      description: 'Water screening and pressure from sediment, bank disturbance and connected runoff. A single sample is compared with screening references; it is not a measured trend.'
+      category: 'pressure', role: 'Derived variable', unit: 'Entered sample screen',
+      description: 'The selected water sample is screened with rain chemistry, bank disturbance and connected runoff. One sample is not a measured trend.'
     },
     usableWater: {
-      category: 'resource', role: 'Derived variable', unit: 'Direction only',
+      category: 'resource', role: 'Derived variable', unit: 'Resolved access state',
       description: 'Water access after quantity and explicit contamination or bloom concerns are considered. Low oxygen alone does not imply mammal drinking-water toxicity.'
     },
     health: {
-      category: 'pressure', role: 'Derived variable', unit: 'Direction only',
+      category: 'pressure', role: 'Derived variable', unit: '30-day support screen',
       description: 'Support for animal condition through forage, usable water and competition. This applies to the scenario herd; it does not alter entered counts or predict illness or mortality.'
     },
     aquaticHealth: {
-      category: 'pressure', role: 'Derived variable', unit: 'Direction only',
+      category: 'pressure', role: 'Derived variable', unit: 'Resolved water screen',
       description: 'Aquatic habitat support affected by water quality. Screening triggers identify stress to investigate, without estimating aquatic populations.'
     },
     zebra: {
@@ -87,7 +93,8 @@
   };
 
   var GRAPH_NODES = [
-    { key: 'rainfall', x: 440, y: 67, w: 166, label: 'Rainfall / dryness' },
+    { key: 'rainfall', x: 300, y: 67, w: 166, label: 'Rainfall / dryness' },
+    { key: 'rainChemistry', x: 610, y: 67, w: 148, label: 'Rain chemistry' },
     { key: 'forage', x: 165, y: 178, w: 148, label: 'Available forage' },
     { key: 'water', x: 440, y: 178, w: 132, label: 'Water availability' },
     { key: 'woody', x: 715, y: 178, w: 148, label: 'Woody vegetation' },
@@ -123,7 +130,7 @@
 
   var state = {
     baseline: model.registeredCounts(),
-    draft: { counts: initialCounts, area: model.DEFAULT_AREA_HA, driver: 'none', water: waterModel.sampleInput('none'), conditions: { soil: 'unmeasured', bank: 'unmeasured', woody: 'unmeasured' } },
+    draft: { counts: initialCounts, area: model.DEFAULT_AREA_HA, driver: 'none', water: waterModel.sampleInput('demo-reference'), demo: demoModel.defaultInput(), conditions: demoModel.contextFor(demoModel.defaultInput()) },
     applied: null,
     context: [],
     lastResult: null,
@@ -212,11 +219,19 @@
     var change = speciesChange(key, result);
     if (change && change.delta !== 0) return change.delta > 0 ? 'increases' : 'decreases';
     if (key === 'rainfall') {
+      if (result.demo && result.demo.components.rainfall) {
+        var demoSign = result.demo.components.rainfall.sign;
+        return demoSign > 0 ? 'increases' : demoSign < 0 ? 'decreases' : 'unchanged';
+      }
       var season = model.SEASONS && model.SEASONS[result.driver];
       if (season && season.seeds.length) {
         var seed = season.seeds.filter(function (item) { return item.node === 'rainfall'; })[0];
         if (seed) return seed.sign > 0 ? 'increases' : 'decreases';
       }
+    }
+    if (result.demo && result.demo.components[key]) {
+      var resolvedSign = result.demo.components[key].sign;
+      return resolvedSign > 0 ? 'increases' : resolvedSign < 0 ? 'decreases' : 'unchanged';
     }
     var effect = effectFor(key, result);
     return effect ? effect.status : 'unchanged';
@@ -242,6 +257,8 @@
      comes from is the question a reader actually has. */
   var PANEL_ROLE_WORDS = {
     'Scenario driver': 'Set by the season you choose',
+    'Climate input': 'Set by season and rainfall',
+    'Demo input': 'You set this value',
     'Derived variable': 'Calculated from other variables',
     'Scenario input': 'You set this number'
   };
@@ -270,18 +287,51 @@
   function registeredDirectionWord(direction) {
     if (direction === 'up') return 'supports';
     if (direction === 'down') return 'reduces';
-    return 'can go either way';
+    return 'resolved by entered conditions';
   }
 
   function scenarioStateWord(info) {
     if (!info) return 'not active';
-    return info.status === 'unchanged' ? 'no change passed' : 'active';
+    if (info.status === 'increases') return 'raises the target';
+    if (info.status === 'decreases') return 'lowers the target';
+    return info.status === 'unchanged' ? 'no change passed' : 'resolved from inputs';
   }
 
   /* Shared closing cell: every qualitative card answers "how much" the same
      way, which is also the one place the direction-only limit is stated. */
   function howMuchHtml() {
     return '<div><dt>How much</dt><dd>Not estimated<small>The model reports direction only: up, down, or no change.</small></dd></div>';
+  }
+
+  function demoMeasurementHtml(key, result) {
+    if (!result.demo || !result.demo.components[key]) return howMuchHtml();
+    var metrics = result.demo.metrics;
+    var component = result.demo.components[key];
+    var primary = component.label;
+    var detail = component.basis;
+    if (key === 'forage') {
+      primary = number(metrics.availableForageKg, 1) + ' kg DM';
+      detail = metrics.forageDays == null ? 'No herd demand entered' : number(metrics.forageDays, 1) + ' days for the entered herd';
+    } else if (key === 'woody') {
+      primary = number(metrics.woodyCoverPercent, 0) + '% canopy';
+    } else if (key === 'soil') {
+      primary = number(metrics.groundCoverPercent, 0) + '% cover';
+    } else if (key === 'erosion') {
+      primary = number(metrics.bankDisturbancePercent, 0) + '% bank disturbance';
+      detail = number(metrics.groundCoverPercent, 0) + '% ground cover · ' + number(metrics.rainMm, 0) + ' mm rain';
+    } else if (key === 'competition') {
+      primary = number(metrics.densityPerUsableHa, 2) + ' animals / usable ha';
+      detail = metrics.forageDays == null ? component.basis : number(metrics.forageDays, 1) + '-day forage screen';
+    } else if (key === 'health') {
+      primary = metrics.forageDays == null ? 'No herd demand' : number(metrics.forageDays, 1) + '-day forage screen';
+    } else if (key === 'waterQuality' || key === 'aquaticHealth') {
+      primary = result.waterQuality.label;
+      detail = result.waterQuality.summary;
+    } else if (key === 'water' || key === 'usableWater') {
+      primary = component.label;
+      detail = 'Water-point access: ' + result.waterQuality.availability;
+    }
+    return '<div><dt>Entered / calculated value</dt><dd>' + esc(primary) + '<small>' + esc(detail) + '</small></dd></div>';
   }
 
   function nodeLabel(key) {
@@ -300,6 +350,16 @@
   function sourceBadge(source) {
     if (!source) return '<span class="eco-badge eco-badge--assumption">No source attached</span>';
     return '<span class="eco-badge" title="' + esc(tierNote(source)) + '">Tier ' + esc(source.tier) + ' · ' + esc(source.label) + '</span>';
+  }
+
+  function sourceById(id) {
+    var found = null;
+    Object.keys(model.SOURCES || {}).some(function (key) {
+      if (model.SOURCES[key].id !== id) return false;
+      found = model.SOURCES[key];
+      return true;
+    });
+    return found;
   }
 
   function changeMarkup(from, to) {
@@ -324,6 +384,29 @@
     });
   }
 
+  function renderDemoControls() {
+    if (!el.demoInputs) return;
+    el.demoInputs.innerHTML = demoModel.FIELDS.map(function (field) {
+      var options = field.options.map(function (option) {
+        return '<option value="' + esc(option.id) + '"' + (state.draft.demo[field.key] === option.id ? ' selected' : '') + '>' + esc(option.label) + '</option>';
+      }).join('');
+      return '<label class="eco-select-field" for="eco-demo-' + esc(field.key) + '"><span>' + esc(field.label) + '</span><select id="eco-demo-' + esc(field.key) + '" data-demo-input="' + esc(field.key) + '">' + options + '</select><small>' + esc(field.note) + '</small></label>';
+    }).join('');
+  }
+
+  function renderDemoAssessment(result) {
+    if (!el.demoAssessment || !result.demo) return;
+    var metrics = result.demo.metrics;
+    var forageDays = metrics.forageDays == null ? 'No herd' : number(metrics.forageDays, 1) + ' days';
+    el.demoAssessment.innerHTML =
+      '<div><span>Usable habitat</span><strong>' + number(metrics.usableHabitatHa, 2) + ' ha</strong><small>' + number(metrics.usableHabitatPercent, 0) + '% of entered boundary</small></div>' +
+      '<div><span>Available forage</span><strong>' + number(metrics.availableForageKg, 1) + ' kg DM</strong><small>25% of standing biomass</small></div>' +
+      '<div><span>Herd demand</span><strong>' + number(metrics.dailyDemandKg, 1) + ' kg DM/day</strong><small>' + number(metrics.horizonDemandKg, 1) + ' kg over 30 days</small></div>' +
+      '<div><span>Forage screen</span><strong>' + esc(forageDays) + '</strong><small>' + esc(result.demo.components.forage.label) + '</small></div>' +
+      '<div><span>Regrowth outlook</span><strong>' + esc(metrics.regrowthOutlook) + '</strong><small>' + esc(metrics.seasonLabel) + '</small></div>' +
+      '<div><span>Water outlook</span><strong>' + esc(result.demo.components.water.label) + '</strong><small>Season + ' + number(metrics.rainMm, 0) + ' mm + entered access</small></div>';
+  }
+
   function editWater(key, value) {
     state.draft.water[key] = value;
     state.draft.water.sampleId = 'custom';
@@ -344,11 +427,11 @@
   function renderComponentResponses(result) {
     if (!el.componentResponses) return;
     if (result.inputErrors.length) { el.componentResponses.innerHTML = ''; return; }
-    el.componentResponses.innerHTML = '<div class="eco-table-wrap"><table class="eco-input-table"><caption>Component responses · actions are separate from ecological certainty</caption>' +
+    el.componentResponses.innerHTML = '<div class="eco-table-wrap"><table class="eco-input-table"><caption>' + (result.demo ? 'Resolved demo states · each result follows the entered teaching measurements' : 'Component responses · actions are separate from ecological certainty') + '</caption>' +
       '<thead><tr><th scope="col">Component</th><th scope="col">Response</th><th scope="col">Action / basis</th></tr></thead><tbody>' + result.effects.map(function (effect) {
         var decision = effect.decision;
         return '<tr><th scope="row"><button type="button" class="eco-response-select" data-node="' + esc(effect.key) + '">' + esc(effect.label) + '</button></th>' +
-          '<td><strong>' + esc(decision.response) + '</strong><small>' + esc(decision.possibilities.join(' / ')) + '</small></td>' +
+          '<td><strong>' + esc(decision.response) + '</strong>' + (result.demo ? '<small>One outcome resolved from the entered values</small>' : '<small>' + esc(decision.possibilities.join(' / ')) + '</small>') + '</td>' +
           '<td>' + esc(decision.action) + '<small>' + esc(decision.basis) + '</small></td></tr>';
       }).join('') + '</tbody></table></div>';
   }
@@ -393,8 +476,10 @@
 
   function changedInputSummary(result) {
     var populationCount = result.speciesChanges.filter(function (item) { return item.delta !== 0; }).length;
+    var demoDefaults = demoModel.DEFAULTS;
+    var demoCount = Object.keys(state.applied.demo || {}).filter(function (key) { return state.applied.demo[key] !== demoDefaults[key]; }).length;
     var contextCount = (result.driver !== 'none' ? 1 : 0) + (Number(state.applied.area) !== Number(model.DEFAULT_AREA_HA) ? 1 : 0) +
-      (result.waterQuality.hasInput ? 1 : 0) + Object.keys(result.conditions).filter(function (key) { return result.conditions[key] !== 'unmeasured'; }).length;
+      (result.waterQuality.sampleId !== 'demo-reference' ? 1 : 0) + demoCount;
     return {
       total: populationCount + contextCount,
       populationCount: populationCount,
@@ -405,8 +490,8 @@
   function renderSummary(result) {
     if (!el.summary) return;
     var changes = changedInputSummary(result);
-    var density = result.totals.densityTo == null ? 'Not available' : number(result.totals.densityTo, 2);
-    var densityNote = result.totals.densityTo == null ? 'A positive area is required' : 'animals per estimated ha';
+    var density = result.totals.densityPerUsableHa == null ? 'Not available' : number(result.totals.densityPerUsableHa, 2);
+    var densityNote = result.totals.densityPerUsableHa == null ? 'A positive usable area is required' : 'animals per usable ha';
     if (el.summarySub) {
       el.summarySub.textContent = 'Synchronized with the working scenario · ' + result.driverLabel + (result.estimatedAreaHa == null ? '' : ' · ' + number(result.estimatedAreaHa, 1) + ' ha estimate');
     }
@@ -418,8 +503,8 @@
       '<dl class="eco-metric-grid">' +
         '<div class="eco-metric"><dt>Inputs changed</dt><dd>' + changes.total + '</dd><small>' + changes.populationCount + ' population' + (changes.populationCount === 1 ? '' : 's') + (changes.contextCount ? ' · ' + changes.contextCount + ' context' : '') + '</small></div>' +
         '<div class="eco-metric"><dt>Total animals</dt><dd>' + number(result.totals.from, 0) + '<span aria-hidden="true">→</span>' + number(result.totals.to, 0) + '</dd><small>' + signed(result.totals.delta, 0) + ' · ' + percent(result.totals.percent) + '</small></div>' +
-        '<div class="eco-metric"><dt>Scenario density</dt><dd>' + density + '</dd><small>' + densityNote + '</small></div>' +
-        '<div class="eco-metric"><dt>Network response</dt><dd>' + result.effects.length + '</dd><small>components · ' + result.pathways.length + ' active pathways</small></div>' +
+        '<div class="eco-metric"><dt>Usable-area density</dt><dd>' + density + '</dd><small>' + densityNote + '</small></div>' +
+        '<div class="eco-metric"><dt>Network response</dt><dd>' + result.effects.length + '</dd><small>components · ' + result.pathways.length + (result.demo ? ' resolved relationships' : ' active pathways') + '</small></div>' +
       '</dl>';
   }
 
@@ -651,7 +736,11 @@
     var effect = effectFor(key, result);
     if (effect && effect.decision) return '<p><strong>' + esc(effect.decision.response) + '.</strong> ' + esc(effect.decision.explanation) + '</p>' +
       '<p><strong>Action:</strong> ' + esc(effect.decision.action) + '</p><p><strong>Next reading:</strong> ' + esc(effect.decision.nextReading) + '</p>' +
-      (effect.seedReasons.length ? '<p>' + effect.seedReasons.map(esc).join(' ') + '</p>' : '');
+      (!result.demo && effect.seedReasons.length ? '<p>' + effect.seedReasons.map(esc).join(' ') + '</p>' : '');
+    if (result.demo && result.demo.components[key]) {
+      var resolved = result.demo.components[key];
+      return '<p><strong>' + esc(resolved.label) + '.</strong> ' + esc(resolved.basis) + '</p><p><strong>Action:</strong> ' + esc(resolved.action) + '</p>';
+    }
     var item = null;
     ((result && result.hypotheticals) || []).forEach(function (entry) { if (entry.key === key) item = entry; });
     if (!item) return '';
@@ -705,20 +794,31 @@
     var statusText = panelStatusLabel(status);
     var effect = effectFor(key, result);
     if (effect && effect.decision) statusText = effect.decision.response;
+    if (!effect && result.demo && result.demo.components[key]) statusText = result.demo.components[key].label;
     var values = comparisonHtml(change);
     if (key === 'rainfall') {
-      values = '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Scenario signal</dt><dd>' + esc(result.driverLabel) + '</dd></div>' + howMuchHtml() + '</dl>';
+      values = result.demo
+        ? '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Rainfall demo</dt><dd>' + esc(number(result.demo.metrics.rainMm, 0)) + ' mm<small>' + esc(result.driverLabel) + '</small></dd></div><div><dt>Resolved outlook</dt><dd>' + esc(result.demo.components.rainfall.label) + '<small>Season and rainfall evaluated together</small></dd></div></dl>'
+        : '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Scenario signal</dt><dd>' + esc(result.driverLabel) + '</dd></div>' + howMuchHtml() + '</dl>';
+    } else if (key === 'rainChemistry' && result.demo) {
+      values = '<dl class="eco-inspector-values eco-inspector-values--two"><div><dt>Rain chemistry</dt><dd>pH ' + esc(number(result.demo.metrics.rainPh, 1)) + '<small>Explicit teaching value</small></dd></div><div><dt>Resolved state</dt><dd>' + esc(result.demo.components.rainChemistry.label) + '<small>Quantity is evaluated separately</small></dd></div></dl>';
     } else if (!change) {
       var response = panelResponseWords(status);
       /* The badge above already names the state, so these cells explain it:
          why the model answered this way, and how far the answer goes. */
       values = '<dl class="eco-inspector-values eco-inspector-values--two">' +
         '<div><dt>Why</dt><dd>' + esc(response.summary) + '<small>' + esc(response.detail) + '</small></dd></div>' +
-        howMuchHtml() +
+        demoMeasurementHtml(key, result) +
         '</dl>';
     }
     var sources = [];
     if (change && change.source) sources.push(change.source);
+    if (result.demo && result.demo.components[key]) {
+      result.demo.components[key].evidenceIds.forEach(function (id) {
+        var source = sourceById(id);
+        if (source && !sources.some(function (item) { return item.id === source.id; })) sources.push(source);
+      });
+    }
     if (key === 'rainfall' && result.driver !== 'none' && model.SEASONS[result.driver] && model.SEASONS[result.driver].source) {
       sources.push(model.SEASONS[result.driver].source);
     }
@@ -739,8 +839,9 @@
     if (!edge) return '<p class="eco-empty">Relationship not found.</p>';
     var info = result.edgeStates && result.edgeStates[key];
     var status = info ? info.status : 'unchanged';
-    var direction = edge.direction === 'up' ? 'Supports' : (edge.direction === 'down' ? 'Reduces' : 'Can go either way');
+    var direction = edge.direction === 'up' ? 'Supports' : (edge.direction === 'down' ? 'Reduces' : 'Resolved by entered conditions');
     return '<div class="eco-inspector-head"><p>Ecological relationship</p><h4>' + esc(model.COMPONENTS[edge.from] || edge.from) + ' <span aria-hidden="true">→</span> ' + esc(model.COMPONENTS[edge.to] || edge.to) + '</h4><div><span class="eco-role-label">' + esc(direction) + '</span><span class="eco-status-text eco-status-text--' + statusClassFor(status) + '">' + esc(info ? panelStatusLabel(status) : 'Not active in this scenario') + '</span></div></div>' +
+      (info && info.basis ? '<section><h5>This scenario</h5><p>' + esc(info.basis) + '</p></section>' : '') +
       '<section><h5>Mechanism</h5><p>' + esc(edge.mechanism) + '</p></section>' +
       '<section><h5>Conditions</h5><p>' + esc(edge.conditions) + '</p></section>' +
       '<section><h5>Evidence</h5><div class="eco-inspector-sources">' + sourceBadge(edge.source) + '</div></section>';
@@ -783,6 +884,8 @@
 
   function renderPathways() {
     if (!el.pathways) return;
+    var demoRelationships = !!(state.lastResult && state.lastResult.demo);
+    var noun = demoRelationships ? 'resolved relationship' : 'active pathway';
     var query = state.pathQuery.toLowerCase();
     var allMatches = state.orderedPaths.map(function (path, index) { return { path: path, index: index }; }).filter(function (item) {
       var matchesScope = state.pathScope === 'all' || relevantPath(item.path, item.index);
@@ -796,10 +899,10 @@
     if (state.selected && state.selected.type === 'path') focusLabel = 'the selected pathway';
     if (el.pathwayStatus) {
       el.pathwayStatus.textContent = !state.orderedPaths.length
-        ? 'No pathways are active for the current scenario.'
+        ? (demoRelationships ? 'No relationship passes a change in the current scenario.' : 'No pathways are active for the current scenario.')
         : (state.pathScope === 'relevant'
-          ? 'Showing ' + visible.length + ' of ' + allMatches.length + ' pathways relevant to ' + focusLabel + '.'
-          : 'Showing ' + visible.length + ' of ' + state.orderedPaths.length + ' active pathways.');
+          ? 'Showing ' + visible.length + ' of ' + allMatches.length + ' ' + noun + (allMatches.length === 1 ? '' : 's') + ' relevant to ' + focusLabel + '.'
+          : 'Showing ' + visible.length + ' of ' + state.orderedPaths.length + ' ' + noun + (state.orderedPaths.length === 1 ? '' : 's') + '.');
     }
     if (el.pathScopeRelevant) {
       el.pathScopeRelevant.className = state.pathScope === 'relevant' ? 'is-active' : '';
@@ -808,10 +911,10 @@
     if (el.pathScopeAll) {
       el.pathScopeAll.className = state.pathScope === 'all' ? 'is-active' : '';
       el.pathScopeAll.setAttribute('aria-pressed', state.pathScope === 'all' ? 'true' : 'false');
-      el.pathScopeAll.textContent = 'All active' + (state.orderedPaths.length ? ' (' + state.orderedPaths.length + ')' : '');
+      el.pathScopeAll.textContent = (demoRelationships ? 'All resolved' : 'All active') + (state.orderedPaths.length ? ' (' + state.orderedPaths.length + ')' : '');
     }
     if (!visible.length) {
-      el.pathways.innerHTML = '<li class="eco-empty">' + (state.orderedPaths.length ? 'No pathways match this focus and search.' : 'Change a population, season or water condition to activate pathways.') + '</li>';
+      el.pathways.innerHTML = '<li class="eco-empty">' + (state.orderedPaths.length ? 'No relationships match this focus and search.' : 'Change a population, season or water condition to activate a relationship.') + '</li>';
       return;
     }
     el.pathways.innerHTML = visible.map(function (item) {
@@ -860,6 +963,7 @@
       area: state.draft.area,
       driver: state.draft.driver,
       water: Object.assign({}, state.draft.water),
+      demo: Object.assign({}, state.draft.demo),
       conditions: Object.assign({}, state.draft.conditions)
     };
     state.revision += 1;
@@ -869,10 +973,12 @@
       estimatedAreaHa: state.applied.area,
       environmentalDrivers: state.applied.driver,
       waterQuality: state.applied.water,
+      demo: state.applied.demo,
       conditions: state.applied.conditions
     });
     state.lastResult = result;
     renderSummary(result);
+    renderDemoAssessment(result);
     renderWaterAssessment(result);
     renderComponentResponses(result);
     if (el.brief) el.brief.disabled = result.inputErrors.length > 0;
@@ -1003,6 +1109,13 @@
   }
 
   function wire() {
+    if (el.demoInputs) el.demoInputs.addEventListener('change', function (event) {
+      var key = event.target && event.target.getAttribute('data-demo-input');
+      if (!key) return;
+      state.draft.demo[key] = event.target.value;
+      state.draft.conditions = demoModel.contextFor(state.draft.demo);
+      applyScenario();
+    });
     if (el.waterSample) el.waterSample.addEventListener('change', function () {
       state.draft.water = waterModel.sampleInput(el.waterSample.value);
       renderWaterControls();
@@ -1035,13 +1148,14 @@
     if (el.area) el.area.addEventListener('input', function () { state.draft.area = el.area.value; applyScenario(); });
     if (el.driver) el.driver.addEventListener('change', function () { state.draft.driver = el.driver.value; applyScenario(); });
     if (el.reset) el.reset.addEventListener('click', function () {
-      state.draft = { counts: cloneCounts(state.baseline), area: model.DEFAULT_AREA_HA, driver: 'none', water: waterModel.sampleInput('none'), conditions: { soil: 'unmeasured', bank: 'unmeasured', woody: 'unmeasured' } };
+      var demo = demoModel.defaultInput();
+      state.draft = { counts: cloneCounts(state.baseline), area: model.DEFAULT_AREA_HA, driver: 'none', water: waterModel.sampleInput('demo-reference'), demo: demo, conditions: demoModel.contextFor(demo) };
       if (el.area) el.area.value = String(model.DEFAULT_AREA_HA);
       if (el.driver) el.driver.value = 'none';
-      ['soilCondition', 'bankCondition', 'woodyCondition'].forEach(function (key) { if (el[key]) el[key].value = 'unmeasured'; });
       renderSpeciesControls();
+      renderDemoControls();
       renderWaterControls();
-      applyScenario('Scenario reset to the registered reference');
+      applyScenario('Scenario reset to the evidence-backed demo defaults');
     });
     if (el.graphWrap) {
       el.graphWrap.addEventListener('click', selectFromEvent);
@@ -1077,6 +1191,7 @@
   function cache() {
     var ids = {
       speciesControls: 'ecoSpeciesControls', area: 'ecoArea', driver: 'ecoDriver',
+      demoInputs: 'ecoDemoInputs', demoAssessment: 'ecoDemoAssessment',
       waterSample: 'ecoWaterSample', waterReadings: 'ecoWaterReadings', waterSource: 'ecoWaterSource', waterAssessment: 'ecoWaterAssessment',
       waterSite: 'ecoWaterSite', waterDate: 'ecoWaterDate', waterAvailability: 'ecoWaterAvailability', waterContamination: 'ecoWaterContamination', waterBloom: 'ecoWaterBloom',
       soilCondition: 'ecoSoilCondition', bankCondition: 'ecoBankCondition', woodyCondition: 'ecoWoodyCondition', componentResponses: 'ecoComponentResponses',
@@ -1111,6 +1226,7 @@
     state.draft.area = el.area ? el.area.value : model.DEFAULT_AREA_HA;
     state.draft.driver = el.driver ? el.driver.value : 'none';
     renderSpeciesControls();
+    renderDemoControls();
     renderWaterControls();
     renderEvidence();
     wire();

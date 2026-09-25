@@ -24,7 +24,7 @@
 <link rel="stylesheet" href="../../../components/buttons.css">
 <link rel="stylesheet" href="../../../components/forms.css">
 <link rel="stylesheet" href="../../../components/modals.css">
-    <link rel="stylesheet" href="state.css?v=20260924-4">
+    <link rel="stylesheet" href="state.css?v=20260925-7">
     <link rel="stylesheet" href="../../../components/notifications.css">
     <link rel="stylesheet" href="../../../components/toast.css">
     <link rel="stylesheet" href="../../../components/user-dropdown.css">
@@ -217,9 +217,9 @@
                         <div class="eco-configuration-grid">
                             <div class="eco-condition-panel" aria-labelledby="ecoConditionsHeading">
                                 <h4 id="ecoConditionsHeading">Environment &amp; habitat</h4>
-                                <p class="eco-group-note">These values set context for the qualitative network and density arithmetic.</p>
+                                <p class="eco-group-note">Season and boundary remain explicit scenario inputs. The demo measurements below resolve the resource outcomes.</p>
                                 <div class="eco-settings-row">
-                                    <label class="eco-select-field" for="ecoDriver"><span>Season</span><select id="ecoDriver"><option value="none">No seasonal adjustment</option><option value="rainy">Rainy (Nov to Apr)</option><option value="coolDry">Cool dry (May to Aug)</option><option value="hotDry">Hot dry (Sep to Oct/Nov)</option></select><small>Scenario choice; not a live weather reading</small></label>
+                                    <label class="eco-select-field" for="ecoDriver"><span>Season context</span><select id="ecoDriver"><option value="none">No separate seasonal modifier</option><option value="rainy">Rainy (Nov to Apr)</option><option value="coolDry">Cool dry (May to Aug)</option><option value="hotDry">Hot dry (Sep to Oct/Nov)</option></select><small>Season changes regrowth and water persistence; the rainfall amount below can intensify or offset it</small></label>
                                     <label class="eco-select-field" for="ecoArea"><span>Whole-park area</span><span class="eco-input-unit"><input id="ecoArea" type="number" min="0" step="0.1" value="6.6" inputmode="decimal"><b>ha</b></span><small>Prototype estimate; not a surveyed boundary</small></label>
                                 </div>
                             </div>
@@ -229,6 +229,12 @@
                                 <div id="ecoSpeciesControls" class="eco-species-controls"></div>
                             </div>
                         </div>
+
+                        <section class="eco-demo-controls" aria-labelledby="ecoDemoHeading">
+                            <div class="eco-group-heading"><div><h4 id="ecoDemoHeading">Demo evidence inputs</h4><p class="eco-group-note">Choose explicit teaching measurements. Every valid combination resolves to one component state and one management response.</p></div><span class="eco-demo-label">30-day screen</span></div>
+                            <div id="ecoDemoInputs" class="eco-demo-grid"></div>
+                            <div id="ecoDemoAssessment" class="eco-demo-assessment" aria-live="polite"></div>
+                        </section>
 
                         <section class="eco-water-controls" aria-labelledby="ecoWaterHeading">
                             <h4 id="ecoWaterHeading">Water quality</h4>
@@ -245,16 +251,6 @@
                             </div>
                             <p id="ecoWaterAssessment" class="eco-group-note" aria-live="polite"></p>
                         </section>
-                        <details class="eco-model-conditions">
-                            <summary>Conditions that resolve competing pathways</summary>
-                            <p class="eco-group-note">Select only conditions you can support or want to test. Unmeasured conditions retain their possible outcomes and receive a precautionary action.</p>
-                            <div class="eco-water-grid">
-                                <label class="eco-select-field" for="ecoSoilCondition"><span>Grazing / soil response</span><select id="ecoSoilCondition"><option value="unmeasured">Not measured</option><option value="exposed">Exposed ground / trampling dominates</option><option value="nutrientReturn">Cover retained / nutrient return dominates</option></select></label>
-                                <label class="eco-select-field" for="ecoBankCondition"><span>Water-point banks</span><select id="ecoBankCondition"><option value="unmeasured">Not measured</option><option value="disturbed">Disturbed and connected to water</option><option value="protected">Protected from animal disturbance</option></select></label>
-                                <label class="eco-select-field" for="ecoWoodyCondition"><span>Woody cover / grass relationship</span><select id="ecoWoodyCondition"><option value="unmeasured">Not measured</option><option value="dense">Dense cover competes with grass</option><option value="open">Open cover shelters grass</option></select></label>
-                            </div>
-                        </details>
-
                         <div class="eco-scenario-footer">
                             <span id="ecoScenarioStatus" class="eco-control-status" role="status" aria-live="polite"></span>
                             <button type="button" class="eco-button eco-button--quiet" id="ecoReset">Reset scenario</button>
@@ -269,7 +265,7 @@
                         <div id="ecoSummary" class="eco-summary" aria-live="polite"></div>
                         <div id="ecoComponentResponses" class="eco-component-responses"></div>
                         <div class="eco-interpretation-grid">
-                            <section aria-labelledby="ecoUnknownHeading"><p class="eco-subsection-kicker">Interpret carefully</p><h4 id="ecoUnknownHeading">What remains unknown</h4><ul id="ecoUnknowns" class="eco-list"></ul></section>
+                            <section aria-labelledby="ecoUnknownHeading"><p class="eco-subsection-kicker">Interpret carefully</p><h4 id="ecoUnknownHeading">Demo assumptions &amp; limits</h4><ul id="ecoUnknowns" class="eco-list"></ul></section>
                             <section aria-labelledby="ecoManagementHeading"><p class="eco-subsection-kicker">Use this scenario</p><h4 id="ecoManagementHeading">Decision guidance</h4><ul id="ecoManagement" class="eco-list"></ul></section>
                         </div>
                     </section>
@@ -277,12 +273,12 @@
                     <section class="eco-section eco-section--explore" id="eco-explore" aria-labelledby="ecoGraphHeading">
                         <div class="eco-section-heading">
                             <div><p class="eco-section-number">03 · Explore relationships</p><h3 id="ecoGraphHeading">Coupled-system explorer</h3></div>
-                            <p>Select a variable or relationship to inspect its role, current qualitative response, mechanism, conditions, and evidence.</p>
+                            <p>Select a variable or relationship to inspect its resolved response, mechanism, entered conditions, and evidence.</p>
                         </div>
 
                         <div class="eco-visual-key" aria-label="Diagram legend">
                             <div class="eco-key-group"><span class="eco-key-title">Variables</span><span><i class="eco-key-swatch eco-key-swatch--environment"></i>Environment</span><span><i class="eco-key-swatch eco-key-swatch--resource"></i>Resources</span><span><i class="eco-key-swatch eco-key-swatch--pressure"></i>Interactions &amp; condition</span><span><i class="eco-key-swatch eco-key-swatch--wildlife"></i>Wildlife inputs</span></div>
-                            <div class="eco-key-group"><span class="eco-key-title">Relationships</span><span><i class="eco-key-line eco-key-line--up"></i>Supports</span><span><i class="eco-key-line eco-key-line--down"></i>Reduces</span><span><i class="eco-key-line eco-key-line--conditional"></i>Conditional</span></div>
+                            <div class="eco-key-group"><span class="eco-key-title">Relationships</span><span><i class="eco-key-line eco-key-line--up"></i>Supports</span><span><i class="eco-key-line eco-key-line--down"></i>Reduces</span><span><i class="eco-key-line eco-key-line--conditional"></i>Resolved by input</span></div>
                         </div>
 
                         <div class="eco-explorer-grid">
@@ -343,12 +339,13 @@
     <script defer src="../../../lib/survey.js"></script>
      <script defer src="../../../lib/ecology.js"></script>
      <script defer src="../../../lib/capacity.js"></script>
-     <script defer src="../../../lib/water-quality.js?v=20260924-4"></script>
-     <script defer src="../../../lib/ecosystem-model.js?v=20260924-4"></script>
+     <script defer src="../../../lib/water-quality.js?v=20260925-6"></script>
+     <script defer src="../../../lib/ecosystem-demo.js?v=20260925-4"></script>
+     <script defer src="../../../lib/ecosystem-model.js?v=20260925-9"></script>
      <script defer src="../../../pages/admin/layout/admin-layout.js"></script>
      <script defer src="state.js"></script>
-     <script defer src="scenario-brief.js?v=20260924-4"></script>
-     <script defer src="ecosystem.js?v=20260924-4"></script>
+     <script defer src="scenario-brief.js?v=20260925-8"></script>
+     <script defer src="ecosystem.js?v=20260925-14"></script>
 
 </body>
 </html>

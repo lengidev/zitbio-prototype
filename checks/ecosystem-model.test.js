@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const model = require('../lib/ecosystem-model');
 const water = require('../lib/water-quality');
+const demo = require('../lib/ecosystem-demo');
 const brief = require('../pages/admin/state/scenario-brief');
 const baseline = model.registeredCounts();
 const effect = (result, key) => result.effects.find(item => item.key === key);
@@ -156,6 +157,188 @@ test('brief uses the same decisions and water inputs; IDs distinguish water and 
   const a = evaluate({ conditions: { soil: 'exposed', bank: 'protected' } });
   const b = evaluate({ conditions: { bank: 'protected', soil: 'exposed' } });
   assert.equal(brief.scenarioIdFor(a), brief.scenarioIdFor(b));
+});
+
+test('demo defaults produce a measured-state response and an explicit forage balance', () => {
+  const result = evaluate({ demo: demo.defaultInput(), waterQuality: water.sampleInput('demo-reference') });
+  assert.equal(result.modelVersion, 'cbu-demo-decision-v6');
+  assert.equal(result.decision.code, 'maintain-demo-balance');
+  assert.equal(result.demo.metrics.usableHabitatHa, 6.6);
+  assert.equal(result.demo.metrics.availableForageKg, 1650);
+  assert.equal(result.demo.metrics.dailyDemandKg, 43.3);
+  assert.equal(result.demo.metrics.horizonDemandKg, 1300.4);
+  assert.equal(result.demo.metrics.forageDays, 38.1);
+  assert.equal(effect(result, 'forage').decision.response, '30-day forage buffer');
+  assert.equal(effect(result, 'health').decision.response, 'Animal condition supported');
+  for (const item of result.effects) {
+    assert.equal(item.possibleSigns.length, 1);
+    assert.ok(!['uncertain', 'conditional'].includes(item.status));
+    assert.ok(item.decision.action && item.decision.explanation);
+  }
+  const snapshot = brief.buildSnapshot({ result, defaultAreaHa: model.DEFAULT_AREA_HA });
+  assert.deepEqual(snapshot.demo.metrics, result.demo.metrics);
+  assert.notEqual(brief.scenarioIdFor(result), brief.scenarioIdFor(evaluate({ demo: { ...demo.defaultInput(), grassBiomass: 'low' }, waterQuality: water.sampleInput('demo-reference') })));
+});
+
+test('demo measurements resolve rainfall, park area, herd demand and usable water without either-or output', () => {
+  const acidic = evaluate({
+    demo: { ...demo.defaultInput(), rainAmount: 'high', rainChemistry: 'acidic' },
+    waterQuality: water.sampleInput('demo-reference')
+  });
+  assert.equal(acidic.demo.components.rainfall.label, 'High rainfall input');
+  assert.equal(acidic.demo.components.rainChemistry.label, 'Acidic deposition stress');
+  assert.equal(effect(acidic, 'forage').decision.response, 'Current forage; acidic regrowth stress');
+  assert.equal(effect(acidic, 'waterQuality').decision.response, 'Water-quality stress');
+  assert.equal(effect(acidic, 'usableWater').decision.response, 'Usable water available');
+  assert.equal(acidic.decision.code, 'hold-expansion');
+
+  const crowded = evaluate({
+    demo: { ...demo.defaultInput(), usableHabitat: 'restricted', grassBiomass: 'low' },
+    targetCounts: { zebra: 10, waterbuck: 10, puku: 20, impala: 30 },
+    waterQuality: water.sampleInput('demo-reference')
+  });
+  assert.equal(effect(crowded, 'forage').decision.response, '30-day forage deficit');
+  assert.equal(effect(crowded, 'competition').decision.response, 'High resource competition');
+  assert.equal(effect(crowded, 'health').decision.response, 'Animal condition at risk');
+  assert.equal(crowded.decision.priority, 'high');
+
+  const contaminated = evaluate({ demo: demo.defaultInput(), waterQuality: water.sampleInput('demo-contamination') });
+  assert.equal(effect(contaminated, 'usableWater').possibleSigns.length, 1);
+  assert.equal(effect(contaminated, 'usableWater').decision.response, 'Usable water restricted');
+  assert.equal(contaminated.decision.code, 'secure-water');
+});
+
+test('season and rainfall jointly resolve water, regrowth and resource pressure', () => {
+  const referenceWater = water.sampleInput('demo-reference');
+  const run = (environmentalDrivers, rainAmount, extraDemo = {}, waterQuality = referenceWater) => evaluate({
+    environmentalDrivers,
+    demo: { ...demo.defaultInput(), rainAmount, ...extraDemo },
+    waterQuality
+  });
+  const none = run('none', 'moderate');
+  const rainy = run('rainy', 'moderate');
+  const coolDry = run('coolDry', 'moderate');
+  const hotDry = run('hotDry', 'moderate');
+  assert.equal(effect(none, 'water').decision.response, 'Water available');
+  assert.equal(effect(rainy, 'water').decision.response, 'Available with recharge');
+  assert.equal(effect(coolDry, 'water').decision.response, 'Available now; cool-dry drawdown');
+  assert.equal(effect(hotDry, 'water').decision.response, 'Available now; hot-dry drawdown');
+  assert.equal(effect(rainy, 'forage').decision.response, '30-day buffer with regrowth support');
+  assert.equal(effect(hotDry, 'forage').decision.response, '30-day buffer; regrowth constrained');
+  assert.equal(effect(hotDry, 'competition').decision.response, 'Elevated hot-dry competition');
+  assert.equal(effect(hotDry, 'health').decision.response, 'Condition support under hot-dry pressure');
+  assert.equal(rainy.decision.code, 'maintain-demo-balance');
+  assert.equal(hotDry.decision.code, 'manage-pressure');
+
+  for (const season of Object.keys(model.SEASONS)) {
+    const low = run(season, 'low');
+    const high = run(season, 'high');
+    assert.ok(effect(low, 'water').possibleSigns[0] < effect(high, 'water').possibleSigns[0]);
+  }
+
+  const dryPoint = run('rainy', 'high', {}, { ...referenceWater, availability: 'dry' });
+  assert.equal(effect(dryPoint, 'water').decision.response, 'Water point dry');
+  assert.equal(effect(dryPoint, 'usableWater').decision.response, 'No usable water at this point');
+  assert.equal(dryPoint.decision.code, 'secure-water');
+
+  const noAccessObservation = run('rainy', 'high', {}, water.sampleInput('none'));
+  assert.equal(effect(noAccessObservation, 'water').decision.response, 'Water recharge supported');
+  assert.equal(effect(noAccessObservation, 'usableWater').decision.response, 'Usable water restricted');
+  assert.equal(noAccessObservation.decision.code, 'hold-expansion');
+});
+
+test('deterministic pathways preserve quantity, chemistry, cover and runoff logic', () => {
+  const referenceWater = water.sampleInput('demo-reference');
+  const acidicRecharge = evaluate({
+    environmentalDrivers: 'rainy',
+    demo: { ...demo.defaultInput(), rainAmount: 'high', rainChemistry: 'acidic' },
+    waterQuality: referenceWater
+  });
+  assert.equal(acidicRecharge.demo.components.rainfall.sign, 1);
+  assert.equal(acidicRecharge.demo.components.rainChemistry.sign, -1);
+  assert.equal(effect(acidicRecharge, 'water').decision.response, 'Available with recharge');
+  assert.equal(effect(acidicRecharge, 'waterQuality').decision.response, 'Water-quality stress');
+
+  const protectedRain = evaluate({
+    environmentalDrivers: 'rainy',
+    demo: { ...demo.defaultInput(), groundCover: 'high', bankDisturbance: 'low', rainAmount: 'high' },
+    waterQuality: referenceWater
+  });
+  assert.equal(effect(protectedRain, 'erosion').decision.response, 'Low erosion pressure');
+  assert.equal(effect(protectedRain, 'waterQuality').decision.response, 'Reference screen met');
+
+  const exposedRunoff = evaluate({
+    environmentalDrivers: 'rainy',
+    demo: { ...demo.defaultInput(), groundCover: 'low', bankDisturbance: 'moderate', rainAmount: 'high' },
+    waterQuality: referenceWater
+  });
+  assert.equal(effect(exposedRunoff, 'erosion').decision.response, 'High erosion pressure');
+  assert.equal(effect(exposedRunoff, 'waterQuality').decision.response, 'Water-quality stress');
+  assert.ok(Object.values(exposedRunoff.edgeStates).every(item => !['uncertain', 'conditional'].includes(item.status)));
+  assert.ok(exposedRunoff.pathways.every(path => !['uncertain', 'conditional'].includes(path.status)));
+});
+
+test('all 52,488 demo selector combinations resolve every component to one outcome', () => {
+  const fieldIds = Object.fromEntries(demo.FIELDS.map(field => [field.key, field.options.map(option => option.id)]));
+  const waterCases = ['demo-reference', 'demo-oxygen', 'demo-contamination'].map(water.sampleInput);
+  const herdCases = [
+    { zebra: 0, waterbuck: 0, puku: 0, impala: 0 },
+    baseline,
+    { zebra: 10, waterbuck: 10, puku: 20, impala: 30 }
+  ];
+  let count = 0;
+  for (const usableHabitat of fieldIds.usableHabitat)
+  for (const grassBiomass of fieldIds.grassBiomass)
+  for (const groundCover of fieldIds.groundCover)
+  for (const woodyCover of fieldIds.woodyCover)
+  for (const bankDisturbance of fieldIds.bankDisturbance)
+  for (const rainAmount of fieldIds.rainAmount)
+  for (const rainChemistry of fieldIds.rainChemistry)
+  for (const environmentalDrivers of Object.keys(model.SEASONS))
+  for (const waterQuality of waterCases)
+  for (const targetCounts of herdCases) {
+    const result = evaluate({
+      demo: { usableHabitat, grassBiomass, groundCover, woodyCover, bankDisturbance, rainAmount, rainChemistry },
+      environmentalDrivers,
+      waterQuality,
+      targetCounts
+    });
+    assert.equal(result.inputErrors.length, 0);
+    assert.equal(result.effects.length, 10);
+    assert.ok(result.decision.code && result.decision.title && result.decision.action);
+    assert.ok(!/\?|unknown|uncertain|undecided/i.test(result.decision.title));
+    for (const item of result.effects) {
+      assert.equal(item.possibleSigns.length, 1);
+      assert.ok(!['uncertain', 'conditional'].includes(item.status));
+      assert.ok(item.decision.response && item.decision.action && item.decision.explanation);
+      assert.ok(!/\?|unknown|uncertain|undecided/i.test(item.decision.response));
+    }
+    for (const path of result.pathways) assert.ok(!['uncertain', 'conditional'].includes(path.status));
+    for (const item of Object.values(result.edgeStates)) assert.ok(!['uncertain', 'conditional'].includes(item.status));
+    for (const influence of result.demo.influences) {
+      const state = result.edgeStates[influence.from + '>' + influence.to];
+      assert.ok(state, 'missing resolved edge ' + influence.from + '>' + influence.to);
+      assert.deepEqual(state.signs, [influence.sign]);
+    }
+    const expectedHydro = rainAmount === 'low' ? -1 : rainAmount === 'high' ? 1 : environmentalDrivers === 'rainy' ? 1 : environmentalDrivers === 'coolDry' || environmentalDrivers === 'hotDry' ? -1 : 0;
+    assert.equal(result.demo.components.rainfall.sign, expectedHydro);
+    assert.equal(result.demo.components.water.sign, expectedHydro);
+    if (result.demo.components.waterQuality.sign < 0) assert.equal(result.demo.components.aquaticHealth.sign, -1);
+    const herdTotal = Object.values(targetCounts).reduce((sum, value) => sum + value, 0);
+    if (herdTotal === 0) {
+      assert.equal(result.demo.components.competition.sign, 0);
+      assert.equal(result.demo.components.health.sign, 0);
+    } else {
+      if (result.demo.metrics.forageDays < demo.HORIZON_DAYS) {
+        assert.equal(result.demo.components.forage.sign, -1);
+        assert.equal(result.demo.components.competition.sign, 1);
+        assert.equal(result.demo.components.health.sign, -1);
+      }
+      if (result.demo.components.usableWater.sign < 0) assert.equal(result.demo.components.competition.sign, 1);
+    }
+    count++;
+  }
+  assert.equal(count, 52488);
 });
 
 test('all 61,236 combinations of herd directions, seasons, field conditions and water cases produce bounded actionable results', () => {

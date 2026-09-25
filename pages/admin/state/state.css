@@ -2,8 +2,17 @@
    define here; every colour comes from a token in styles/theme.css. */
 
 /* Scenario inputs and responses use the existing workspace's spacing/tokens. */
-.eco-water-controls, .eco-model-conditions { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+.eco-water-controls, .eco-model-conditions, .eco-demo-controls { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--border-color); }
 .eco-water-controls h4 { margin: 0 0 8px; }
+.eco-demo-controls h4 { margin: 0; }
+.eco-demo-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+.eco-demo-label { padding: 5px 8px; border: 1px solid var(--color-primary); border-radius: var(--radius-sm); color: var(--color-primary-fg); font-size: 9px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.eco-demo-assessment { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-top: 18px; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; }
+.eco-demo-assessment > div { min-width: 0; padding: 13px 14px; background: var(--color-bg-white); border-right: 1px solid var(--border-color-light); }
+.eco-demo-assessment > div:last-child { border-right: 0; }
+.eco-demo-assessment span, .eco-demo-assessment small { display: block; color: var(--color-text-muted); font-size: 9px; }
+.eco-demo-assessment span { font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.eco-demo-assessment strong { display: block; margin: 7px 0 4px; color: var(--color-text-main); font-family: var(--font-mono); font-size: 15px; }
 .eco-water-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 16px 0; }
 .eco-water-grid input { box-sizing: border-box; width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--border-color-dark); border-radius: var(--radius-sm); color: var(--color-text-main); background: var(--color-bg-white); font: inherit; }
 .eco-water-grid input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
@@ -19,7 +28,8 @@
 .eco-component-responses .eco-input-table thead th:last-child { width: 50%; }
 .eco-response-select { border: 0; padding: 0; background: transparent; color: var(--color-primary-fg); font: inherit; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .eco-response-select:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 4px; }
-@media (max-width: 700px) { .eco-water-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1023px) { .eco-demo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .eco-water-grid, .eco-demo-grid, .eco-demo-assessment { grid-template-columns: 1fr; } .eco-demo-assessment > div { border-right: 0; border-bottom: 1px solid var(--border-color-light); } .eco-demo-assessment > div:last-child { border-bottom: 0; } }
 
 .page-state .state-intro {
   margin-bottom: 20px;
